@@ -75,6 +75,7 @@ inline Vec2& Vec2::operator=( const Vec2 & rhs ) {
 	return *this;
 }
 
+// @TODO change direct equality operator to "fabs( a - b ) < TOLERANCE"
 inline bool Vec2::operator==( const Vec2 & rhs ) const {
 	if ( x != rhs.x ) {
 		return false;
@@ -274,6 +275,7 @@ inline Vec3& Vec3::operator=( const float * rhs ) {
 	return *this;
 }
 
+// @TODO change direct equality operator to "fabs( a - b ) < TOLERANCE"
 inline bool Vec3::operator == ( const Vec3 & rhs ) const {
 	if ( x != rhs.x ) {
 		return false;
