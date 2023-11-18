@@ -168,6 +168,7 @@ inline Mat3 Mat3::Transpose() const {
 	return transpose;
 }
 
+// matrix inverse = adjugate / determinant = ( transpose of cofactor matrix ) / determinant
 inline Mat3 Mat3::Inverse() const {
 	Mat3 inv;
 	for ( int i = 0; i < 3; i++ ) {

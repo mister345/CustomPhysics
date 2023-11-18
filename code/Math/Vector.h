@@ -384,6 +384,7 @@ inline float Vec3::Dot( const Vec3 & rhs ) const {
 	return temp;
 }
 
+// @TODO - add fast inv square root
 inline const Vec3 & Vec3::Normalize() {
 	float mag = GetMagnitude();
 	float invMag = 1.0f / mag;
@@ -420,10 +421,15 @@ inline bool Vec3::IsValid() const {
 	return true;
 }
 
+// get two vectors orthogonal to this one
 inline void Vec3::GetOrtho( Vec3 & u, Vec3 & v ) const {
 	Vec3 n = *this;
 	n.Normalize();
 
+	// avoid crossing n with a vector nearly parallel to itself, 
+	// producing a miniscule cross product mag and value degradation.
+	// ( if this vector is already nearly up / down ( abs( z ) ~= 1 ), 
+	// then we can safely cross it with x, cross it with z )
 	const Vec3 w = ( n.z * n.z > 0.9f * 0.9f ) ? Vec3( 1, 0, 0 ) : Vec3( 0, 0, 1 );
 	u = w.Cross( n );
 	u.Normalize();
