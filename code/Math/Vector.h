@@ -429,7 +429,7 @@ inline void Vec3::GetOrtho( Vec3 & u, Vec3 & v ) const {
 	// avoid crossing n with a vector nearly parallel to itself, 
 	// producing a miniscule cross product mag and value degradation.
 	// ( if this vector is already nearly up / down ( abs( z ) ~= 1 ), 
-	// then we can safely cross it with x, cross it with z )
+	// then we can safely cross it with x, else, cross it with z )
 	const Vec3 w = ( n.z * n.z > 0.9f * 0.9f ) ? Vec3( 1, 0, 0 ) : Vec3( 0, 0, 1 );
 	u = w.Cross( n );
 	u.Normalize();
