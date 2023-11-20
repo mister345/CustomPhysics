@@ -24,4 +24,9 @@ public:
 	Quat		m_orientation;
 
 	Shape *		m_shape;
+
+	Vec3 GetCenterOfMassWorldSpace() const;
+	Vec3 GetCenterOfMassModelSpace() const;
+	Vec3 WorldSpaceToBodySpace( const Vec3 & worldPt ) const;
+	Vec3 BodySpaceToWorldSpace( const Vec3 & worldPt ) const;
 };
