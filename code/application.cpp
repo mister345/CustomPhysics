@@ -22,6 +22,9 @@ Application * g_application = NULL;
 #include <time.h>
 #include <windows.h>
 
+// CONFIG
+static constexpr float ZOOM_MULTIPLIER = 5.f;
+
 static bool gIsInitialized( false );
 static unsigned __int64 gTicksPerSecond;
 static unsigned __int64 gStartTicks;
@@ -406,7 +409,7 @@ Application::MouseScrolled
 ====================================================
 */
 void Application::MouseScrolled( float z ) {
-	m_cameraRadius -= z;
+	m_cameraRadius -= z * ZOOM_MULTIPLIER;
 	if ( m_cameraRadius < 0.5f ) {
 		m_cameraRadius = 0.5f;
 	}
