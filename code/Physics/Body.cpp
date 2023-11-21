@@ -39,3 +39,20 @@ Vec3 Body::BodySpaceToWorldSpace( const Vec3 & localPt ) const {
     const Vec3 orientedPointWithWorldOffset = pointOrientedRelToWorld + GetCenterOfMassWorldSpace();
     return orientedPointWithWorldOffset;
 }
+
+void Body::ApplyImpulseLinear( const Vec3 & impulse ) {
+    // 0 would imply infinitely massive object unaffected by impulses
+    if ( m_invMass == 0.f ) {
+        return;
+    }
+
+    ////////////////// D = "delta" ///////////////
+    ////////////////// J = "momentum" ////////////
+    //                                          //
+    //         momentum   = mass * velocity     //
+    // J     = momentum D = mass * velocity D   //
+    // J / m = velocity D                       //
+    //                                          //
+    //////////////////////////////////////////////
+    m_linearVelocity += impulse * m_invMass;
+}

@@ -20,9 +20,10 @@ class Body {
 public:
 	Body();
 
-	Vec3	m_position;
-	Quat	m_orientation;
-	Vec3	m_linearVelocity;
+	Vec3  m_position;
+	Quat  m_orientation;
+	Vec3  m_linearVelocity;
+	float m_invMass;
 	
 	Shape *	m_shape;
 
@@ -30,4 +31,6 @@ public:
 	Vec3 GetCenterOfMassModelSpace() const;
 	Vec3 WorldSpaceToBodySpace( const Vec3 & worldPt ) const;
 	Vec3 BodySpaceToWorldSpace( const Vec3 & worldPt ) const;
+
+	void ApplyImpulseLinear( const Vec3 & impulse );
 };
