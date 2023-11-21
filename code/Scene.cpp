@@ -14,6 +14,10 @@ Scene
 ========================================================================================================
 */
 
+// CONFIG
+static constexpr float GRAVITY_MAGNITUDE = 10.f;
+static const Vec3 GRAVITATIONAL_ACCELERATION = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+
 /*
 ====================================================
 Scene::~Scene
@@ -66,5 +70,13 @@ Scene::Update
 ====================================================
 */
 void Scene::Update( const float dt_sec ) {
-	// TODO: Add code
+	// apply gravitational acceleration to velocity
+	for ( Body & body : m_bodies ) {
+		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * dt_sec;
+	}
+
+	// apply displacement based on position 
+	for ( Body & body : m_bodies ) {
+		body.m_position += body.m_linearVelocity * dt_sec;
+	}
 }

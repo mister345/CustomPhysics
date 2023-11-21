@@ -86,8 +86,8 @@ private:
 
 	std::vector< RenderModel > m_renderModels;
 
-	static const int WINDOW_WIDTH = 1200;
-	static const int WINDOW_HEIGHT = 720;
+	static const int WINDOW_WIDTH = 1920;
+	static const int WINDOW_HEIGHT = 1080;
 
 	static const bool m_enableLayers = true;
 };
