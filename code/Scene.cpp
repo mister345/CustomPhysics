@@ -70,13 +70,22 @@ Scene::Update
 ====================================================
 */
 void Scene::Update( const float dt_sec ) {
+	// integrate delta time so acceleration is introduced correctly
+	const float fullDuration = dt_sec;
+	const float halfDuration = dt_sec * 0.5f;
+
 	// apply gravitational acceleration to velocity
 	for ( Body & body : m_bodies ) {
-		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * dt_sec;
+		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * halfDuration;
 	}
 
 	// apply displacement based on position 
 	for ( Body & body : m_bodies ) {
-		body.m_position += body.m_linearVelocity * dt_sec;
+		body.m_position += body.m_linearVelocity * fullDuration;
+	}
+
+	// apply gravitational acceleration to velocity
+	for ( Body & body : m_bodies ) {
+		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * halfDuration;
 	}
 }
