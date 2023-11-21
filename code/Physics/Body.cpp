@@ -46,8 +46,8 @@ void Body::ApplyImpulseLinear( const Vec3 & impulse ) {
         return;
     }
 
-    ////////////////// D = "delta" ///////////////
-    ////////////////// J = "momentum" ////////////
+    //////////////// * D = "delta"    * //////////
+    //////////////// * J = "momentum" * //////////
     //                                          //
     //         momentum   = mass * velocity     //
     // J     = momentum D = mass * velocity D   //

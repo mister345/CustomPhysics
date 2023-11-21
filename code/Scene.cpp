@@ -16,7 +16,7 @@ Scene
 
 // CONFIG
 static constexpr float GRAVITY_MAGNITUDE = 10.f;
-static const Vec3 GRAVITATIONAL_ACCELERATION = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+static const Vec3 GRAV_ACCEL = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
 ====================================================
@@ -53,11 +53,20 @@ void Scene::Initialize() {
 	Body body;
 	body.m_position = Vec3( 0, 0, 30 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
+	body.m_invMass = 1 / 1.f;
 	body.m_shape = new ShapeSphere( 1.0f );
 	m_bodies.push_back( body );
 
+	body.m_position = Vec3( 0, 30, 30 );
+	body.m_orientation = Quat( 0, 0, 0, 1 );
+	body.m_invMass = 1 / 1000.f;
+	body.m_shape = new ShapeSphere( 1.0f );
+	m_bodies.push_back( body );
+
+	// "ground" sphere unaffected by gravity
 	body.m_position = Vec3( 0, 0, -101 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
+	body.m_invMass = 0.f;
 	body.m_shape = new ShapeSphere( 100.0f );
 	m_bodies.push_back( body );
 
@@ -76,7 +85,16 @@ void Scene::Update( const float dt_sec ) {
 
 	// apply gravitational acceleration to velocity
 	for ( Body & body : m_bodies ) {
-		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * halfDuration;
+		// Apply gravity as an impulse
+		// Impulse = total delta momentum
+		// Force   = delta momentum amortized over time
+		//		  => delta momentum = Force * delta time = ( mass * accel ) * delta time
+		//	      => Force = mass * gravitational accel * delta time 
+
+		// retrieve actual mass from inverse so we can use it
+		const float mass	= 1.f / body.m_invMass;
+		Vec3 gravityImpulse = GRAV_ACCEL * mass * halfDuration;
+		body.ApplyImpulseLinear( gravityImpulse );
 	}
 
 	// apply displacement based on position 
@@ -84,8 +102,11 @@ void Scene::Update( const float dt_sec ) {
 		body.m_position += body.m_linearVelocity * fullDuration;
 	}
 
-	// apply gravitational acceleration to velocity
+	// apply remainder of acceleration to bodies
 	for ( Body & body : m_bodies ) {
-		body.m_linearVelocity += GRAVITATIONAL_ACCELERATION * halfDuration;
+		// same as above
+		const float mass = 1.f / body.m_invMass;
+		Vec3 gravityImpulse = GRAV_ACCEL * mass * halfDuration;
+		body.ApplyImpulseLinear( gravityImpulse );
 	}
 }
