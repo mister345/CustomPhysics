@@ -51,13 +51,13 @@ Scene::Initialize
 */
 void Scene::Initialize() {
 	Body body;
-	body.m_position = Vec3( 0, 0, 30 );
+	body.m_position = Vec3( 0, 0, 20 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
 	body.m_invMass = 1 / 1.f;
 	body.m_shape = new ShapeSphere( 1.0f );
 	m_bodies.push_back( body );
 
-	body.m_position = Vec3( 0, 30, 30 );
+	body.m_position = Vec3( 0, 15, 20 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
 	body.m_invMass = 1 / 1000.f;
 	body.m_shape = new ShapeSphere( 1.0f );
@@ -77,10 +77,6 @@ Scene::Update
 ====================================================
 */
 void Scene::Update( const float dt_sec ) {
-	// integrate delta time so acceleration is introduced correctly
-	const float fullDuration = dt_sec;
-	const float halfDuration = dt_sec * 0.5f;
-
 	// apply gravitational acceleration to velocity
 	for ( Body & body : m_bodies ) {
 		// Apply gravity as an impulse
@@ -91,21 +87,13 @@ void Scene::Update( const float dt_sec ) {
 
 		// retrieve actual mass from inverse so we can use it
 		const float mass	= 1.f / body.m_invMass;
-		Vec3 gravityImpulse = GRAV_ACCEL * mass * halfDuration;
+		Vec3 gravityImpulse = GRAV_ACCEL * mass * dt_sec;
 		body.ApplyImpulseLinear( gravityImpulse );
 	}
 
 	// apply displacement based on position 
 	for ( Body & body : m_bodies ) {
-		body.m_position += body.m_linearVelocity * fullDuration;
-	}
-
-	// apply remainder of acceleration to bodies
-	for ( Body & body : m_bodies ) {
-		// same as above
-		const float mass = 1.f / body.m_invMass;
-		Vec3 gravityImpulse = GRAV_ACCEL * mass * halfDuration;
-		body.ApplyImpulseLinear( gravityImpulse );
+		body.m_position += body.m_linearVelocity * dt_sec;
 	}
 
 	// Check collisions O( N^2 ) for now
@@ -121,7 +109,6 @@ void Scene::Update( const float dt_sec ) {
 				continue;
 			}
 
-//			if ( Intersect( &bodyA, &bodyB ) ) {
 			contact_t contact;
 			if ( Intersect( &bodyA, &bodyB, contact ) ) {
 				ResolveContact( contact );
