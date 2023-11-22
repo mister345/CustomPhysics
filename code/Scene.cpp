@@ -69,8 +69,6 @@ void Scene::Initialize() {
 	body.m_invMass = 0.f;
 	body.m_shape = new ShapeSphere( 100.0f );
 	m_bodies.push_back( body );
-
-	// TODO: Add code
 }
 
 /*
@@ -108,5 +106,25 @@ void Scene::Update( const float dt_sec ) {
 		const float mass = 1.f / body.m_invMass;
 		Vec3 gravityImpulse = GRAV_ACCEL * mass * halfDuration;
 		body.ApplyImpulseLinear( gravityImpulse );
+	}
+
+	// Check collisions O( N^2 ) for now
+	for ( Body & bodyA : m_bodies ) {
+		for ( Body & bodyB : m_bodies ) {
+			// skip self
+			if ( &bodyA == &bodyB ) {
+				continue;
+			}
+
+			// skip pairs with infinite mass
+			if ( bodyA.m_invMass == 0.f && bodyB.m_invMass == 0.f ) {
+				continue;
+			}
+
+			if ( Intersect( &bodyA, &bodyB ) ) {
+				bodyA.m_linearVelocity.Zero();
+				bodyB.m_linearVelocity.Zero();
+			}
+		}
 	}
 }
