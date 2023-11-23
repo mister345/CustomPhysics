@@ -9,9 +9,13 @@ ResolveContact
 ====================================================
 */
 void ResolveContact( contact_t & contact ) {
+	// Calculate shared elasticity of collision
+	const float systemElasticity = contact.bodyA->m_elasticity * contact.bodyB->m_elasticity;
+
+	// Calculate collision impulse
 	const Vec3 velocityARelativeToB		 = contact.bodyA->m_linearVelocity - contact.bodyB->m_linearVelocity;
 	const float velCompNormalToCollision = velocityARelativeToB.Dot( contact.normal );
-	const float impulseMag				 = -2.f * velCompNormalToCollision / ( contact.bodyA->m_invMass + contact.bodyB->m_invMass );
+	const float impulseMag				 = -( 1.f + systemElasticity ) * velCompNormalToCollision / ( contact.bodyA->m_invMass + contact.bodyB->m_invMass );
 	const Vec3  impulseVec				 = contact.normal * impulseMag;
 	contact.bodyA->ApplyImpulseLinear( impulseVec *  1.f );
 	contact.bodyB->ApplyImpulseLinear( impulseVec * -1.f );
