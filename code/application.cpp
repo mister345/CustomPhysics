@@ -91,7 +91,7 @@ void Application::Initialize() {
 	m_mousePosition = Vec2( 0, 0 );
 	m_cameraPositionTheta = acosf( -1.0f ) / 2.0f;
 	m_cameraPositionPhi = 0;
-	m_cameraRadius = 15.0f;
+	m_cameraRadius = 100.0f;
 	m_cameraFocusPoint = Vec3( 0, 0, 3 );
 
 	m_isPaused = true;

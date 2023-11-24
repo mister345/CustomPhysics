@@ -115,7 +115,7 @@ void Scene::Update( const float dt_sec ) {
 
 	// apply displacement based on position 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
-		Body * body = &m_bodies[ i ];
-		body->m_position += body->m_linearVelocity * dt_sec;
+//		m_bodies[ i ].m_position += m_bodies[ i ].m_linearVelocity * dt_sec;
+		m_bodies[ i ].Update( dt_sec );
 	}
 }

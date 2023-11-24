@@ -22,6 +22,11 @@ Vec3 Body::GetCenterOfMassWorldSpace() const {
     return m_position + centerOfMassWorldRotation;
 }
 
+void Body::Update( const float dt_sec ) {
+    // linear
+    m_position += m_linearVelocity * dt_sec;
+}
+
 Vec3 Body::GetCenterOfMassModelSpace() const {
     // return center of mass respect to MODEL origin, with MODEL space orientation
     return m_shape->GetCenterOfMass();
@@ -57,6 +62,16 @@ Mat3 Body::GetInverseInertiaTensorWorldSpace() const {
     const Mat3 orientation = m_orientation.ToMat3();
     Mat3 invITensorWorld   = orientation * invInertialTensor * orientation.Transpose();
     return invITensorWorld;
+}
+
+// apply both angular and linear impulses
+void Body::ApplyImpulse( const Vec3 impulsePoint, const Vec3 & impulseLinear ) {
+    ApplyImpulseLinear( impulseLinear );
+
+    // general application, but same idea as radius if this were a sphere
+    const Vec3 effectiveRadius = impulsePoint - GetCenterOfMassWorldSpace();
+    const Vec3 angularImpulse  = effectiveRadius.Cross( impulseLinear );
+    ApplyImpulseAngular( angularImpulse );
 }
 
 void Body::ApplyImpulseLinear( const Vec3 & impulse ) {
