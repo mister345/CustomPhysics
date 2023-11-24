@@ -19,8 +19,6 @@ ShapeSphere::Support
 Vec3 ShapeSphere::Support( const Vec3 & dir, const Vec3 & pos, const Quat & orient, const float bias ) const {
 	Vec3 supportPt;
 	
-	// TODO: Add code
-
 	return supportPt;
 }
 
@@ -29,12 +27,18 @@ Vec3 ShapeSphere::Support( const Vec3 & dir, const Vec3 & pos, const Quat & orie
 ShapeSphere::InertiaTensor
 ====================================================
 */
-Mat3 ShapeSphere::InertiaTensor() const {
-	Mat3 tensor;
-	
-	// TODO: Add code
+Mat3 ShapeSphere::InertiaTensorGeometric() const {
+	// NOTE - intertia tensor requires mass, but mass is a property of Body, which is downstream from Shape.
+	// So calculate the partial tensor matrix without, and let Body apply the mass
+	const float diagValNoMass = 2.f * m_radius * m_radius / 5.f;
 
-	return tensor;
+	Mat3 tensorWithoutMass;
+	tensorWithoutMass.Zero();
+	tensorWithoutMass.rows[ 0 ][ 0 ] = diagValNoMass;
+	tensorWithoutMass.rows[ 1 ][ 1 ] = diagValNoMass;
+	tensorWithoutMass.rows[ 2 ][ 2 ] = diagValNoMass;
+	
+	return tensorWithoutMass;
 }
 
 /*

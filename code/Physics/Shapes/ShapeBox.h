@@ -18,7 +18,7 @@ public:
 
 	Vec3 Support( const Vec3 & dir, const Vec3 & pos, const Quat & orient, const float bias ) const override;
 
-	Mat3 InertiaTensor() const override;
+	Mat3 InertiaTensorGeometric() const override;
 
 	Bounds GetBounds( const Vec3 & pos, const Quat & orient ) const override;
 	Bounds GetBounds() const override { return m_bounds; }

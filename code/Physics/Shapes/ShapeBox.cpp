@@ -38,7 +38,7 @@ Vec3 ShapeBox::Support( const Vec3 & dir, const Vec3 & pos, const Quat & orient,
 ShapeBox::InertiaTensor
 ====================================================
 */
-Mat3 ShapeBox::InertiaTensor() const {
+Mat3 ShapeBox::InertiaTensorGeometric() const {
 	Mat3 tensor;
 	
 	// TODO: Add code
