@@ -23,8 +23,45 @@ Vec3 Body::GetCenterOfMassWorldSpace() const {
 }
 
 void Body::Update( const float dt_sec ) {
-    // linear
+    // position
     m_position += m_linearVelocity * dt_sec;
+
+    // orientation
+    // 1. angular velocity operates relative to the center of mass, 
+    //    so convert our world pos to be relative to center of mass
+    //    ( use center of mass as our origin )
+    const Vec3 centerOfMass = GetCenterOfMassWorldSpace();
+    const Vec3 posRelToCM = m_position - centerOfMass;
+
+    // 2. Calculate total torque
+    //    -> equal to externally applied torque + precession ( internal torque about its own axis )
+    //    -> ignore external torque; already applied by collision ResolveContact method ( @TODO )
+    //    -> just need to calculate internal torque ( precession )
+
+    // 3. Calculate angular velocity delta 
+    //    I a =        w X I * w
+    //      a = I^-1 ( w X I * w )
+    const Mat3 toWorldOrientation = m_orientation.ToMat3();
+    const Mat3 iTensorGeom_WS     = toWorldOrientation * m_shape->InertiaTensorGeometric() * toWorldOrientation.Transpose();
+    const Vec3 deltaAngVelocity   = iTensorGeom_WS.Inverse() * ( m_angularVelocity.Cross( iTensorGeom_WS * m_angularVelocity ) );
+    m_angularVelocity             += deltaAngVelocity * dt_sec;
+
+        // @TODO ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // we are getting the pure geometric inertia tensor here, which doesnt include mass yet...
+        // does it somehow cancel out due to cross product, or did he add the mass to the inertia tensor stored in the shape
+        // somewhere else in the code and not mention it???
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    // @TODO - review order of operations multiplying quats
+
+    // 4. Update orientation
+    Vec3 deltaAngle = m_angularVelocity * dt_sec;
+    Quat deltaQuat  = Quat( deltaAngle, deltaAngle.GetMagnitude() ); // NOTE - the quat constructor normalizes the axis for us
+    m_orientation   = deltaQuat * m_orientation;
+    m_orientation.Normalize();
+
+    // this rotation can also affect position, take that into account
+    m_position = centerOfMass + deltaQuat.RotatePoint( posRelToCM );
 }
 
 Vec3 Body::GetCenterOfMassModelSpace() const {
@@ -48,8 +85,8 @@ Vec3 Body::BodySpaceToWorldSpace( const Vec3 & localPt ) const {
 Mat3 Body::GetInverseInertiaTensorBodySpace() const {
 // NOTE - inverting matrix, then multiplying by inv mass, is the same as multiplying by mass, then inverting
 // ( bc of commutable scalar multiplication by mass/invmass, mass gets inverted in the process of inverting the matrix )
-    const Mat3 tensorGeom        = m_shape->InertiaTensorGeometric();
-    const Mat3 invTensorGeom     = tensorGeom.Inverse();
+    const Mat3 iTensorGeom       = m_shape->InertiaTensorGeometric();
+    const Mat3 invTensorGeom     = iTensorGeom.Inverse();
     const Mat3 invInertialTensor = invTensorGeom * m_invMass;
     return invInertialTensor;
 }
