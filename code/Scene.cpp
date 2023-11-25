@@ -51,17 +51,17 @@ Scene::Initialize
 */
 void Scene::Initialize() {
 	Body body;
-	body.m_position = Vec3( 0, 0, 20 );
+	body.m_position = Vec3( 0, 0, 10 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
 	body.m_invMass = 1 / 1.f;
 	body.m_elasticity = 1.f;
 	body.m_shape = new ShapeSphere( 1.0f );
 	m_bodies.push_back( body );
 
-	body.m_position = Vec3( 0, 15, 20 );
+	body.m_position = Vec3( 0, 15, 10 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
 	body.m_invMass = 1 / 1000.f;
-	body.m_elasticity = 0.5f;
+	body.m_elasticity = 1.f;
 	body.m_shape = new ShapeSphere( 1.0f );
 	m_bodies.push_back( body );
 
