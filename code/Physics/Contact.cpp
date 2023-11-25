@@ -9,29 +9,48 @@ ResolveContact
 ====================================================
 */
 void ResolveContact( contact_t & contact ) {
+	Body * bodyA		 = contact.bodyA;
+	Body * bodyB		 = contact.bodyB;
+	const Vec3 ptOnA	 = contact.ptOnA_WorldSpace;
+	const Vec3 ptOnB	 = contact.ptOnB_WorldSpace;
+	const float invMassA = contact.bodyA->m_invMass;
+	const float invMassB = contact.bodyB->m_invMass;
+	const Vec3 normal	 = contact.normal;
+
 	// Calculate shared elasticity of collision
-	const float systemElasticity = contact.bodyA->m_elasticity * contact.bodyB->m_elasticity;
+	const float systemElasticity = bodyA->m_elasticity * bodyB->m_elasticity;
+
+	// with rotation
+	const Mat3 invWorldInertiaA = bodyA->GetInverseInertiaTensorWorldSpace();
+	const Mat3 invWorldInertiaB = bodyB->GetInverseInertiaTensorWorldSpace();
+	const Vec3 radiusA			= ptOnA - bodyA->GetCenterOfMassWorldSpace();
+	const Vec3 radiusB			= ptOnB - bodyB->GetCenterOfMassWorldSpace();
+
+	// get a vector orthogonal to axis of rotation and radius, whose magnitude is the angular impulse 
+	// ( basically, the second basis vector of the 2d subspace, or "disc" of rotation )
+	const Vec3 angImpulseA	  = ( invWorldInertiaA * radiusA.Cross( normal ) ).Cross( radiusA );
+	const Vec3 angImpulseB	  = ( invWorldInertiaB * radiusB.Cross( normal ) ).Cross( radiusB );
+	// now how much of this angular impulse is actually acting in the direction of the impulse normal?
+	const float angularFactor = ( angImpulseA + angImpulseB ).Dot( normal );
+
+	// world space velocity including both motion and rotation
+	const Vec3 totalVelA   = bodyA->m_linearVelocity + bodyA->m_angularVelocity.Cross( radiusA );
+	const Vec3 totalVelB   = bodyB->m_linearVelocity + bodyB->m_angularVelocity.Cross( radiusB );
 
 	// Calculate collision impulse
-	const Vec3 velocityARelativeToB		 = contact.bodyA->m_linearVelocity - contact.bodyB->m_linearVelocity;
-	const float velCompNormalToCollision = velocityARelativeToB.Dot( contact.normal );
-	const float impulseMag				 = -( 1.f + systemElasticity ) * velCompNormalToCollision / ( contact.bodyA->m_invMass + contact.bodyB->m_invMass );
-	const Vec3  impulseVec				 = contact.normal * impulseMag;
-	contact.bodyA->ApplyImpulseLinear( impulseVec *  1.f );
-	contact.bodyB->ApplyImpulseLinear( impulseVec * -1.f );
+	const Vec3 velARelToB  = totalVelA - totalVelB;
+	const float impulseMag = ( 1.f + systemElasticity ) * velARelToB.Dot( normal ) / ( invMassA + invMassB + angularFactor );
+	const Vec3 impulseVec  = normal * impulseMag;
+
+	bodyA->ApplyImpulse( ptOnA, impulseVec * -1.f );
+	bodyB->ApplyImpulse( ptOnB, impulseVec *  1.f );
 
 	// separate the colliding bodies such that their shared center of mass doesnt change
 	// ( collective c. of mass is like a barycentric avg of their positions, weighted by their respective masses )
-	const float massA		= 1.f / contact.bodyA->m_invMass;
-	const float massB		= 1.f / contact.bodyB->m_invMass;
-	const Vec3 centerOfMass = ( contact.bodyA->GetCenterOfMassModelSpace() * massA +
-								contact.bodyB->GetCenterOfMassModelSpace() * massB )
-							  / massA + massB;
+	const float adjustPercA   = invMassA / ( invMassA + invMassB );
+	const float adjustPercB   = invMassB / ( invMassA + invMassB );
 
-	const float totalInvMass  =  contact.bodyA->m_invMass + contact.bodyB->m_invMass;
-	const float adjustPercA   =  contact.bodyA->m_invMass / totalInvMass;
-	const float adjustPercB   =  contact.bodyB->m_invMass / totalInvMass;
-	const Vec3 separationDist =  contact.ptOnB_WorldSpace - contact.ptOnA_WorldSpace;
-	contact.bodyA->m_position += separationDist * adjustPercA;
-	contact.bodyB->m_position += separationDist * adjustPercB;
+	const Vec3 separationDist = ptOnB - ptOnA;
+	bodyA->m_position += separationDist * adjustPercA;
+	bodyB->m_position -= separationDist * adjustPercB;
 }
