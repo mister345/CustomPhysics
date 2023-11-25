@@ -14,14 +14,6 @@ Body::Body() :
     m_shape( NULL ) {
 }
 
-Vec3 Body::GetCenterOfMassWorldSpace() const {
-    // rotate the center of mass as defined in MODEL space, 
-    // by the world orientation of the object, it may not be at the model origin
-    const Vec3 centerOfMassWorldRotation = m_orientation.RotatePoint( m_shape->GetCenterOfMass() );
-    // add world offset to this rotated point
-    return m_position + centerOfMassWorldRotation;
-}
-
 void Body::Update( const float dt_sec ) {
     // position
     m_position += m_linearVelocity * dt_sec;
@@ -63,6 +55,14 @@ void Body::Update( const float dt_sec ) {
 
     // 5. update position, since above rotation can also affect that
     m_position = centerOfMass + deltaQuat.RotatePoint( posRelToCM );
+}
+
+Vec3 Body::GetCenterOfMassWorldSpace() const {
+    // rotate the center of mass as defined in MODEL space, 
+    // by the world orientation of the object, it may not be at the model origin
+    const Vec3 centerOfMassWorldRotation = m_orientation.RotatePoint( m_shape->GetCenterOfMass() );
+    // add world offset to this rotated point
+    return m_position + centerOfMassWorldRotation;
 }
 
 Vec3 Body::GetCenterOfMassModelSpace() const {
