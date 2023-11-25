@@ -46,21 +46,22 @@ void Body::Update( const float dt_sec ) {
     const Vec3 deltaAngVelocity   = iTensorGeom_WS.Inverse() * ( m_angularVelocity.Cross( iTensorGeom_WS * m_angularVelocity ) );
     m_angularVelocity             += deltaAngVelocity * dt_sec;
 
-        // @TODO ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // we are getting the pure geometric inertia tensor here, which doesnt include mass yet...
-        // does it somehow cancel out due to cross product, or did he add the mass to the inertia tensor stored in the shape
-        // somewhere else in the code and not mention it???
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // @TODO ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //   we are getting the pure geometric inertia tensor here, which doesnt include mass yet...
+    //   does it somehow cancel out due to cross product, or did he add the mass to the inertia tensor stored in the shape
+    //   somewhere else in the code and not mention it???
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     // @TODO - review order of operations multiplying quats
 
+    // NOTE - the quat constructor normalizes the axis for us
     // 4. Update orientation
     Vec3 deltaAngle = m_angularVelocity * dt_sec;
-    Quat deltaQuat  = Quat( deltaAngle, deltaAngle.GetMagnitude() ); // NOTE - the quat constructor normalizes the axis for us
+    Quat deltaQuat  = Quat( deltaAngle, deltaAngle.GetMagnitude() );
     m_orientation   = deltaQuat * m_orientation;
     m_orientation.Normalize();
 
-    // this rotation can also affect position, take that into account
+    // 5. update position, since above rotation can also affect that
     m_position = centerOfMass + deltaQuat.RotatePoint( posRelToCM );
 }
 
@@ -83,8 +84,8 @@ Vec3 Body::BodySpaceToWorldSpace( const Vec3 & localPt ) const {
 }
 
 Mat3 Body::GetInverseInertiaTensorBodySpace() const {
-// NOTE - inverting matrix, then multiplying by inv mass, is the same as multiplying by mass, then inverting
-// ( bc of commutable scalar multiplication by mass/invmass, mass gets inverted in the process of inverting the matrix )
+    // NOTE - inverting matrix, then multiplying by inv mass, is the same as multiplying by mass, then inverting
+    // ( bc of commutable scalar multiplication by mass/invmass, mass gets inverted in the process of inverting the matrix )
     const Mat3 iTensorGeom       = m_shape->InertiaTensorGeometric();
     const Mat3 invTensorGeom     = iTensorGeom.Inverse();
     const Mat3 invInertialTensor = invTensorGeom * m_invMass;
