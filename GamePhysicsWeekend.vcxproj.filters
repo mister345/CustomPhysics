@@ -48,12 +48,6 @@
     <ClCompile Include="code\Physics\Body.cpp">
       <Filter>code\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="code\Physics\Shapes\ShapeBox.cpp">
-      <Filter>code\Physics\Shapes</Filter>
-    </ClCompile>
-    <ClCompile Include="code\Physics\Shapes\ShapeConvex.cpp">
-      <Filter>code\Physics\Shapes</Filter>
-    </ClCompile>
     <ClCompile Include="code\Physics\Shapes\ShapeSphere.cpp">
       <Filter>code\Physics\Shapes</Filter>
     </ClCompile>
@@ -165,12 +159,6 @@
       <Filter>code\Physics</Filter>
     </ClInclude>
     <ClInclude Include="code\Physics\Shapes\ShapeBase.h">
-      <Filter>code\Physics\Shapes</Filter>
-    </ClInclude>
-    <ClInclude Include="code\Physics\Shapes\ShapeBox.h">
-      <Filter>code\Physics\Shapes</Filter>
-    </ClInclude>
-    <ClInclude Include="code\Physics\Shapes\ShapeConvex.h">
       <Filter>code\Physics\Shapes</Filter>
     </ClInclude>
     <ClInclude Include="code\Physics\Shapes\ShapeSphere.h">

@@ -13,17 +13,6 @@ ShapeSphere
 
 /*
 ====================================================
-ShapeSphere::Support
-====================================================
-*/
-Vec3 ShapeSphere::Support( const Vec3 & dir, const Vec3 & pos, const Quat & orient, const float bias ) const {
-	Vec3 supportPt;
-	
-	return supportPt;
-}
-
-/*
-====================================================
 ShapeSphere::InertiaTensor
 ====================================================
 */
@@ -39,30 +28,4 @@ Mat3 ShapeSphere::InertiaTensorGeometric() const {
 	tensorWithoutMass.rows[ 2 ][ 2 ] = diagValNoMass;
 	
 	return tensorWithoutMass;
-}
-
-/*
-====================================================
-ShapeSphere::GetBounds
-====================================================
-*/
-Bounds ShapeSphere::GetBounds( const Vec3 & pos, const Quat & orient ) const {
-	Bounds tmp;
-	
-	// TODO: Add code
-
-	return tmp;
-}
-
-/*
-====================================================
-ShapeSphere::GetBounds
-====================================================
-*/
-Bounds ShapeSphere::GetBounds() const {
-	Bounds tmp;
-	
-	// TODO: Add code
-
-	return tmp;
 }

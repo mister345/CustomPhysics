@@ -22,14 +22,8 @@ public:
 	};
 
 	virtual shapeType_t GetType() const = 0;
-	virtual Vec3 GetCenterOfMass() const { return m_centerOfMass; }
 	virtual Mat3 InertiaTensorGeometric() const = 0;
-
-	// not yet implemented
-	virtual Bounds GetBounds( const Vec3 & pos, const Quat & orient ) const = 0;
-	virtual Bounds GetBounds() const = 0;
-	virtual Vec3 Support( const Vec3 & dir, const Vec3 & pos, const Quat & orient, const float bias ) const = 0;
-	virtual float FastestLinearSpeed( const Vec3 & angularVelocity, const Vec3 & dir ) const { return 0.0f; }
+	virtual Vec3 GetCenterOfMass() const { return m_centerOfMass; }
 
 protected:
 	Vec3 m_centerOfMass;

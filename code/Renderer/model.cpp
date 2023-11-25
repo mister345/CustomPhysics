@@ -395,94 +395,15 @@ bool Model::BuildFromShape( const Shape * shape ) {
 		return false;
 	}
 
-	if ( shape->GetType() == Shape::SHAPE_BOX ) {
-		const ShapeBox * shapeBox = (const ShapeBox *)shape;
+	const ShapeSphere * shapeSphere = (const ShapeSphere *)shape;
 
-		m_vertices.clear();
-		m_indices.clear();
+	m_vertices.clear();
+	m_indices.clear();
 
-		FillCubeTessellated( *this, 0 );
-		Vec3 halfdim = ( shapeBox->m_bounds.maxs - shapeBox->m_bounds.mins ) * 0.5f;
-		Vec3 center = ( shapeBox->m_bounds.maxs + shapeBox->m_bounds.mins ) * 0.5f;
-		for ( int v = 0; v < m_vertices.size(); v++ ) {
-			for ( int i = 0; i < 3; i++ ) {
-				m_vertices[ v ].xyz[ i ] *= halfdim[ i ];
-				m_vertices[ v ].xyz[ i ] += center[ i ];
-			}
-		}
-	} else if ( shape->GetType() == Shape::SHAPE_SPHERE ) {
-		const ShapeSphere * shapeSphere = (const ShapeSphere *)shape;
-
-		m_vertices.clear();
-		m_indices.clear();
-
-		FillSphere( *this, shapeSphere->m_radius );
-		for ( int v = 0; v < m_vertices.size(); v++ ) {
-			for ( int i = 0; i < 3; i++ ) {
-				m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
-			}
-		}
-	} else if ( shape->GetType() == Shape::SHAPE_CONVEX ) {
-		const ShapeConvex * shapeConvex = (const ShapeConvex *)shape;
-
-		m_vertices.clear();
-		m_indices.clear();
-
-		// Build the connected convex hull from the points
-		std::vector< Vec3 > hullPts;
-		std::vector< tri_t > hullTris;
-		BuildConvexHull( shapeConvex->m_points, hullPts, hullTris );
-
-		// Calculate smoothed normals
-		std::vector< Vec3 > normals;
-		normals.reserve( hullPts.size() );
-		for ( int i = 0; i < hullPts.size(); i++ ) {
-			Vec3 norm( 0.0f );
-
-			for ( int t = 0; t < hullTris.size(); t++ ) {
-				const tri_t & tri = hullTris[ t ];
-				if ( i != tri.a && i != tri.b && i != tri.c ) {
-					continue;
-				}
-
-				const Vec3 & a = hullPts[ tri.a ];
-				const Vec3 & b = hullPts[ tri.b ];
-				const Vec3 & c = hullPts[ tri.c ];
-
-				Vec3 ab = b - a;
-				Vec3 ac = c - a;
-				norm += ab.Cross( ac );
-			}
-
-			norm.Normalize();
-			normals.push_back( norm );
-		}
-
-		m_vertices.reserve( hullPts.size() );
-		for ( int i = 0; i < hullPts.size(); i++ ) {
-			vert_t vert;
-			memset( &vert, 0, sizeof( vert_t ) );
-			
-			vert.xyz[ 0 ] = hullPts[ i ].x;
-			vert.xyz[ 1 ] = hullPts[ i ].y;
-			vert.xyz[ 2 ] = hullPts[ i ].z;
-
-			Vec3 norm = normals[ i ];
-			norm.Normalize();
-
-			vert.norm[ 0 ] = FloatToByte_n11( norm[ 0 ] );
-			vert.norm[ 1 ] = FloatToByte_n11( norm[ 1 ] );
-			vert.norm[ 2 ] = FloatToByte_n11( norm[ 2 ] );
-			vert.norm[ 3 ] = FloatToByte_n11( 0.0f );
-
-			m_vertices.push_back( vert );
-		}
-
-		m_indices.reserve( hullTris.size() * 3 );
-		for ( int i = 0; i < hullTris.size(); i++ ) {
-			m_indices.push_back( hullTris[ i ].a );
-			m_indices.push_back( hullTris[ i ].b );
-			m_indices.push_back( hullTris[ i ].c );
+	FillSphere( *this, shapeSphere->m_radius );
+	for ( int v = 0; v < m_vertices.size(); v++ ) {
+		for ( int i = 0; i < 3; i++ ) {
+			m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
 		}
 	}
 

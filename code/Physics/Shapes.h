@@ -3,8 +3,6 @@
 //
 #pragma once
 #include "Shapes/ShapeSphere.h"
-#include "Shapes/ShapeBox.h"
-#include "Shapes/ShapeConvex.h"
 
 extern Vec3 g_boxGround[ 8 ];
 extern Vec3 g_boxWall0[ 8 ];
