@@ -104,10 +104,14 @@ Mat3 Body::GetInverseInertiaTensorWorldSpace() const {
 
 // apply both angular and linear impulses
 void Body::ApplyImpulse( const Vec3 impulsePoint, const Vec3 & impulseLinear ) {
+    if ( m_invMass == 0.f ) {
+        return;
+    }
+
     ApplyImpulseLinear( impulseLinear );
 
-    // general application, but same idea as radius if this were a sphere
-    const Vec3 effectiveRadius = impulsePoint - GetCenterOfMassWorldSpace();
+    const Vec3 position        = GetCenterOfMassWorldSpace();
+    const Vec3 effectiveRadius = impulsePoint - position;
     const Vec3 angularImpulse  = effectiveRadius.Cross( impulseLinear );
     ApplyImpulseAngular( angularImpulse );
 }
@@ -131,7 +135,7 @@ void Body::ApplyImpulseLinear( const Vec3 & impulse ) {
 
 void Body::ApplyImpulseAngular( const Vec3 & impulse ) {
     // 0 would imply infinitely massive object unaffected by impulses
-    if ( m_invMass = 0.f ) {
+    if ( m_invMass == 0.f ) {
         return;
     }
 
