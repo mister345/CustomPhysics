@@ -51,14 +51,16 @@ Scene::Initialize
 */
 void Scene::Initialize() {
 	Body body;
-	body.m_position = Vec3( 0, 0, 10 );
+	body.m_position = Vec3( 0, 0, 15 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
+	body.m_linearVelocity = Vec3( 1, 0, 0 );
 	body.m_invMass = 1 / 1.f;
-	body.m_elasticity = 1.f;
+	body.m_elasticity = 0.8f;
+	body.m_friction = 0.5f;
 	body.m_shape = new ShapeSphere( 1.0f );
 	m_bodies.push_back( body );
 
-	body.m_position = Vec3( 0, 15, 10 );
+	body.m_position = Vec3( 0, 15, 1 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
 	body.m_invMass = 1 / 1000.f;
 	body.m_elasticity = 1.f;
@@ -66,11 +68,13 @@ void Scene::Initialize() {
 	m_bodies.push_back( body );
 
 	// "ground" sphere unaffected by gravity
-	body.m_position = Vec3( 0, 0, -101 );
+	body.m_position = Vec3( 0, 0, -151 );
 	body.m_orientation = Quat( 0, 0, 0, 1 );
+	body.m_linearVelocity = Vec3( 0, 0, 0 );
 	body.m_invMass = 0.f;
 	body.m_elasticity = 1.f;
-	body.m_shape = new ShapeSphere( 100.0f );
+	body.m_friction = 0.5f;
+	body.m_shape = new ShapeSphere( 150.0f );
 	m_bodies.push_back( body );
 }
 
