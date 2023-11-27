@@ -45,6 +45,63 @@ bool RaySphere( const Vec3 & rayStart, const Vec3 & rayDir, const Vec3 & sphereC
 
 /*
 ====================================================
+Intersect - sphere to sphere dynamic
+====================================================
+*/
+bool SphereSphereDynamic( const ShapeSphere * shapeA, const ShapeSphere * shapeB,
+						  const Vec3 & posA, const Vec3 & posB, const Vec3 & velA, const Vec3 & velB,
+						  const float dt, Vec3 & ptOnA, Vec3 & ptOnB, float & toi ) {
+
+	const Vec3 relativeVelocity = velA - velB;
+
+	const Vec3 startPtA = posA;
+	const Vec3 endPtA   = posA + relativeVelocity * dt;
+	const Vec3 rayPath  = endPtA - startPtA;
+
+	// two solutions
+	float t0 = 0;
+	float t1 = 0;
+	if ( rayPath.GetLengthSqr() < 0.001f * 0.001f ) {
+		// Ray is too short, just do simple intersection check
+		Vec3 ab = posB - posA;
+		float radii = shapeA->m_radius + shapeB->m_radius + 0.001f;
+		if ( ab.GetLengthSqr() > radii * radii ) {
+			return false;
+		}
+	} else if ( !RaySphere( posA, rayPath, posB, shapeA->m_radius + shapeB->m_radius, t0, t1 ) ) {
+		return false;
+	}
+
+	// Scale range from 0~1 to 0~dt
+	t0 *= dt;
+	t1 *= dt;
+
+	// collision was in the past, this frame will not have a collision
+	if ( t1 < 0.f ) {
+		return false;
+	}
+
+	// choose the earlier time of impact and clamp to 0
+	toi = ( t0 < 0.f ) ? 0.f : t0;
+
+	// if earliest collision is beyond the duration of this frame, it's not happening this frame
+	if ( toi > dt ) {
+		return false;
+	}
+
+	Vec3 newPosA = posA + velA * toi;
+	Vec3 newPosB = posB + velB * toi;
+	Vec3 ab = newPosB - newPosA;
+	ab.Normalize();
+
+	// calculate points on the surfaces of each object with respect to their radii
+	ptOnA = newPosA + ab * shapeA->m_radius;
+	ptOnB = newPosB + ab * shapeB->m_radius;
+	return true;
+}
+
+/*
+====================================================
 Intersect - sphere to sphere only
 ====================================================
 */
@@ -95,8 +152,38 @@ Intersect
 ====================================================
 */
 bool Intersect( Body * bodyA, Body * bodyB, const float dt, contact_t & contact ) {
-	// TODO: Add Code
+	if ( bodyA->m_shape->GetType() == Shape::SHAPE_SPHERE &&
+		 bodyB->m_shape->GetType() == Shape::SHAPE_SPHERE ) {
 
+		const ShapeSphere * sphereA = reinterpret_cast< ShapeSphere * >( bodyA->m_shape );
+		const ShapeSphere * sphereB = reinterpret_cast< ShapeSphere * >( bodyB->m_shape );
+		Vec3 posA = bodyA->m_position;
+		Vec3 posB = bodyB->m_position;
+		Vec3 velA = bodyA->m_linearVelocity;
+		Vec3 velB = bodyB->m_linearVelocity;
+
+		if ( SphereSphereDynamic( sphereA, sphereB, posA, posB, velA, velB, dt, contact.ptOnA_WorldSpace, contact.ptOnB_WorldSpace, contact.timeOfImpact ) ) {
+			// step bodies fwd in time to be at local space collision points
+			bodyA->Update( contact.timeOfImpact );
+			bodyB->Update( contact.timeOfImpact );
+
+			// Convert world space contact to local space
+			contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace( contact.ptOnA_WorldSpace );
+			contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace( contact.ptOnB_WorldSpace );
+
+			contact.normal = bodyA->m_position - bodyB->m_position;
+			contact.normal.Normalize();
+
+			// undo the step forward from above
+			bodyA->Update( -contact.timeOfImpact );
+			bodyB->Update( -contact.timeOfImpact );
+
+			// Calculate separation distance
+			Vec3 ab = bodyB->m_position - bodyA->m_position;
+			contact.separationDistance = ab.GetMagnitude() - ( sphereA->m_radius + sphereB->m_radius );
+			return true;
+		}
+	}
 	return false;
 }
 
