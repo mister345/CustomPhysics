@@ -24,6 +24,7 @@ Application * g_application = NULL;
 
 // CONFIG
 static constexpr float ZOOM_MULTIPLIER = 5.f;
+static constexpr bool TEST_WITHOUT_TOI = false;
 
 static bool gIsInitialized( false );
 static unsigned __int64 gTicksPerSecond;
@@ -493,7 +494,11 @@ void Application::MainLoop() {
 		if ( runPhysics ) {
 			int startTime = GetTimeMicroseconds();
 			for ( int i = 0; i < 2; i++ ) {
-				m_scene->Update( dt_sec * 0.5f );
+				if ( TEST_WITHOUT_TOI ) {
+					m_scene->UpdateWithoutTOI( dt_sec * 0.5f );
+				} else {
+					m_scene->Update( dt_sec * 0.5f );
+				}
 			}
 			int endTime = GetTimeMicroseconds();
 

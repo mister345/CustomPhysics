@@ -176,3 +176,43 @@ void Scene::Update( const float dt_sec ) {
 		m_bodies[ i ].Update( timeRemaining );
 	}
 }
+
+void Scene::UpdateWithoutTOI( const float dt_sec ) {
+	// apply gravitational acceleration to velocity
+	for ( int i = 0; i < m_bodies.size(); i++ ) {
+		Body * body = &m_bodies[ i ];
+		// Apply gravity as an impulse
+		// Impulse = total delta momentum
+		// Force   = delta momentum amortized over time
+		//		  => delta momentum = Force * delta time = ( mass * accel ) * delta time
+		//	      => Force = mass * gravitational accel * delta time 
+
+		// retrieve actual mass from inverse so we can use it
+		const float mass = 1.f / body->m_invMass;
+		Vec3 gravityImpulse = GRAV_ACCEL * mass * dt_sec;
+		body->ApplyImpulseLinear( gravityImpulse );
+	}
+
+	// Check collisions O( N^2 ) for now
+	for ( int i = 0; i < m_bodies.size(); i++ ) {
+		for ( int j = i + 1; j < m_bodies.size(); j++ ) {
+			Body * bodyA = &m_bodies[ i ];
+			Body * bodyB = &m_bodies[ j ];
+
+			// skip pairs with infinite mass
+			if ( bodyA->m_invMass == 0.f && bodyB->m_invMass == 0.f ) {
+				continue;
+			}
+
+			contact_t contact;
+			if ( Intersect( bodyA, bodyB, contact ) ) {
+				ResolveContact( contact );
+			}
+		}
+	}
+
+	// apply displacement based on position 
+	for ( int i = 0; i < m_bodies.size(); i++ ) {
+		m_bodies[ i ].Update( dt_sec );
+	}
+}
