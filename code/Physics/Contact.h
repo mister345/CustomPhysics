@@ -19,4 +19,4 @@ struct contact_t {
 	Body * bodyB;
 };
 
-void ResolveContact( contact_t & contact );
+void ResolveContact( const contact_t & contact );
