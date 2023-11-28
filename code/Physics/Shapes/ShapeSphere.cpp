@@ -29,3 +29,19 @@ Mat3 ShapeSphere::InertiaTensorGeometric() const {
 	
 	return tensorWithoutMass;
 }
+
+// world space
+Bounds ShapeSphere::GetBounds( const Vec3 & pos, const Quat & orient ) const {
+	Bounds bounds;
+	bounds.mins = Vec3( -m_radius ) + pos;
+	bounds.maxs = Vec3(  m_radius ) + pos;
+	return bounds;
+}
+
+// local space
+Bounds ShapeSphere::GetBounds() const {
+	Bounds bounds;
+	bounds.mins = Vec3( -m_radius );
+	bounds.maxs = Vec3(  m_radius );
+	return bounds;
+}
