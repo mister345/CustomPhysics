@@ -16,11 +16,11 @@ static constexpr Shape::shapeType_t sphereType = Shape::shapeType_t::SHAPE_SPHER
 Intersect - Ray Sphere
 ====================================================
 */
-bool RaySphere( const Vec3 & rayStart, const Vec3 & rayDir, const Vec3 & sphereCenter, const float sphereRadii, float & t1, float & t2 ) {
+bool RaySphere( const Vec3 & rayStart, const Vec3 & rayPath, const Vec3 & sphereCenter, const float sphereRadii, float & t1, float & t2 ) {
 	const Vec3 pathToSphere		  = sphereCenter - rayStart;
 
-	const float rayDirMagSq		  = rayDir.Dot( rayDir );				// a
-	const float rayParallelToPath = pathToSphere.Dot( rayDir );			// b
+	const float rayPathMagSq	  = rayPath.Dot( rayPath );				// a
+	const float rayParallelToPath = pathToSphere.Dot( rayPath );		// b
 	// after accounting for the sum of both radii, 
 	// we see the distance for that outermost edge, from our raycast
 	// starting point. we need to solve for the scalar ( time, traversal ),
@@ -28,8 +28,8 @@ bool RaySphere( const Vec3 & rayStart, const Vec3 & rayDir, const Vec3 & sphereC
 	const float distToSphereSurfaceSq = 
 		pathToSphere.Dot( pathToSphere ) - sphereRadii * sphereRadii;	// c
 
-	const float discriminant = rayParallelToPath * rayParallelToPath - rayDirMagSq * distToSphereSurfaceSq;
-	const float invA		 = 1.f / rayDirMagSq;
+	const float discriminant = rayParallelToPath * rayParallelToPath - rayPathMagSq * distToSphereSurfaceSq;
+	const float invA		 = 1.f / rayPathMagSq;
 
 	if ( discriminant < 0 ) {
 		// no solution exists
@@ -53,10 +53,8 @@ bool SphereSphereDynamic( const ShapeSphere * shapeA, const ShapeSphere * shapeB
 						  const float dt, Vec3 & ptOnA, Vec3 & ptOnB, float & toi ) {
 
 	const Vec3 relativeVelocity = velA - velB;
-
-	const Vec3 startPtA = posA;
 	const Vec3 endPtA   = posA + relativeVelocity * dt;
-	const Vec3 rayPath  = endPtA - startPtA;
+	const Vec3 rayPath  = endPtA - posA;
 
 	// two solutions
 	float t0 = 0;
@@ -68,7 +66,7 @@ bool SphereSphereDynamic( const ShapeSphere * shapeA, const ShapeSphere * shapeB
 		if ( ab.GetLengthSqr() > radii * radii ) {
 			return false;
 		}
-	} else if ( !RaySphere( posA, rayPath, posB, shapeA->m_radius + shapeB->m_radius, t0, t1 ) ) {
+	} else if ( !RaySphere( posA, rayPath, posB, shapeA->m_radius + shapeB->m_radius, t0, t1) ) {
 		return false;
 	}
 
@@ -96,7 +94,7 @@ bool SphereSphereDynamic( const ShapeSphere * shapeA, const ShapeSphere * shapeB
 
 	// calculate points on the surfaces of each object with respect to their radii
 	ptOnA = newPosA + ab * shapeA->m_radius;
-	ptOnB = newPosB + ab * shapeB->m_radius;
+	ptOnB = newPosB - ab * shapeB->m_radius;
 	return true;
 }
 
