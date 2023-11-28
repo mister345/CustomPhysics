@@ -150,39 +150,42 @@ Intersect
 ====================================================
 */
 bool Intersect( Body * bodyA, Body * bodyB, const float dt, contact_t & contact ) {
-	if ( bodyA->m_shape->GetType() == Shape::SHAPE_SPHERE &&
-		 bodyB->m_shape->GetType() == Shape::SHAPE_SPHERE ) {
-
-		const ShapeSphere * sphereA = reinterpret_cast< ShapeSphere * >( bodyA->m_shape );
-		const ShapeSphere * sphereB = reinterpret_cast< ShapeSphere * >( bodyB->m_shape );
-		Vec3 posA = bodyA->m_position;
-		Vec3 posB = bodyB->m_position;
-		Vec3 velA = bodyA->m_linearVelocity;
-		Vec3 velB = bodyB->m_linearVelocity;
-
-		if ( SphereSphereDynamic( sphereA, sphereB, posA, posB, velA, velB, dt, contact.ptOnA_WorldSpace, contact.ptOnB_WorldSpace, contact.timeOfImpact ) ) {
-			// step bodies fwd in time to be at local space collision points
-			bodyA->Update( contact.timeOfImpact );
-			bodyB->Update( contact.timeOfImpact );
-
-			// Convert world space contact to local space
-			contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace( contact.ptOnA_WorldSpace );
-			contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace( contact.ptOnB_WorldSpace );
-
-			contact.normal = bodyA->m_position - bodyB->m_position;
-			contact.normal.Normalize();
-
-			// undo the step forward from above
-			bodyA->Update( -contact.timeOfImpact );
-			bodyB->Update( -contact.timeOfImpact );
-
-			// Calculate separation distance
-			Vec3 ab = bodyB->m_position - bodyA->m_position;
-			contact.separationDistance = ab.GetMagnitude() - ( sphereA->m_radius + sphereB->m_radius );
-			return true;
-		}
+	if ( bodyA->m_shape->GetType() != Shape::SHAPE_SPHERE ||
+		 bodyB->m_shape->GetType() != Shape::SHAPE_SPHERE ) {
+		return false;
 	}
-	return false;
+
+	const ShapeSphere * sphereA = reinterpret_cast< ShapeSphere * >( bodyA->m_shape );
+	const ShapeSphere * sphereB = reinterpret_cast< ShapeSphere * >( bodyB->m_shape );
+	Vec3 posA = bodyA->m_position;
+	Vec3 posB = bodyB->m_position;
+	Vec3 velA = bodyA->m_linearVelocity;
+	Vec3 velB = bodyB->m_linearVelocity;
+
+	if ( !SphereSphereDynamic( sphereA, sphereB, posA, posB, velA, velB, dt, 
+		 contact.ptOnA_WorldSpace, contact.ptOnB_WorldSpace, contact.timeOfImpact ) ) {
+		return false;
+	}
+
+	// step bodies fwd in time to be at local space collision points
+	bodyA->Update( contact.timeOfImpact );
+	bodyB->Update( contact.timeOfImpact );
+
+	// Convert world space contact to local space
+	contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace( contact.ptOnA_WorldSpace );
+	contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace( contact.ptOnB_WorldSpace );
+
+	contact.normal = bodyA->m_position - bodyB->m_position;
+	contact.normal.Normalize();
+
+	// undo the step forward from above
+	bodyA->Update( -contact.timeOfImpact );
+	bodyB->Update( -contact.timeOfImpact );
+
+	// Calculate separation distance
+	Vec3 ab = bodyB->m_position - bodyA->m_position;
+	contact.separationDistance = ab.GetMagnitude() - ( sphereA->m_radius + sphereB->m_radius );
+	return true;
 }
 
 
