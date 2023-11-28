@@ -81,6 +81,19 @@ void Scene::Initialize() {
 	m_bodies.push_back( body );
 }
 
+int CompareContacts( const void * p1, const void * p2 ) {
+	const contact_t & a = *( contact_t * )p1;
+	const contact_t & b = *( contact_t * )p2;
+
+	if ( a.timeOfImpact < b.timeOfImpact ) {
+		return -1;
+	}
+	if ( a.timeOfImpact == b.timeOfImpact ) {
+		return 0;
+	}
+	return 1;
+}
+
 /*
 ====================================================
 Scene::Update
@@ -102,26 +115,64 @@ void Scene::Update( const float dt_sec ) {
 		body->ApplyImpulseLinear( gravityImpulse );
 	}
 
-	// Check collisions O( N^2 ) for now
+	int numContacts = 0;
+	const int maxContacts = m_bodies.size() * m_bodies.size();
+	contact_t * contacts = reinterpret_cast< contact_t * >( alloca( sizeof( contact_t ) * maxContacts ) );
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		for ( int j = i + 1; j < m_bodies.size(); j++ ) {
 			Body * bodyA = &m_bodies[ i ];
 			Body * bodyB = &m_bodies[ j ];
 
-			// skip pairs with infinite mass
-			if ( bodyA->m_invMass == 0.f && bodyB->m_invMass == 0.f ) {
+			// skip pairs w infinite mass
+			if ( 0.f == bodyA->m_invMass && 0.f == bodyB->m_invMass ) {
 				continue;
 			}
 
-			contact_t contact;
-			if ( Intersect( bodyA, bodyB, contact ) ) {
-				ResolveContact( contact );
+			contact_t contact{};
+			if ( Intersect( bodyA, bodyB, dt_sec, contact ) ) {
+				contacts[ numContacts ] = contact;
+				numContacts++;
 			}
 		}
 	}
 
-	// apply displacement based on position 
+	// Sort time of impact from earliest to latest
+	if ( numContacts > 1 ) {
+		qsort( contacts, numContacts, sizeof( contact_t ), CompareContacts );
+	}
+
+	// resolve all the bodies that have contacted first
+	float accumulatedTime = 0.f;
+	for ( int i = 0; i < numContacts; i++ ) {
+		contact_t & contact = contacts[ i ];
+		const float dt = contact.timeOfImpact - accumulatedTime;
+
+		Body * bodyA = contact.bodyA;
+		Body * bodyB = contact.bodyB;
+
+		// skip pairs w infinite mass
+		if ( 0.f == bodyA->m_invMass && 0.f == bodyB->m_invMass ) {
+			continue;
+		}
+
+		// update pos
+		for ( int j = 0; j < m_bodies.size(); j++ ) {
+			m_bodies[ j ].Update( dt );
+		}
+
+		ResolveContact( contact );
+		accumulatedTime += dt;
+	}
+
+	const float timeRemaining = dt_sec - accumulatedTime;
+	if ( timeRemaining <= 0.f ) {
+		return;
+	}
+
+	// update all the bodies for the frame time remaining after all contacts were resolved
+	// NOTE - if there were additional ( secondary ) contacts during this period, we just
+	// ignore them, bc that would be way too expensive
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
-		m_bodies[ i ].Update( dt_sec );
+		m_bodies[ i ].Update( timeRemaining );
 	}
 }
