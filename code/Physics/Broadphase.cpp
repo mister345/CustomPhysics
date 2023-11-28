@@ -96,8 +96,8 @@ void SweepAndPrune1D( const Body * bodies, const int num, std::vector< collision
 BroadPhase
 ====================================================
 */
-void BroadPhase( const Body * bodies, const int num, std::vector< collisionPair_t > & finalPairs, const float dt_sec ) {
-	finalPairs.clear();
+void BroadPhase( const Body * bodies, const int num, std::vector< collisionPair_t > & outFinalPairs, const float dt_sec ) {
+	outFinalPairs.clear();
 
-	SweepAndPrune1D( bodies, num, finalPairs, dt_sec );
+	SweepAndPrune1D( bodies, num, outFinalPairs, dt_sec );
 }

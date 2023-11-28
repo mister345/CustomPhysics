@@ -52,33 +52,39 @@ Scene::Initialize
 void Scene::Initialize() {
 	Body body;
 
-	body.m_position = Vec3( -3, 0, 3 );
-	body.m_orientation = Quat( 0, 0, 0, 1 );
-	body.m_linearVelocity = Vec3( 1000, 0, 0 );
-	body.m_invMass = 1 / 1.f;
-	body.m_elasticity = 0.f;
-	body.m_friction = 0.5f;
-	body.m_shape = new ShapeSphere( 0.5f );
-	m_bodies.push_back( body );
+	// Dynamic bodies
+	for ( int x = 0; x < 6; x++ ) {
+		for ( int y = 0; y < 6; y++ ) {
+			float radius = 0.5f;
+			float xx = float( x - 1 ) * radius * 1.5f;
+			float yy = float( y - 1 ) * radius * 1.5f;
+			body.m_position = Vec3( xx, yy, 10.f );
+			body.m_orientation = Quat( 0, 0, 0, 1 );
+			body.m_linearVelocity.Zero();
+			body.m_invMass = 1.f;
+			body.m_elasticity = 0.5f;
+			body.m_friction = 0.5f;
+			body.m_shape = new ShapeSphere( radius );
+			m_bodies.push_back( body );
+		}
+	}
 
-	body.m_position = Vec3( 0, 0, 3 );
-	body.m_orientation = Quat( 0, 0, 0, 1 );
-	body.m_linearVelocity = Vec3( 0, 0, 0 );
-	body.m_invMass = 0.f;
-	body.m_elasticity = 0.f;
-	body.m_friction = 0.5f;
-	body.m_shape = new ShapeSphere( 0.5f );
-	m_bodies.push_back( body );
-
-	// "ground" sphere unaffected by gravity
-	body.m_position = Vec3( 0, 0, -1000 );
-	body.m_orientation = Quat( 0, 0, 0, 1 );
-	body.m_linearVelocity = Vec3( 0, 0, 0 );
-	body.m_invMass = 0.f;
-	body.m_elasticity = 1.f;
-	body.m_friction = 0.f;
-	body.m_shape = new ShapeSphere( 1000.0f );
-	m_bodies.push_back( body );
+	// Static floor
+	for ( int x = 0; x < 3; x++ ) {
+		for ( int y = 0; y < 3; y++ ) {
+			float radius = 80.f;
+			float xx = float( x - 1 ) * radius * 0.25f;
+			float yy = float( y - 1 ) * radius * 0.25f;
+			body.m_position = Vec3( xx, yy, -radius );
+			body.m_orientation = Quat( 0, 0, 0, 1 );
+			body.m_linearVelocity.Zero();
+			body.m_invMass = 0.f;
+			body.m_elasticity = 0.99f;
+			body.m_friction = 0.5f;
+			body.m_shape = new ShapeSphere( radius );
+			m_bodies.push_back( body );
+		}
+	}
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
@@ -115,24 +121,29 @@ void Scene::Update( const float dt_sec ) {
 		body->ApplyImpulseLinear( gravityImpulse );
 	}
 
+	// Broadphase ( identify potential pairs )
+	std::vector< collisionPair_t > collisionPairs;
+	BroadPhase( m_bodies.data(), static_cast< int >( m_bodies.size() ), collisionPairs, dt_sec );
+
+
+	// Narrow Phase ( actual collision detection )
 	int numContacts = 0;
 	const int maxContacts = m_bodies.size() * m_bodies.size();
 	contact_t * contacts = reinterpret_cast< contact_t * >( alloca( sizeof( contact_t ) * maxContacts ) );
-	for ( int i = 0; i < m_bodies.size(); i++ ) {
-		for ( int j = i + 1; j < m_bodies.size(); j++ ) {
-			Body * bodyA = &m_bodies[ i ];
-			Body * bodyB = &m_bodies[ j ];
+	for ( int i = 0; i < collisionPairs.size(); i++ ) {
+		const collisionPair_t & pair = collisionPairs[ i ];
+		Body * bodyA = &m_bodies[ pair.a ];
+		Body * bodyB = &m_bodies[ pair.b ];
 
-			// skip pairs w infinite mass
-			if ( 0.f == bodyA->m_invMass && 0.f == bodyB->m_invMass ) {
-				continue;
-			}
+		// skip pairs w infinite mass
+		if ( 0.f == bodyA->m_invMass && 0.f == bodyB->m_invMass ) {
+			continue;
+		}
 
-			contact_t contact{};
-			if ( Intersect( bodyA, bodyB, dt_sec, contact ) ) {
-				contacts[ numContacts ] = contact;
-				numContacts++;
-			}
+		contact_t contact{};
+		if ( Intersect( bodyA, bodyB, dt_sec, contact ) ) {
+			contacts[ numContacts ] = contact;
+			numContacts++;
 		}
 	}
 
@@ -147,14 +158,6 @@ void Scene::Update( const float dt_sec ) {
 		contact_t & contact = contacts[ i ];
 		const float dt = contact.timeOfImpact - accumulatedTime;
 
-		Body * bodyA = contact.bodyA;
-		Body * bodyB = contact.bodyB;
-
-		// skip pairs w infinite mass
-		if ( 0.f == bodyA->m_invMass && 0.f == bodyB->m_invMass ) {
-			continue;
-		}
-
 		// update pos
 		for ( int j = 0; j < m_bodies.size(); j++ ) {
 			m_bodies[ j ].Update( dt );
@@ -164,14 +167,13 @@ void Scene::Update( const float dt_sec ) {
 		accumulatedTime += dt;
 	}
 
+	// update all the bodies for the frame time remaining after all contacts were resolved
+	// NOTE - if there were additional ( secondary ) contacts during this period, we just
+	// ignore them, bc that would be way too expensive
 	const float timeRemaining = dt_sec - accumulatedTime;
 	if ( timeRemaining <= 0.f ) {
 		return;
 	}
-
-	// update all the bodies for the frame time remaining after all contacts were resolved
-	// NOTE - if there were additional ( secondary ) contacts during this period, we just
-	// ignore them, bc that would be way too expensive
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		m_bodies[ i ].Update( timeRemaining );
 	}
