@@ -150,6 +150,9 @@ Intersect
 ====================================================
 */
 bool Intersect( Body * bodyA, Body * bodyB, const float dt, contact_t & contact ) {
+	contact.bodyA = bodyA;
+	contact.bodyB = bodyB;
+
 	if ( bodyA->m_shape->GetType() != Shape::SHAPE_SPHERE ||
 		 bodyB->m_shape->GetType() != Shape::SHAPE_SPHERE ) {
 		return false;
@@ -187,25 +190,3 @@ bool Intersect( Body * bodyA, Body * bodyB, const float dt, contact_t & contact 
 	contact.separationDistance = ab.GetMagnitude() - ( sphereA->m_radius + sphereB->m_radius );
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
