@@ -19,6 +19,9 @@
     <Filter Include="code\Physics\Constraints">
       <UniqueIdentifier>{2305611d-ec70-4b22-952a-04699c9ff7d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="code\Animation">
+      <UniqueIdentifier>{38b4c4b8-0a84-483e-a2c7-f409ced6d19e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\main.cpp">
@@ -122,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="code\Physics\Manifold.cpp">
       <Filter>code\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="code\Animation\Animation.cpp">
+      <Filter>code\Animation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -238,6 +244,9 @@
     </ClInclude>
     <ClInclude Include="code\Physics\Manifold.h">
       <Filter>code\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="code\Animation\Animation.h">
+      <Filter>code\Animation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

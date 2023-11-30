@@ -5,6 +5,7 @@
 #include "Physics/Contact.h"
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
+#include "Animation/Animation.h"
 
 /*
 ========================================================================================================
@@ -85,6 +86,10 @@ void Scene::Initialize() {
 			m_bodies.push_back( body );
 		}
 	}
+
+	// Animated body demo
+	m_bodies.push_back( Body() );
+	animDemo.Initialize( Vec3( 0, 0, 15 ), &m_bodies.back());
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
@@ -106,6 +111,9 @@ Scene::Update
 ====================================================
 */
 void Scene::Update( const float dt_sec ) {
+	// anim demo
+	animDemo.Update( dt_sec );
+
 	// apply gravitational acceleration to velocity
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		Body * body = &m_bodies[ i ];

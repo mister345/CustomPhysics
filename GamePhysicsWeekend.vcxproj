@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="code\Animation\Animation.cpp" />
     <ClCompile Include="code\application.cpp" />
     <ClCompile Include="code\Fileio.cpp" />
     <ClCompile Include="code\main.cpp" />
@@ -55,6 +56,7 @@
     <ClCompile Include="code\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="code\Animation\Animation.h" />
     <ClInclude Include="code\application.h" />
     <ClInclude Include="code\Fileio.h" />
     <ClInclude Include="code\Math\Bounds.h" />
