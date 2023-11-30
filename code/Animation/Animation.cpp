@@ -30,9 +30,23 @@ Quat Lerp( const Quat & from, const Quat & to, float t ) {
 	return out;
 }
 
-// @TODO
-Quat Slerp( const Quat & a, const Quat & b, float t ) {
-	return Quat( 0, 0, 0, 1 );
+Quat Slerp( const Quat & from, const Quat & to, float t ) {
+	Vec4 a( from.x, from.y, from.z, from.w );
+	Vec4 b( to.x, to.y, to.z, to.w );
+
+	float cosPhi = a.Dot( b );
+	if ( cosPhi > ( 1.f - 0.001 ) ) {
+		// small angle so just lerp
+		return Lerp( from, to, t );
+	}
+
+	float phi    = acos( cosPhi );
+	float sinPhi = sin( phi );
+
+	Vec4 result = a * ( sin( phi * ( 1.f - t ) ) / sinPhi ) + b * ( sin( phi * t ) / sinPhi );
+	Quat resultQ( result.x, result.y, result.z, result.w );
+//	resultQ.Normalize();
+	return resultQ;
 }
 
 void BoneAnimation::Interpolate( float t, Quat & outRotation, Vec3 & outTranslation ) const {
@@ -56,7 +70,8 @@ void BoneAnimation::Interpolate( float t, Quat & outRotation, Vec3 & outTranslat
 				outTranslation		 = start.translation + ( end.translation - start.translation ) * progress;
 
 				// slerp quat
-				outRotation = Lerp( start.rotation, end.rotation, progress );
+//				outRotation = Lerp( start.rotation, end.rotation, progress );
+				outRotation = Slerp( start.rotation, end.rotation, progress );
 
 				printf( "cur time: %10.2f\ncur prog: %2.2f\ncur keyframes: %zu:%zu", t, progress, i, i + 1 );
 
