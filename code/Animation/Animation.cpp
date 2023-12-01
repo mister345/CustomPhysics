@@ -3,9 +3,8 @@
 #include "../Math/Quat.h"
 #include "Animation.h"
 
-
-#include <Windows.h>
-#include "debugapi.h"
+// config
+constexpr float ANIM_MULTIPLIER = 10.f;
 
 float BoneAnimation::GetStartTime() const {
 	return keyframes.front().timePos;
@@ -52,11 +51,11 @@ Quat Slerp( const Quat & from, const Quat & to, float t ) {
 void BoneAnimation::Interpolate( float t, Quat & outRotation, Vec3 & outTranslation ) const {
 	// return first keyframe
 	if ( t <= keyframes.front().timePos ) {
-		outRotation    = keyframes.front().rotation;
-		outTranslation = keyframes.front().translation;
+		outRotation    = keyframes.front().transform.rotation;
+		outTranslation = keyframes.front().transform.translation;
 	} else if ( t >= keyframes.back().timePos ) {
-		outRotation = keyframes.back().rotation;
-		outTranslation = keyframes.back().translation;
+		outRotation = keyframes.back().transform.rotation;
+		outTranslation = keyframes.back().transform.translation;
 	} else {
 		for ( size_t i = 0; i < keyframes.size() - 1; i++ ) {
 			const Keyframe & start = keyframes[ i ];
@@ -67,11 +66,11 @@ void BoneAnimation::Interpolate( float t, Quat & outRotation, Vec3 & outTranslat
 				// lerp translation
 				const float range    = end.timePos - start.timePos;
 				const float progress = ( t - start.timePos ) / range;
-				outTranslation		 = start.translation + ( end.translation - start.translation ) * progress;
+				outTranslation		 = start.transform.translation + ( end.transform.translation - start.transform.translation ) * progress;
 
 				// slerp quat
 //				outRotation = Lerp( start.rotation, end.rotation, progress );
-				outRotation = Slerp( start.rotation, end.rotation, progress );
+				outRotation = Slerp( start.transform.rotation, end.transform.rotation, progress );
 
 				printf( "cur time: %10.2f\ncur prog: %2.2f\ncur keyframes: %zu:%zu", t, progress, i, i + 1 );
 
@@ -91,49 +90,29 @@ void SkeletalMesh::Initialize( const Vec3 startPos_WS, Body * bodyToAnimateSourc
 
 	anim.keyframes.resize( 5 );
 
-	//anim.keyframes[ 0 ].timePos = 0.0f;
-	//anim.keyframes[ 0 ].translation = Vec3( -1.0f, 0.0f, 0.0f );
-	//anim.keyframes[ 0 ].rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
-
-	//anim.keyframes[ 1 ].timePos = 2.0f;
-	//anim.keyframes[ 1 ].translation = Vec3( 0.0f, 2.0f, 3.0f );
-	//anim.keyframes[ 1 ].rotation = Quat( Vec3( 1, 1, 2 ), 45 * TO_RAD );
-
-	//anim.keyframes[ 2 ].timePos = 4.0f;
-	//anim.keyframes[ 2 ].translation = Vec3( 3.0f, 0.0f, 0.0f );
-	//anim.keyframes[ 2 ].rotation = Quat( Vec3( 0, 1, 0 ), -30 * TO_RAD );
-
-	//anim.keyframes[ 3 ].timePos = 6.0f;
-	//anim.keyframes[ 3 ].translation = Vec3( 0.0f, 1.0f, -3.0f );
-	//anim.keyframes[ 3 ].rotation = Quat( Vec3( 0, 1, 0 ), 70 * TO_RAD );
-
-	//anim.keyframes[ 4 ].timePos = 8.0f;
-	//anim.keyframes[ 4 ].translation = Vec3( -2.5f, 0.0f, 0.0f );
-	//anim.keyframes[ 4 ].rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
-
 	anim.keyframes[ 0 ].timePos = 0.0f;
-	anim.keyframes[ 0 ].translation = Vec3( -1.0f, 0.0f, 0.0f );
-	anim.keyframes[ 0 ].rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
+	anim.keyframes[ 0 ].transform.translation = Vec3( -1.0f, 0.0f, 0.0f );
+	anim.keyframes[ 0 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
 
-	anim.keyframes[ 1 ].timePos = 2.0f;
-	anim.keyframes[ 1 ].translation = Vec3( 0.0f, 2.0f, 3.0f );
-	anim.keyframes[ 1 ].rotation = Quat( Vec3( 1, 1, 2 ), 45 * TO_RAD );
+	anim.keyframes[ 1 ].timePos = 1.0f;
+	anim.keyframes[ 1 ].transform.translation = Vec3( 0.0f, 2.0f, 3.0f );
+	anim.keyframes[ 1 ].transform.rotation = Quat( Vec3( 1, 1, 2 ), 45 * TO_RAD );
 
-	anim.keyframes[ 2 ].timePos = 4.0f;
-	anim.keyframes[ 2 ].translation = Vec3( 3.0f, 0.0f, 0.0f );
-	anim.keyframes[ 2 ].rotation = Quat( Vec3( 0, 1, 0 ), -30 * TO_RAD );
+	anim.keyframes[ 2 ].timePos = 1.0f;
+	anim.keyframes[ 2 ].transform.translation = Vec3( 3.0f, 0.0f, 0.0f );
+	anim.keyframes[ 2 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), -30 * TO_RAD );
 
-	anim.keyframes[ 3 ].timePos = 6.0f;
-	anim.keyframes[ 3 ].translation = Vec3( 0.0f, 1.0f, -3.0f );
-	anim.keyframes[ 3 ].rotation = Quat( Vec3( 0, 1, 0 ), 70 * TO_RAD );
+	anim.keyframes[ 3 ].timePos = 3.0f;
+	anim.keyframes[ 3 ].transform.translation = Vec3( 0.0f, 1.0f, -3.0f );
+	anim.keyframes[ 3 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 70 * TO_RAD );
 
-	anim.keyframes[ 4 ].timePos = 8.0f;
-	anim.keyframes[ 4 ].translation = Vec3( -2.5f, 0.0f, 0.0f );
-	anim.keyframes[ 4 ].rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
+	anim.keyframes[ 4 ].timePos = 4.0f;
+	anim.keyframes[ 4 ].transform.translation = Vec3( -2.5f, 0.0f, 0.0f );
+	anim.keyframes[ 4 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
 
 	// rendering / physics
 	bodyToAnimate->m_position = startPos_WS;
-	bodyToAnimate->m_orientation = anim.keyframes[ 0 ].rotation;
+	bodyToAnimate->m_orientation = anim.keyframes[ 0 ].transform.rotation;
 	bodyToAnimate->m_linearVelocity.Zero();
 	bodyToAnimate->m_invMass = 0.f;	// no grav
 	bodyToAnimate->m_elasticity = 1.f;
@@ -143,12 +122,12 @@ void SkeletalMesh::Initialize( const Vec3 startPos_WS, Body * bodyToAnimateSourc
 
 void SkeletalMesh::Update( float deltaT ) {
 	animTimePos += deltaT;
-	if ( animTimePos >= anim.GetEndTime() ) {
+	if ( animTimePos * ANIM_MULTIPLIER >= anim.GetEndTime() ) {
 		animTimePos = 0.f;
 	}
 	Vec3 posOffset;
 	Quat rotOffset;
-	anim.Interpolate( animTimePos, rotOffset, posOffset );
+	anim.Interpolate( animTimePos * ANIM_MULTIPLIER, rotOffset, posOffset );
 
 	bodyToAnimate->m_orientation = rotOffset;
 	bodyToAnimate->m_position = meshWorldPos + posOffset;
