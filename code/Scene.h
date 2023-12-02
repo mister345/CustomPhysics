@@ -25,7 +25,7 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
-	AnimationInstance animDemo;
+	AnimationInstance animInstanceDemo;
 
 	std::vector< Body > m_bodies;
 	std::vector< Constraint * >	m_constraints;

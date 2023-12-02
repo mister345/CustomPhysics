@@ -86,9 +86,22 @@ void Scene::Initialize() {
 		}
 	}
 
-	// Animated body demo
-	m_bodies.push_back( Body() );
-	animDemo.Initialize( &m_bodies.back(), Vec3( 0, 0, 15 ) );
+	// anim demo
+	SkinnedData & data = animInstanceDemo.animData;
+	SingleBoneTest::PopulateTestAnimData( data, SingleBoneTest::HIERARCHY.size() );
+
+	const int numBones = data.BoneCount();
+	if ( numBones > 0 ) {
+		for ( int i = 0; i < numBones; i++ ) {
+			m_bodies.push_back( Body() );
+		}
+		animInstanceDemo.Initialize( 
+			&( m_bodies.back() ) - numBones + 1, 
+			numBones, 
+			Vec3( 0, 0, 15 ), 
+			SingleBoneTest::ANIM_NAME 
+		);
+	}
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
@@ -111,7 +124,7 @@ Scene::Update
 */
 void Scene::Update( const float dt_sec ) {
 	// anim demo
-	animDemo.Update( dt_sec );
+	animInstanceDemo.Update( dt_sec );
 
 	// apply gravitational acceleration to velocity
 	for ( int i = 0; i < m_bodies.size(); i++ ) {

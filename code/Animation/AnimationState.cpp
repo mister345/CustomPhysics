@@ -1,9 +1,11 @@
 #include "AnimationState.h"
 
+// TODO
+// const std::vector< int > HIERARCHY = { -1, 0, 1, 2 };
+//	std::vector< BoneTransform > OFFSETS = { BoneTransform::Identity(), BoneTransform::Identity(), BoneTransform::Identity(), BoneTransform::Identity() };
+
 namespace SingleBoneTest {
-	constexpr float TO_RAD = 3.14159265359f / 180.f;
-	constexpr const char * ANIM_NAME = "SingleBone";
-	const std::vector< int > HIERARCHY = { -1 };
+	const std::vector< int > HIERARCHY   = { -1 };
 	std::vector< BoneTransform > OFFSETS = { BoneTransform::Identity() };
 
 BoneAnimation MakeBoneAnim() {
@@ -33,46 +35,75 @@ BoneAnimation MakeBoneAnim() {
 	return anim;
 }
 
-void PopulateTestAnimData( SkinnedData & skinnedData ) {
+void PopulateTestAnimData( SkinnedData & skinnedData, const int desiredBoneCount ) {
 	AnimationClip clip{};
-	clip.BoneAnimations.push_back( MakeBoneAnim() );
-	std::map< std::string, AnimationClip > SingleBoneAnim = { std::make_pair( SingleBoneTest::ANIM_NAME, clip ) };
+	for ( int i = 0; i < desiredBoneCount; i++ ) {
+		clip.BoneAnimations.push_back( MakeBoneAnim() );
+	}
 
+	std::map< std::string, AnimationClip > SingleBoneAnim = { { SingleBoneTest::ANIM_NAME, clip } };
 	skinnedData.Set( HIERARCHY, OFFSETS, SingleBoneAnim );
 }
 } // namespace SingleBoneTest
 
-void AnimationInstance::Initialize( Body * bodySrc, const Vec3 & startPos_WS ) {
-	SingleBoneTest::PopulateTestAnimData( animData );
-	const BoneAnimation & singleBoneAnim = GetSingleBoneTestAnim();
 
-	// rendering / physics
-	bodyToAnimate = bodySrc;
-	bodyToAnimate->m_position = startPos_WS;
-	bodyToAnimate->m_orientation = singleBoneAnim.keyframes[ 0 ].transform.rotation;
-	bodyToAnimate->m_linearVelocity.Zero();
-	bodyToAnimate->m_invMass = 0.f;	// no grav
-	bodyToAnimate->m_elasticity = 1.f;
-	bodyToAnimate->m_friction = 0.f;
-	bodyToAnimate->m_shape = new ShapeSphere( 2.f );
+void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay ) {
+	curClip = clipToPlay;
+
+	const BoneAnimation * testAnim = TryGetSingleBoneTestAnim();
+	if ( testAnim == nullptr ) {
+		assert( "TEST ANIM WAS NULL!" );
+	}
+	bodiesToAnimate = bodies;
+	const BoneAnimation & singleBoneAnim = *testAnim;
+
+	// for now, this will default to only animating our single bone bc thats all we have!
+	for ( int i = 0; i < numBodies; i++ ) {
+		Body * bodyToAnimate = bodiesToAnimate + i;
+		bodyToAnimate->m_position = startPos_WS;
+		bodyToAnimate->m_orientation = singleBoneAnim.keyframes[ 0 ].transform.rotation;
+		bodyToAnimate->m_linearVelocity.Zero();
+		bodyToAnimate->m_invMass = 0.f;	// no grav
+		bodyToAnimate->m_elasticity = 1.f;
+		bodyToAnimate->m_friction = 0.f;
+		bodyToAnimate->m_shape = new ShapeSphere( 1.f );
+	}
 }
 
 void AnimationInstance::Update( float deltaT ) {
-	// @TODO - generalize!
-	// currently hardcoded to only animate the single bone from our test
-	const BoneAnimation & singleBoneAnim = GetSingleBoneTestAnim();
+	// find our time bounds for looping
+	const BoneAnimation * testAnim = TryGetSingleBoneTestAnim();
+	if ( testAnim == nullptr ) {
+		assert( "TEST ANIM WAS NULL!" );
+	}
+	const BoneAnimation & singleBoneAnim = *testAnim;
+	const float loopBoundary = singleBoneAnim.GetEndTime();
 
+	// increment time and wrap around
 	animTimePos += deltaT;
-	if ( animTimePos * ANIM_MULTIPLIER >= singleBoneAnim.GetEndTime() ) {
+	if ( animTimePos * speedMultiplier >= loopBoundary ) {
 		animTimePos = 0.f;
 	}
-	BoneTransform bTransform{};
-	singleBoneAnim.Interpolate( animTimePos * ANIM_MULTIPLIER, bTransform );
+	const float timePos = animTimePos * speedMultiplier;
 
-	bodyToAnimate->m_orientation = bTransform.rotation;
-	bodyToAnimate->m_position = worldPos + bTransform.translation;
+	// ask AnimData to interpolate each bone transform across its keyframes, based on 
+	// our given time point, and concatenate them down the skeletal hiearchy...
+	// to get the final COMPONENT SPACE transforms of our bones
+	std::vector< BoneTransform > boneTransforms( animData.BoneCount() );
+	animData.GetFinalTransforms( curClip, timePos, boneTransforms );
+
+	// ( with a single bone and no hierarchy, we are basically doing this: )
+	// singleBoneAnim.Interpolate( timePos, boneTransforms[ 0 ] );
+
+	// apply each bone transform to each body ( 1 to 1 )
+	for ( int i = 0; i < animData.BoneCount(); i++ ) {
+		Body * bodyToAnimate			= bodiesToAnimate + i;
+		const BoneTransform & transform = boneTransforms[ i ];
+		bodyToAnimate->m_orientation = transform.rotation;
+		bodyToAnimate->m_position = worldPos + transform.translation;
+	}
 }
 
-const BoneAnimation & AnimationInstance::GetSingleBoneTestAnim() const {
-	return animData.mAnimations.at( SingleBoneTest::ANIM_NAME ).BoneAnimations[ 0 ];
+const BoneAnimation * AnimationInstance::TryGetSingleBoneTestAnim() const {
+	return &animData.mAnimations.at( SingleBoneTest::ANIM_NAME ).BoneAnimations[ 0 ];
 }

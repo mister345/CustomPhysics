@@ -54,11 +54,13 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
 		outTransform.rotation = keyframes.back().transform.rotation;
 		outTransform.translation = keyframes.back().transform.translation;
 	} else {
+		// where does teh given time t fall within our list of keyframes?
 		for ( size_t i = 0; i < keyframes.size() - 1; i++ ) {
 			const Keyframe & start = keyframes[ i ];
 			const Keyframe & end   = keyframes[ i + 1 ];
 			if ( t >= start.timePos && t <= end.timePos ) {
-				// we have found the corresponding range for the keyframe, so interpolate between begin and end
+				// we have found the two keyframes that t lies between, 
+				// so interpolate it within the range of start ~ end
 
 				// lerp translation
 				const float range		 = end.timePos - start.timePos;
@@ -72,9 +74,6 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
 			}
 		}
 	}
-}
-
-void SkinnedData::Initialize() {
 }
 
 float AnimationClip::GetClipStartTime() const {
@@ -121,19 +120,30 @@ void SkinnedData::GetFinalTransforms(
 
 	// get all the individual bone transforms( still relative to their parents, as defined in the fbx file ),
 	// but interpolated in the TIME DOMAIN, across their keyframes at this exact time point
+	// @TODO - cache and reuse
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
 	clip.Interpolate( timePos, interpolatedBoneSpaceTransforms );
 
-	// now concatenate all the transforms leading up to each leaf, to get the full transforms that take us
-	// from component space ( skeletal root ), to each respective bone
-	// this will be the final weight represented by each bone, that will deform each vertex in the skinning stage
-	// ( maybe be blended with multiple bones as a matrix palette )
-	std::vector< BoneTransform > concatenatedTransforms( BoneCount() );
+	/*
+		now concatenate all the transforms leading up to each leaf, to get the full transforms that take us
+		from component space ( skeletal root ), to each respective bone
+		this will be the final weight represented by each bone, that will deform each vertex in the skinning stage
+		( maybe be blended with multiple bones as a matrix palette )
+	*/
+	
 	// prepopulate tree root node because it has no parent
-	concatenatedTransforms[ 0 ] = interpolatedBoneSpaceTransforms[ 0 ];
+	outFinalTransforms[ 0 ] = interpolatedBoneSpaceTransforms[ 0 ];
+
+	// concatenate the rest, from root to leaf
+	// NOTE - if we want a flat hiearchy, it is the CONTENT CREATOR's job to add an identity root bone
+	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
+	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a partical shader )
+
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ];
 		const BoneTransform parentTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-		concatenatedTransforms[ i ] *= parentTransform;
+		outFinalTransforms[ i ] *= parentTransform;
 	}
+
+	// @TODO - add component space offsets ( otherwise they will all be located at same spot )
 }

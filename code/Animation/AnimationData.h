@@ -29,20 +29,20 @@ struct AnimationClip {
 	std::vector< BoneAnimation > BoneAnimations;
 };
 
+// database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE!
 class SkinnedData {
 	friend class AnimationInstance;
 
 public:
 	inline uint32_t BoneCount() const { return BoneHierarchy.size(); };
-	void Initialize();
+
 	void Set( const std::vector< int > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 
-	// engine that drives the pose based on the anim data of this class -
-	// note that this is const - it HAS NO STATE!
 	void GetFinalTransforms( const std::string & clipName, 
-							 float timePos, std::vector< BoneTransform > & outFinalTransforms ) const;
+							 float timePos, 
+							 std::vector< BoneTransform > & outFinalTransforms ) const;
 
 private:
 	// stored in parent - child order, as a flattened tree
