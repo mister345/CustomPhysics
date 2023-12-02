@@ -126,7 +126,10 @@
     <ClCompile Include="code\Physics\Manifold.cpp">
       <Filter>code\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="code\Animation\Animation.cpp">
+    <ClCompile Include="code\Animation\AnimationData.cpp">
+      <Filter>code\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="code\Animation\AnimationState.cpp">
       <Filter>code\Animation</Filter>
     </ClCompile>
   </ItemGroup>
@@ -245,7 +248,13 @@
     <ClInclude Include="code\Physics\Manifold.h">
       <Filter>code\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="code\Animation\Animation.h">
+    <ClInclude Include="code\Animation\AnimationData.h">
+      <Filter>code\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="code\Animation\Bone.h">
+      <Filter>code\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="code\Animation\AnimationState.h">
       <Filter>code\Animation</Filter>
     </ClInclude>
   </ItemGroup>

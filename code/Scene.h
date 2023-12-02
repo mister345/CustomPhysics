@@ -8,7 +8,7 @@
 #include "Physics/Body.h"
 #include "Physics/Constraints.h"
 #include "Physics/Manifold.h"
-#include "Animation/Animation.h"
+#include "Animation/AnimationState.h"
 
 /*
 ====================================================
@@ -25,7 +25,7 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
-	SkeletalMesh animDemo;
+	AnimationInstance animDemo;
 
 	std::vector< Body > m_bodies;
 	std::vector< Constraint * >	m_constraints;

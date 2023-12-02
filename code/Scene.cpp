@@ -5,7 +5,6 @@
 #include "Physics/Contact.h"
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
-#include "Animation/Animation.h"
 
 /*
 ========================================================================================================
@@ -89,7 +88,7 @@ void Scene::Initialize() {
 
 	// Animated body demo
 	m_bodies.push_back( Body() );
-	animDemo.Initialize( Vec3( 0, 0, 15 ), &m_bodies.back());
+	animDemo.Initialize( &m_bodies.back(), Vec3( 0, 0, 15 ) );
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
