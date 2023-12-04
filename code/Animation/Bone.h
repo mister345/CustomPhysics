@@ -1,48 +1,24 @@
 #pragma once
 
+#include "../Math/Vector.h"
+#include "../Math/Quat.h"
+
 struct BoneTransform {
-	Quat rotation = { 0, 0, 0, 1 };
-	Vec3 translation = {};
-	bool isIdentity = false;
+	Quat rotation;
+	Vec3 translation;
+	bool isIdentity;
 
-	static BoneTransform Identity() {
-		return {
-			{ 0, 0, 0, 1 },
-			{ 0, 0, 0 },
-			true
-		};
-	}
+	BoneTransform() : 
+		rotation( { 0, 0, 0, 1 } ), 
+		translation( { 0, 0, 0 } ),
+		isIdentity( true ) {}
+	BoneTransform( const Quat & rot, const Vec3 & trans, bool isI )
+		: rotation( rot ), translation( trans ), isIdentity( isI ) {}
+	BoneTransform( const BoneTransform & other ) { *this = other; }
 
-	inline bool IsIdentity() const { return IsIdentity(); }
-	void operator *= ( const BoneTransform & other ) {
-		/*
-		*	sometimes, you want a flat hierarchy of bones as in vertex animation;
-		*	in that case, concatenate each transform with an identity root, ie, do nothing!
-		* 
-			if( IsIdentity() ){
-				return;
-			}
-		
-		*/
+	void operator *= ( const BoneTransform & other );
+	BoneTransform operator * ( const BoneTransform & b ) const;
 
-		translation += rotation.RotatePoint( other.translation );
-		rotation *= other.rotation;
-	}
-
-	BoneTransform operator * ( const BoneTransform & b ) const {
-		/*
-		*	sometimes, you want a flat hierarchy of bones as in vertex animation;
-		*	in that case, concatenate each transform with an identity root, ie, do nothing!
-		*
-			if( IsIdentity() ){
-				return *this;
-			}
-
-		*/
-
-		BoneTransform concatenated;
-		concatenated.translation = translation + rotation.RotatePoint( b.translation );
-		concatenated.rotation = rotation * b.rotation;
-		return concatenated;
-	}
+	inline bool IsIdentity() const { return isIdentity; }
+	static BoneTransform Identity();
 };

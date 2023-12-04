@@ -132,6 +132,9 @@
     <ClCompile Include="code\Animation\AnimationState.cpp">
       <Filter>code\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="code\Animation\Bone.cpp">
+      <Filter>code\Animation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">

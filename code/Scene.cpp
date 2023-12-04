@@ -88,18 +88,21 @@ void Scene::Initialize() {
 
 	// anim demo
 	SkinnedData & data = animInstanceDemo.animData;
-	SingleBoneTest::PopulateTestAnimData( data, SingleBoneTest::HIERARCHY.size() );
+	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
+//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
 
-	const int numBones = data.BoneCount();
+	const int numBones  = data.BoneCount();
+	const int fstBodIdx = m_bodies.size();
 	if ( numBones > 0 ) {
 		for ( int i = 0; i < numBones; i++ ) {
 			m_bodies.push_back( Body() );
 		}
 		animInstanceDemo.Initialize( 
-			&( m_bodies.back() ) - numBones + 1, 
+			&m_bodies[ fstBodIdx ],
 			numBones, 
 			Vec3( 0, 0, 15 ), 
-			SingleBoneTest::ANIM_NAME 
+			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
+//			AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
 		);
 	}
 }

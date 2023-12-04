@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="code\Animation\AnimationData.cpp" />
     <ClCompile Include="code\Animation\AnimationState.cpp" />
+    <ClCompile Include="code\Animation\Bone.cpp" />
     <ClCompile Include="code\application.cpp" />
     <ClCompile Include="code\Fileio.cpp" />
     <ClCompile Include="code\main.cpp" />

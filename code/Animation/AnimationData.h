@@ -4,7 +4,6 @@
 #include "../Physics/Body.h"
 #include "Bone.h"
 
-
 struct Keyframe {
 	float timePos = 0.f;
 	BoneTransform transform;
@@ -14,6 +13,7 @@ struct BoneAnimation {
 	float GetStartTime() const;
 	float GetEndTime() const;
 	void Interpolate( float t, BoneTransform & outTransform ) const;
+	inline bool HasData() const { return !keyframes.empty(); }
 	std::vector< Keyframe > keyframes;
 };
 
@@ -24,6 +24,10 @@ struct AnimationClip {
 	float GetClipEndTime() const;
 	// loop over each bone and interpolate animation
 	void Interpolate( float t, std::vector< BoneTransform > & boneTransforms ) const;
+
+	inline bool HasValidKeyframes() const {
+		return GetClipStartTime() >= 0.f;
+	}
 
 	// animation for each bone
 	std::vector< BoneAnimation > BoneAnimations;
@@ -46,8 +50,7 @@ public:
 
 private:
 	// stored in parent - child order, as a flattened tree
-	std::vector< int > BoneHierarchy = {
-		-1, 0, 0, 2, 3, 4, 5, 6, 8
-	};
+	std::vector< int > BoneHierarchy; 
+	std::vector< BoneTransform > RefPoseOffsets;
 	std::map< std::string, AnimationClip > mAnimations;
 };

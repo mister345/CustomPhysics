@@ -46,6 +46,11 @@ Quat Slerp( const Quat & from, const Quat & to, float t ) {
 }
 
 void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
+	if ( keyframes.empty() ) {
+		puts( "Bone Animation had no keyframe! Returning..." );
+		return;
+	}
+
 	// return first keyframe
 	if ( t <= keyframes.front().timePos ) {
 		outTransform.rotation = keyframes.front().transform.rotation;
@@ -79,7 +84,9 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
 float AnimationClip::GetClipStartTime() const {
 	float minTime = std::numeric_limits< float >::max();
 	for ( const BoneAnimation & anim : BoneAnimations ) {
-		minTime = std::min( anim.GetStartTime(), minTime );
+		if ( anim.HasData() ) {
+			minTime = std::min( anim.GetStartTime(), minTime );
+		}
 	}
 	return minTime;
 }
@@ -87,7 +94,9 @@ float AnimationClip::GetClipStartTime() const {
 float AnimationClip::GetClipEndTime() const {
 	float maxTime = std::numeric_limits< float >::min();
 	for ( const BoneAnimation & anim : BoneAnimations ) {
-		maxTime = std::max( anim.GetEndTime(), maxTime );
+		if ( anim.HasData() ) {
+			maxTime = std::max( anim.GetEndTime(), maxTime );
+		}
 	}
 	return maxTime;
 }
@@ -105,8 +114,13 @@ void SkinnedData::Set(
 	std::vector<BoneTransform> & boneOffsets, 
 	std::map<std::string, AnimationClip> & animations ) {
 
+	// make sure we have no negative keyframes
+	for ( auto & iter = animations.begin(); iter != animations.end(); iter++ ) {
+		assert( iter->second.HasValidKeyframes() );
+	}
+
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
-	boneOffsets.assign( boneOffsets.begin(), boneOffsets.end() );
+	RefPoseOffsets.assign( boneOffsets.begin(), boneOffsets.end() );
 	mAnimations.insert( animations.begin(), animations.end() );
 }
 
@@ -115,12 +129,14 @@ void SkinnedData::GetFinalTransforms(
 	float timePos, 
 	std::vector<BoneTransform> & outFinalTransforms ) const {
 
-	AnimationClip clip = mAnimations.at( clipName );	
-	// we will compose all the final transforms in place
+	// pre-multiply the ref pose offsets 
+	// ( T-Pose positions of bones, relative to which these bone animations are defined )
+	outFinalTransforms.assign( RefPoseOffsets.begin(), RefPoseOffsets.end() );
 
 	// get all the individual bone transforms( still relative to their parents, as defined in the fbx file ),
 	// but interpolated in the TIME DOMAIN, across their keyframes at this exact time point
 	// @TODO - cache and reuse
+	AnimationClip clip = mAnimations.at( clipName );	
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
 	clip.Interpolate( timePos, interpolatedBoneSpaceTransforms );
 
@@ -132,18 +148,16 @@ void SkinnedData::GetFinalTransforms(
 	*/
 	
 	// prepopulate tree root node because it has no parent
-	outFinalTransforms[ 0 ] = interpolatedBoneSpaceTransforms[ 0 ];
+	// NOTE - root will probably have NO animation so this value should always be identity
+	outFinalTransforms[ 0 ] *= interpolatedBoneSpaceTransforms[ 0 ];
 
 	// concatenate the rest, from root to leaf
 	// NOTE - if we want a flat hiearchy, it is the CONTENT CREATOR's job to add an identity root bone
 	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
 	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a partical shader )
-
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ];
 		const BoneTransform parentTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
 		outFinalTransforms[ i ] *= parentTransform;
 	}
-
-	// @TODO - add component space offsets ( otherwise they will all be located at same spot )
 }
