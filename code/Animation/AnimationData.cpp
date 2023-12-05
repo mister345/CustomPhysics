@@ -132,9 +132,41 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	AnimationClip clip;
 	std::map< std::string, AnimationClip > anims = { { "TODO", clip } };
 
-	// TODO
+	////////////////////////////////////////////////
 	// Extract all the above data from the scene
+	struct local_t {
+		static void PrintNode( fbxsdk::FbxNode * pNode ) {
+			if ( pNode != nullptr ) {
+				printf( "Node Name: %s\n", pNode->GetName() );
+				for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
+					fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
+					if ( pAttribute != nullptr ) {
+						fbxsdk::FbxString typeName = pAttribute->GetTypeName();
+						fbxsdk::FbxString attrName = pAttribute->GetName();
+						printf( "    Attribute Type: %s\n", typeName.Buffer() );
+						printf( "    Attribute Name: %s\n", attrName.Buffer() );
+					}
+				}
+				for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
+					PrintNode( pNode->GetChild( j ) );
+				}
+			}
+		}
+		static void PrintScene( fbxsdk::FbxScene * pScene ) {
+			printf( "Scene Name: %s\n--------------------------------------\n", pScene->GetName() );
+			
+			fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
+			if ( pRootNode != nullptr ) {
+				for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
+					PrintNode( pRootNode->GetChild( i ) );
+				}
+			}
+		}
+	};
 
+	local_t::PrintScene( scene );
+
+	////////////////////////////////////////////////
 	Set( bones, refPose, anims );
 }
 
