@@ -135,6 +135,9 @@
     <ClCompile Include="code\Animation\Bone.cpp">
       <Filter>code\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="code\Animation\ModelLoader.cpp">
+      <Filter>code\Animation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">
@@ -260,5 +263,13 @@
     <ClInclude Include="code\Animation\AnimationState.h">
       <Filter>code\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="code\Animation\ModelLoader.h">
+      <Filter>code\Animation</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">
+      <Filter>code\Animation</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>
