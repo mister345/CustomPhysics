@@ -88,8 +88,8 @@ void Scene::Initialize() {
 
 	// anim demo
 	SkinnedData & data = animInstanceDemo.animData;
-	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
-//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
+//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
+	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
 
 	const int numBones  = data.BoneCount();
 	const int fstBodIdx = m_bodies.size();
@@ -101,8 +101,8 @@ void Scene::Initialize() {
 			&m_bodies[ fstBodIdx ],
 			numBones, 
 			Vec3( 0, 0, 15 ), 
-			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
-//			AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
+//			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
+			AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
 		);
 	}
 }

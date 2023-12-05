@@ -120,7 +120,7 @@ void SkinnedData::Set(
 	}
 
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
-	RefPoseOffsets.assign( boneOffsets.begin(), boneOffsets.end() );
+	RefPoseOffsets_ComponentSpace.assign( boneOffsets.begin(), boneOffsets.end() );
 	mAnimations.insert( animations.begin(), animations.end() );
 }
 
@@ -131,7 +131,8 @@ void SkinnedData::GetFinalTransforms(
 
 	// pre-multiply the ref pose offsets 
 	// ( T-Pose positions of bones, relative to which these bone animations are defined )
-	outFinalTransforms.assign( RefPoseOffsets.begin(), RefPoseOffsets.end() );
+	// @TODO - do these also need to be multiplied in accumulated fashion like hte other transforms,
+	outFinalTransforms.assign( RefPoseOffsets_ComponentSpace.begin(), RefPoseOffsets_ComponentSpace.end() );
 
 	// get all the individual bone transforms( still relative to their parents, as defined in the fbx file ),
 	// but interpolated in the TIME DOMAIN, across their keyframes at this exact time point
@@ -149,15 +150,26 @@ void SkinnedData::GetFinalTransforms(
 	
 	// prepopulate tree root node because it has no parent
 	// NOTE - root will probably have NO animation so this value should always be identity
-	outFinalTransforms[ 0 ] *= interpolatedBoneSpaceTransforms[ 0 ];
-
+	
 	// concatenate the rest, from root to leaf
 	// NOTE - if we want a flat hiearchy, it is the CONTENT CREATOR's job to add an identity root bone
 	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
 	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a partical shader )
+
+	// When you accumulate local bone transforms from teh ROOT to the leaf,
+	// you are bringing that bone from local space into component space
+
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ];
-		const BoneTransform parentTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-		outFinalTransforms[ i ] *= parentTransform;
+		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
+
+		// first, get into bone space ( parent space ) by accumulated transform from parent
+		// now apply the current interpolated transform of THIS bone, in that space
+		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
+	}
+
+	// now that the bones are in component space
+	for ( int i = 0; i < BoneCount(); i++ ) {
+		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
 	}
 }

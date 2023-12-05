@@ -51,6 +51,6 @@ public:
 private:
 	// stored in parent - child order, as a flattened tree
 	std::vector< int > BoneHierarchy; 
-	std::vector< BoneTransform > RefPoseOffsets;
+	std::vector< BoneTransform > RefPoseOffsets_ComponentSpace;
 	std::map< std::string, AnimationClip > mAnimations;
 };
