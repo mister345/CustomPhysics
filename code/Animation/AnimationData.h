@@ -48,13 +48,7 @@ public:
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 
-	void SetFromFBX( fbxsdk::FbxScene * scene ) {
-		std::vector< int > bones;
-		std::vector< BoneTransform > refPose;
-		AnimationClip clip;
-		std::map< std::string, AnimationClip > anims = { { "TODO", clip } };
-		Set( bones, refPose, anims );
-	}
+	void Set( fbxsdk::FbxScene * scene );
 
 	void GetFinalTransforms( const std::string & clipName, 
 							 float timePos, 

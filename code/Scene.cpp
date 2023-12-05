@@ -51,6 +51,7 @@ void OnLoadedCallback( bool status, FbxScene * scene, void * userData ) {
 	} 
 		
 	SkinnedData * data = reinterpret_cast< SkinnedData * >( userData );
+	data->Set( scene );
 }
 
 /*

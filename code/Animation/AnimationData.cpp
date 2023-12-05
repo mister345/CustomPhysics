@@ -125,6 +125,20 @@ void SkinnedData::Set(
 	mAnimations.insert( animations.begin(), animations.end() );
 }
 
+void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
+
+	std::vector< int > bones;
+	std::vector< BoneTransform > refPose;
+	AnimationClip clip;
+	std::map< std::string, AnimationClip > anims = { { "TODO", clip } };
+
+	// TODO
+	// Extract all the above data from the scene
+
+	Set( bones, refPose, anims );
+}
+
+
 void SkinnedData::GetFinalTransforms( 
 	const std::string & clipName, 
 	float timePos, 
