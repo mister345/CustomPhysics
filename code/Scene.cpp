@@ -86,6 +86,9 @@ void Scene::Initialize() {
 		}
 	}
 
+	// load fbx data
+	const bool loaded = LoadFBXFile( "assets/humanDance.fbx" );
+
 	// anim demo
 	SkinnedData & data = animInstanceDemo.animData;
 //	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );

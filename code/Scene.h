@@ -9,6 +9,8 @@
 #include "Physics/Constraints.h"
 #include "Physics/Manifold.h"
 #include "Animation/AnimationState.h"
+#include "Animation/ModelLoader.h"
+
 
 /*
 ====================================================
@@ -25,6 +27,8 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
+	FbxManager * fbxManager = nullptr;
+	FbxImporter * fbxImporter = nullptr;
 	AnimationInstance animInstanceDemo;
 
 	std::vector< Body > m_bodies;
