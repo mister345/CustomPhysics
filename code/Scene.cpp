@@ -44,12 +44,13 @@ void Scene::Reset() {
 	Initialize();
 }
 
-void OnLoadedCallback( bool status, FbxScene * scene ) {	
-	if ( status ) {
-		PrintScene( scene );
-	} else {
+void OnLoadedCallback( bool status, FbxScene * scene, void * userData ) {	
+	if ( !status ) {
 		puts( "Error - Failed to load FBX Scene." );
-	}
+		return;
+	} 
+		
+	SkinnedData * data = reinterpret_cast< SkinnedData * >( userData );
 }
 
 /*
@@ -94,27 +95,32 @@ void Scene::Initialize() {
 		}
 	}
 
-	// load fbx data
-	const bool loaded = LoadFBXFile( "assets/humanDance.fbx", &OnLoadedCallback );
+	// anim demo 1 - handbuilt data
+	{
+		SkinnedData & data = animInstanceDemo.animData;
+		//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
+		AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
 
-	// anim demo
-	SkinnedData & data = animInstanceDemo.animData;
-//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
-	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
-
-	const int numBones  = data.BoneCount();
-	const int fstBodIdx = m_bodies.size();
-	if ( numBones > 0 ) {
-		for ( int i = 0; i < numBones; i++ ) {
-			m_bodies.push_back( Body() );
+		const int numBones = data.BoneCount();
+		const int fstBodIdx = m_bodies.size();
+		if ( numBones > 0 ) {
+			for ( int i = 0; i < numBones; i++ ) {
+				m_bodies.push_back( Body() );
+			}
+			animInstanceDemo.Initialize(
+				&m_bodies[ fstBodIdx ],
+				numBones,
+				Vec3( 0, 0, 15 ),
+				//			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
+				AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
+			);
 		}
-		animInstanceDemo.Initialize( 
-			&m_bodies[ fstBodIdx ],
-			numBones, 
-			Vec3( 0, 0, 15 ), 
-//			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
-			AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
-		);
+	}
+
+	// anim demo 2 - loaded data from file 
+	{
+		SkinnedData data;
+		const bool loaded = LoadFBXFile( "assets/humanDance.fbx", &OnLoadedCallback, &data );
 	}
 }
 

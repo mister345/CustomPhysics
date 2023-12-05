@@ -2,5 +2,7 @@
 
 #include <fbxsdk.h>
 
-bool LoadFBXFile( const char * filename, void ( *onLoadedCallback )( bool status, FbxScene * scene ) );
-void PrintScene( FbxScene * pScene );
+typedef void ( *onLoadedCallback_t )( bool status, fbxsdk::FbxScene * scene, void * userData );
+
+bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData );
+void PrintScene( fbxsdk::FbxScene * pScene );

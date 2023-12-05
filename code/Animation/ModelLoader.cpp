@@ -1,15 +1,15 @@
 #include "ModelLoader.h"
 #include <iostream>
 
-void PrintNode( FbxNode * pNode ) {
+void PrintNode( fbxsdk::FbxNode * pNode ) {
     if ( pNode ) {
         std::cout << "Node Name: " << pNode->GetName() << std::endl;
         for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
-            FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
+            fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 
             if ( pAttribute != nullptr ) {
-                FbxString typeName = pAttribute->GetTypeName();
-                FbxString attrName = pAttribute->GetName();
+                fbxsdk::FbxString typeName = pAttribute->GetTypeName();
+                fbxsdk::FbxString attrName = pAttribute->GetName();
                 std::cout << "    Attribute Type: " << typeName.Buffer() << std::endl;
                 std::cout << "    Attribute Name: " << attrName.Buffer() << std::endl;
             }
@@ -20,11 +20,11 @@ void PrintNode( FbxNode * pNode ) {
     }
 }
 
-void PrintScene( FbxScene * pScene ) {
+void PrintScene( fbxsdk::FbxScene * pScene ) {
     std::cout << "Scene Name: " << pScene->GetName() << std::endl;
     std::cout << "--------------------------------------" << std::endl;
 
-    FbxNode * pRootNode = pScene->GetRootNode();
+    fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
 
     if ( pRootNode ) {
         for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
@@ -33,14 +33,14 @@ void PrintScene( FbxScene * pScene ) {
     }
 }
 
-bool InitializeSdkObjects( FbxManager *& pManager, FbxImporter *& pImporter ) {
-    pManager = FbxManager::Create();
+bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter ) {
+    pManager = fbxsdk::FbxManager::Create();
     if ( !pManager ) {
         std::cout << "Error: Unable to create FBX Manager!\n";
         return false;
     }
 
-    FbxIOSettings * ios = FbxIOSettings::Create( pManager, IOSROOT );
+    fbxsdk::FbxIOSettings * ios = fbxsdk::FbxIOSettings::Create( pManager, IOSROOT );
     pManager->SetIOSettings( ios );
 
     pImporter = FbxImporter::Create( pManager, "" );
@@ -52,9 +52,9 @@ bool InitializeSdkObjects( FbxManager *& pManager, FbxImporter *& pImporter ) {
     return true;
 }
 
-bool LoadFBXFile( const char * filename, void ( * onLoadedCallback )( bool status, FbxScene * scene ) ) {
-    FbxManager * pManager = nullptr;
-    FbxImporter * pImporter = nullptr;
+bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData ) {
+    fbxsdk::FbxManager * pManager = nullptr;
+    fbxsdk::FbxImporter * pImporter = nullptr;
 
     if ( !InitializeSdkObjects( pManager, pImporter ) ) {
         return false;
@@ -66,7 +66,7 @@ bool LoadFBXFile( const char * filename, void ( * onLoadedCallback )( bool statu
     }
 
     // Create a new scene so it can be populated by the imported file
-    FbxScene * pScene = FbxScene::Create( pManager, "myScene" );
+    fbxsdk::FbxScene * pScene = fbxsdk::FbxScene::Create( pManager, "myScene" );
 
     // Import the contents of the file into the scene
     bool lStatus = pImporter->Import( pScene );
@@ -74,7 +74,7 @@ bool LoadFBXFile( const char * filename, void ( * onLoadedCallback )( bool statu
     // Destroy the importer
     pImporter->Destroy();
 
-    onLoadedCallback( lStatus, pScene );
+    onLoaded( lStatus, pScene, userData );
 
     // Destroy the SDK manager and all other objects it was handling
     pManager->Destroy();

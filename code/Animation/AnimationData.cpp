@@ -1,4 +1,5 @@
 #include <vector>
+#include <fbxsdk.h>
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
 #include "AnimationData.h"
