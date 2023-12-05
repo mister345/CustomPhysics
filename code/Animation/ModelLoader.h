@@ -2,5 +2,5 @@
 
 #include <fbxsdk.h>
 
-bool InitializeSdkObjects( FbxManager *& pManager, FbxImporter *& pImporter );
-bool LoadFBXFile( const char * filename );
+bool LoadFBXFile( const char * filename, void ( *onLoadedCallback )( bool status, FbxScene * scene ) );
+void PrintScene( FbxScene * pScene );

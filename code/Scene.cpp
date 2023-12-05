@@ -44,6 +44,14 @@ void Scene::Reset() {
 	Initialize();
 }
 
+void OnLoadedCallback( bool status, FbxScene * scene ) {	
+	if ( status ) {
+		PrintScene( scene );
+	} else {
+		puts( "Error - Failed to load FBX Scene." );
+	}
+}
+
 /*
 ====================================================
 Scene::Initialize
@@ -87,7 +95,7 @@ void Scene::Initialize() {
 	}
 
 	// load fbx data
-	const bool loaded = LoadFBXFile( "assets/humanDance.fbx" );
+	const bool loaded = LoadFBXFile( "assets/humanDance.fbx", &OnLoadedCallback );
 
 	// anim demo
 	SkinnedData & data = animInstanceDemo.animData;

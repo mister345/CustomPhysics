@@ -52,7 +52,7 @@ bool InitializeSdkObjects( FbxManager *& pManager, FbxImporter *& pImporter ) {
     return true;
 }
 
-bool LoadFBXFile( const char * filename ) {
+bool LoadFBXFile( const char * filename, void ( * onLoadedCallback )( bool status, FbxScene * scene ) ) {
     FbxManager * pManager = nullptr;
     FbxImporter * pImporter = nullptr;
 
@@ -74,10 +74,7 @@ bool LoadFBXFile( const char * filename ) {
     // Destroy the importer
     pImporter->Destroy();
 
-    if ( lStatus ) {
-        // Print the contents of the scene
-        PrintScene( pScene );
-    }
+    onLoadedCallback( lStatus, pScene );
 
     // Destroy the SDK manager and all other objects it was handling
     pManager->Destroy();
