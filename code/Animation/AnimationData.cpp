@@ -249,16 +249,52 @@ void SkinnedData::Set(
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
-	std::vector< int > bones;
-	std::vector< BoneTransform > refPose;
-	AnimationClip clip;	
-	std::map< std::string, AnimationClip > animMap = { { AnimationAssets::animNames[ whichAnim ], clip } };
+	// @TODO - move into to animation assets namespace	
+	struct local_t {
+		static BoneTransform ToBoneTransform( fbxsdk::FbxVector4 & translation_LS, fbxsdk::FbxVector4 & rotation_LS ) {
+			//BoneTransform temp;
+			//temp.isIdentity = false;
+			//temp.rotation = Quat()
+			return {};
+		}
+		static void ToBindPose( 
+			fbxsdk::FbxAMatrix & localTransform,
+			fbxsdk::FbxVector4 & translation_LS,
+			fbxsdk::FbxVector4 & rotation_LS ){
 
-	FbxUtil::PrintScene( scene );
+			// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
+			/* TODO
+				The bind poses are stored as inverse world space transform matrices.
+				Invert them, and you'll have world space TM's.
+				Multiply by the parents inverse TM's and you'll get the local space matrices.
+				Extract the translation direct from the matrix.
+				Extract the scale by getting the length of each axis. You can skip this if you aren't animating scale.
+				Convert the matrix to a quaternion, and you'll get the combined PreRotate * Rotate * PostRotate.
+				Pre and Post multiply the inverse Pre/Post rotate quats you get from the FBX sdk and you'll be able to extract the actual rotation values.
+				( mayube not necessary if u use the alt function, not go thru matrices )
+			*/
+		}
+	};
 
-	// @TODO - populate teh above vectors and map w teh animation gotten from the fbx file
+	FbxUtil::HarvestSceneData( scene, 
+							   this,  
+							   []( void * userData,
+								   fbxsdk::FbxAMatrix & localTransform,
+								   fbxsdk::FbxVector4 & translation_LS,
+								   fbxsdk::FbxVector4 & rotation_LS ) {
 
-	Set( bones, refPose, animMap );
+									SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
+
+									local_t::ToBindPose( localTransform, translation_LS, rotation_LS );
+
+									// @TODO - push_back on the BoneOffsets_ComponentSpace, etc, etc
+									/*	( smtg like this )
+										for( ToBoneTransform( 
+									
+									*/
+
+									printf( "TODO - now that we found our bone, populate the data!" );
+								});
 }
 
 void SkinnedData::GetFinalTransforms( 

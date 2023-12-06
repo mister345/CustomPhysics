@@ -1,5 +1,6 @@
 #include "ModelLoader.h"
 #include <iostream>
+#include <cassert>
 
 namespace FbxUtil {
 	bool IsBone( fbxsdk::FbxNode * node ) {
@@ -7,8 +8,12 @@ namespace FbxUtil {
 			node->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton;
 	}
 
-	void PrintBoneTransform( fbxsdk::FbxNode * pNode ) {
-		fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform();
+	void PrintBoneTransform( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * userData ) {
+		// @TODO - print:
+		// - rotation is an euler, but whats in the 4th idx?
+		// - is the bone transform in parent space or object space?
+
+		fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
 		fbxsdk::FbxVector4 translation = localTransform.GetT();
 		fbxsdk::FbxVector4 rotation = localTransform.GetR();
 		fbxsdk::FbxVector4 scaling = localTransform.GetS();
@@ -17,9 +22,14 @@ namespace FbxUtil {
 		printf( "        Translation: %f, %f, %f\n", translation[ 0 ], translation[ 1 ], translation[ 2 ] );
 		printf( "        Rotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
 		printf( "        Scaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
+
+		if ( onFoundBone == nullptr ) {
+			assert( "FOUND BONE CALL BACK WAS NULLPTR!!!!" );
+		}
+		onFoundBone( userData, localTransform, translation, rotation );
 	}
 
-	void PrintNode( fbxsdk::FbxNode * pNode ) {
+	void PrintNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone ) {
 		if ( pNode != nullptr ) {
 			printf( "Node Name: %s\n", pNode->GetName() );
 			// Print rotation order
@@ -46,17 +56,17 @@ namespace FbxUtil {
 					printf( "    Attribute Type: %s\n", typeName.Buffer() );
 					printf( "    Attribute Name: %s\n", attrName.Buffer() );
 					if ( IsBone( pNode ) ) {
-						PrintBoneTransform( pNode );
+						PrintBoneTransform( pNode, onFoundBone, onFoundBone );
 					}
 				}
 			}
 			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				PrintNode( pNode->GetChild( j ) );
+				PrintNode( pNode->GetChild( j ), onFoundBone );
 			}
 		}
 	}
 
-	void PrintScene( fbxsdk::FbxScene * pScene ) {
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, void * dataToPopulate, onFoundBoneNode_fn onFoundBone ) {
 		printf( "Scene Name: %s\n--------------------------------------\n", pScene->GetName() );
 
 		// Get and print coordinate system information
@@ -88,7 +98,7 @@ namespace FbxUtil {
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
 		if ( pRootNode != nullptr ) {
 			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-				PrintNode( pRootNode->GetChild( i ) );
+				PrintNode( pRootNode->GetChild( i ), onFoundBone );
 			}
 		}
 	}

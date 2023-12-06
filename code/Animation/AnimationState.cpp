@@ -27,7 +27,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 		bodyToAnimate->m_invMass = 0.f;	// no grav
 		bodyToAnimate->m_elasticity = 1.f;
 		bodyToAnimate->m_friction = 0.f;
-		bodyToAnimate->m_shape = new ShapeSphere( 1.f );
+		bodyToAnimate->m_shape = new ShapeSphere( 0.25f );
 	}
 }
 
