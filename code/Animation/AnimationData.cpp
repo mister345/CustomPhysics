@@ -1,8 +1,131 @@
 #include <vector>
-#include <fbxsdk.h>
+#include "ModelLoader.h"
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
 #include "AnimationData.h"
+#include "AnimationState.h"
+
+namespace AnimationAssets {
+	constexpr float TO_RAD = 3.14159265359f / 180.f;
+	const char * animNames[ eWhichAnim::COUNT + 1 ] = {
+		"SingleBone",
+		"MultiBone",
+		"SkeletonOnly",
+		"SkinnedMesh",
+		"Unknown",
+	};
+
+	void FillAnimInstanceData( SkinnedData *& skinnedData, eWhichAnim whichAnim, fbxsdk::FbxScene * sceneData ) {
+		switch ( whichAnim ) {
+			case SINGLE_BONE: {
+				int boneCount;
+				std::vector< int > hierarchy;
+				std::vector< BoneTransform > boneOffsets;
+				AnimationClip clip;
+
+				hierarchy.assign( { -1 } );
+				boneOffsets.assign( { BoneTransform::Identity() } );
+				clip.BoneAnimations.assign( { MakeBoneAnim1(), } );
+
+				std::map< std::string, AnimationClip > animMap = { { animNames[ whichAnim ], clip } };
+				skinnedData->Set( hierarchy, boneOffsets, animMap );
+				break;
+			}
+			case MULTI_BONE: {
+				int boneCount;
+				std::vector< int > hierarchy;
+				std::vector< BoneTransform > boneOffsets;
+				AnimationClip clip;
+
+				hierarchy.assign( { -1, 0, 1, 2, 3, 4, 5, 6, 7 } );
+				boneOffsets.assign( { { { 0, 0, 0, 1 }, { 0, 0 * 2.f, 0 }, true, },
+									  { { 0, 0, 0, 1 }, { 0, 2 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 4 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 6 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 8 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 10 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 12 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 14 * 2.f, 0 }, false, },
+									  { { 0, 0, 0, 1 }, { 0, 16 * 2.f, 0 }, false, } } );
+
+				BoneAnimation boneAnim = MakeBoneAnim0();
+				clip.BoneAnimations.assign( { { { } },
+											  boneAnim,
+											  boneAnim,
+											  boneAnim,
+											  boneAnim,
+											  boneAnim,
+											  boneAnim,
+											  boneAnim,
+											  boneAnim } );
+
+				std::map< std::string, AnimationClip > animMap = { { animNames[ whichAnim ], clip } };
+				skinnedData->Set( hierarchy, boneOffsets, animMap );
+				break;
+			}
+			case SKELETON_ONLY:
+			case SKINNED_MESH:
+			default: {
+				skinnedData->Set( sceneData, whichAnim );
+				break;
+			}
+		}
+	}
+
+	BoneAnimation MakeBoneAnim0() {
+		BoneAnimation anim;
+		anim.keyframes.resize( 5 );
+
+		anim.keyframes[ 0 ].timePos = 0.0f;
+		anim.keyframes[ 0 ].transform.translation = Vec3( -5.0f, 0.0f, 0.0f );
+		anim.keyframes[ 0 ].transform.rotation = { 0, 0, 0, 1 };
+
+		anim.keyframes[ 1 ].timePos = 1.0f;
+		anim.keyframes[ 1 ].transform.translation = Vec3( 0.0f, 0.0f, 0.0f );
+		anim.keyframes[ 1 ].transform.rotation = { 0, 0, 0, 1 };
+
+		anim.keyframes[ 2 ].timePos = 1.0f;
+		anim.keyframes[ 2 ].transform.translation = Vec3( 5.0f, 0.0f, 0.0f );
+		anim.keyframes[ 2 ].transform.rotation = { 0, 0, 0, 1 };
+
+		anim.keyframes[ 3 ].timePos = 3.0f;
+		anim.keyframes[ 3 ].transform.translation = Vec3( 0.0f, 0.0f, 0.0f );
+		anim.keyframes[ 3 ].transform.rotation = { 0, 0, 0, 1 };
+
+		anim.keyframes[ 4 ].timePos = 4.0f;
+		anim.keyframes[ 4 ].transform.translation = Vec3( -5.f, 0.0f, 0.0f );
+		anim.keyframes[ 4 ].transform.rotation = { 0, 0, 0, 1 };
+
+		return anim;
+	}
+
+	BoneAnimation MakeBoneAnim1() {
+		BoneAnimation anim;
+		anim.keyframes.resize( 5 );
+
+		anim.keyframes[ 0 ].timePos = 0.0f;
+		anim.keyframes[ 0 ].transform.translation = Vec3( -1.0f, 0.0f, 0.0f );
+		anim.keyframes[ 0 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
+
+		anim.keyframes[ 1 ].timePos = 1.0f;
+		anim.keyframes[ 1 ].transform.translation = Vec3( 0.0f, 2.0f, 3.0f );
+		anim.keyframes[ 1 ].transform.rotation = Quat( Vec3( 1, 1, 2 ), 45 * TO_RAD );
+
+		anim.keyframes[ 2 ].timePos = 1.0f;
+		anim.keyframes[ 2 ].transform.translation = Vec3( 3.0f, 0.0f, 0.0f );
+		anim.keyframes[ 2 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), -30 * TO_RAD );
+
+		anim.keyframes[ 3 ].timePos = 3.0f;
+		anim.keyframes[ 3 ].transform.translation = Vec3( 0.0f, 1.0f, -3.0f );
+		anim.keyframes[ 3 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 70 * TO_RAD );
+
+		anim.keyframes[ 4 ].timePos = 4.0f;
+		anim.keyframes[ 4 ].transform.translation = Vec3( -2.5f, 0.0f, 0.0f );
+		anim.keyframes[ 4 ].transform.rotation = Quat( Vec3( 0, 1, 0 ), 30 * TO_RAD );
+
+		return anim;
+	}
+} // namespace AnimationAssets
 
 float BoneAnimation::GetStartTime() const {
 	return keyframes.front().timePos;
@@ -125,111 +248,18 @@ void SkinnedData::Set(
 	mAnimations.insert( animations.begin(), animations.end() );
 }
 
-namespace FbxUtil{
-bool IsBone( fbxsdk::FbxNode * node ) {
-	return node->GetNodeAttribute() &&
-		   node->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton;
-}
-
-void PrintBoneTransform( fbxsdk::FbxNode * pNode ) {
-	fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform();
-	fbxsdk::FbxVector4 translation = localTransform.GetT();
-	fbxsdk::FbxVector4 rotation = localTransform.GetR();
-	fbxsdk::FbxVector4 scaling = localTransform.GetS();
-
-	printf( "    Bone Transform:\n" );
-	printf( "        Translation: %f, %f, %f\n", translation[ 0 ], translation[ 1 ], translation[ 2 ] );
-	printf( "        Rotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
-	printf( "        Scaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
-}
-
-void PrintNode( fbxsdk::FbxNode * pNode ) {
-	if ( pNode != nullptr ) {
-		printf( "Node Name: %s\n", pNode->GetName() );
-		// Print rotation order
-		fbxsdk::FbxEuler::EOrder rotOrder;
-		pNode->GetRotationOrder( fbxsdk::FbxNode::eSourcePivot, rotOrder );
-		std::string rotOrderStr;
-		switch ( rotOrder ) {
-			case fbxsdk::FbxEuler::eEulerXYZ: rotOrderStr = "XYZ"; break;
-			case fbxsdk::FbxEuler::eEulerXZY: rotOrderStr = "XZY"; break;
-			case fbxsdk::FbxEuler::eEulerYZX: rotOrderStr = "YZX"; break;
-			case fbxsdk::FbxEuler::eEulerYXZ: rotOrderStr = "YXZ"; break;
-			case fbxsdk::FbxEuler::eEulerZXY: rotOrderStr = "ZXY"; break;
-			case fbxsdk::FbxEuler::eEulerZYX: rotOrderStr = "ZYX"; break;
-			case fbxsdk::FbxEuler::eSphericXYZ: rotOrderStr = "Spherical XYZ"; break;
-			default: rotOrderStr = "Unknown"; break;
-		}
-		printf( "    Rotation Order: %s\n", rotOrderStr.c_str() );
-
-		for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
-			fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
-			if ( pAttribute != nullptr ) {
-				fbxsdk::FbxString typeName = pAttribute->GetTypeName();
-				fbxsdk::FbxString attrName = pAttribute->GetName();
-				printf( "    Attribute Type: %s\n", typeName.Buffer() );
-				printf( "    Attribute Name: %s\n", attrName.Buffer() );
-				if ( IsBone( pNode ) ) {
-					PrintBoneTransform( pNode );
-				}
-			}
-		}
-		for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-			PrintNode( pNode->GetChild( j ) );
-		}
-	}
-}
-
-void PrintScene( fbxsdk::FbxScene * pScene ) {
-	printf( "Scene Name: %s\n--------------------------------------\n", pScene->GetName() );
-
-	// Get and print coordinate system information
-	fbxsdk::FbxAxisSystem axisSystem = pScene->GetGlobalSettings().GetAxisSystem();
-	std::string coordSystem = axisSystem.GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded ? "Right-Handed" : "Left-Handed";
-	printf( "Coordinate System: %s\n", coordSystem.c_str() );
-
-	// Determine and print the Up, Front and Right Axis
-	int upAxisSign, frontAxisSign;
-	fbxsdk::FbxAxisSystem::EUpVector upAxis = axisSystem.GetUpVector( upAxisSign );
-	fbxsdk::FbxAxisSystem::EFrontVector frontAxis = axisSystem.GetFrontVector( frontAxisSign );
-
-	// Determine Right Axis based on the right-handed or left-handed coordinate system
-	std::string rightAxis = coordSystem == "Right-Handed" ? "+X" : "-X";
-
-	// Determine Up Axis
-	std::string upAxisString = ( upAxis == fbxsdk::FbxAxisSystem::eXAxis ? "X" : ( upAxis == fbxsdk::FbxAxisSystem::eYAxis ? "Y" : "Z" ) );
-	upAxisString = ( upAxisSign > 0 ? "+" : "-" ) + upAxisString;
-
-	// Determine Front Axis (assuming Z is the default front axis)
-	std::string frontAxisString = ( frontAxis == fbxsdk::FbxAxisSystem::eParityOdd ? "-Z" : "+Z" );
-
-	// Print axes in X, Y, Z order
-	printf( "Right Axis: %s\n", rightAxis.c_str() );
-	printf( "Up    Axis: %s\n", upAxisString.c_str() );
-	printf( "Fwd   Axis: %s\n", frontAxisString.c_str() );
-
-	// print nodes
-	fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-	if ( pRootNode != nullptr ) {
-		for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-			PrintNode( pRootNode->GetChild( i ) );
-		}
-	}
-}
-} // namepsace fbx util
-
-void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
-
+void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	std::vector< int > bones;
 	std::vector< BoneTransform > refPose;
-	AnimationClip clip;
-	std::map< std::string, AnimationClip > anims = { { "TODO", clip } };
+	AnimationClip clip;	
+	std::map< std::string, AnimationClip > animMap = { { AnimationAssets::animNames[ whichAnim ], clip } };
 
 	FbxUtil::PrintScene( scene );
 
-	Set( bones, refPose, anims );
-}
+	// @TODO - populate teh above vectors and map w teh animation gotten from the fbx file
 
+	Set( bones, refPose, animMap );
+}
 
 void SkinnedData::GetFinalTransforms( 
 	const std::string & clipName, 

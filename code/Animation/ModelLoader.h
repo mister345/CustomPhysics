@@ -4,5 +4,9 @@
 
 typedef void ( *onLoadedCallback_t )( bool status, fbxsdk::FbxScene * scene, void * userData );
 
-bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData );
-void PrintScene( fbxsdk::FbxScene * pScene );
+namespace FbxUtil {
+	bool IsBone( fbxsdk::FbxNode * node );
+	void PrintNode( fbxsdk::FbxNode * pNode );
+	void PrintScene( fbxsdk::FbxScene * pScene );
+	bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData );
+} // namepsace fbx util

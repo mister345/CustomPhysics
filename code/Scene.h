@@ -8,6 +8,7 @@
 #include "Physics/Body.h"
 #include "Physics/Constraints.h"
 #include "Physics/Manifold.h"
+#include "Animation/AnimationData.h"
 #include "Animation/AnimationState.h"
 #include "Animation/ModelLoader.h"
 

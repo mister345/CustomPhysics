@@ -15,8 +15,9 @@ Scene
 */
 
 // CONFIG
-static constexpr float GRAVITY_MAGNITUDE = 10.f;
-static const Vec3 GRAV_ACCEL = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
+static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
+static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
 ====================================================
@@ -42,16 +43,6 @@ void Scene::Reset() {
 	m_bodies.clear();
 
 	Initialize();
-}
-
-void OnLoadedCallback( bool status, FbxScene * scene, void * userData ) {	
-	if ( !status ) {
-		puts( "Error - Failed to load FBX Scene." );
-		return;
-	} 
-		
-	SkinnedData * data = reinterpret_cast< SkinnedData * >( userData );
-	data->Set( scene );
 }
 
 /*
@@ -96,33 +87,48 @@ void Scene::Initialize() {
 		}
 	}
 
-	// anim demo 1 - handbuilt data
-	{
-		SkinnedData & data = animInstanceDemo.animData;
-		//	AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::SINGLE_BONE );
-		AnimationAssets::MakeAnimInstanceData( data, AnimationAssets::MULTI_BONE );
 
-		const int numBones = data.BoneCount();
-		const int fstBodIdx = m_bodies.size();
-		if ( numBones > 0 ) {
-			for ( int i = 0; i < numBones; i++ ) {
-				m_bodies.push_back( Body() );
-			}
-			animInstanceDemo.Initialize(
-				&m_bodies[ fstBodIdx ],
-				numBones,
-				Vec3( 0, 0, 15 ),
-				//			AnimationAssets::animNames[ AnimationAssets::SINGLE_BONE ]
-				AnimationAssets::animNames[ AnimationAssets::MULTI_BONE ]
+	///////////////////////////////////////////////////////////////////////
+	// animation
+	///////////////////////////////////////////////////////////////////////
+
+	switch ( ANIM_TYPE ) {
+		case AnimationAssets::SKELETON_ONLY:
+		case AnimationAssets::SKINNED_MESH: {
+			const bool loaded = FbxUtil::LoadFBXFile(
+				"assets/humanDance.fbx", 
+				[]( bool status, FbxScene * scene, void * userData ) {
+					if ( !status ) {
+						puts( "Error - Failed to load FBX Scene." );
+						return;
+					}
+					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
+					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
+				}, 
+				animInstanceDemo.animData
 			);
+			break;
+		}
+		case AnimationAssets::MULTI_BONE:
+		case AnimationAssets::SINGLE_BONE:
+		default: {
+			AnimationAssets::FillAnimInstanceData( animInstanceDemo.animData, ANIM_TYPE );
+			break;
 		}
 	}
 
-	// anim demo 2 - loaded data from file 
-	{
-		SkinnedData data;
-		const bool loaded = LoadFBXFile( "assets/humanDance.fbx", &OnLoadedCallback, &data );
+	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
+	const int numBones    = animInstanceDemo.animData->BoneCount();
+	const int firstBodIdx = m_bodies.size();
+	for ( int i = 0; i < numBones; i++ ) {
+		m_bodies.push_back( Body() );
 	}
+	animInstanceDemo.Initialize(
+		numBones > 0 ? &m_bodies[ firstBodIdx ] : nullptr,
+		numBones,
+		Vec3( 0, 0, 15 ),
+		AnimationAssets::animNames[ ANIM_TYPE ]
+	);
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {

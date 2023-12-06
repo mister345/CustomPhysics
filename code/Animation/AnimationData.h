@@ -1,4 +1,5 @@
 #pragma once
+
 #include <map>
 #include <string>
 #include "../Physics/Body.h"
@@ -37,6 +38,25 @@ struct AnimationClip {
 	std::vector< BoneAnimation > BoneAnimations;
 };
 
+class SkinnedData;
+namespace AnimationAssets {
+	enum eWhichAnim : uint8_t {
+		SINGLE_BONE = 0,
+		MULTI_BONE = 1,
+		SKELETON_ONLY = 2,
+		SKINNED_MESH = 3,
+		COUNT = 4,
+	};
+	extern const char * animNames[ eWhichAnim::COUNT + 1 ];
+
+	// util
+	BoneAnimation MakeBoneAnim0();
+	BoneAnimation MakeBoneAnim1();
+
+	// user interface
+	void FillAnimInstanceData( SkinnedData *& skinnedData, const eWhichAnim which, fbxsdk::FbxScene * sceneData = nullptr );
+} // namespace AnimationAssets
+
 // database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE!
 class SkinnedData {
 	friend class AnimationInstance;
@@ -48,15 +68,15 @@ public:
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 
-	void Set( fbxsdk::FbxScene * scene );
+	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
 
-	void GetFinalTransforms( const std::string & clipName, 
-							 float timePos, 
+	void GetFinalTransforms( const std::string & clipName,
+							 float timePos,
 							 std::vector< BoneTransform > & outFinalTransforms ) const;
 
 private:
 	// stored in parent - child order, as a flattened tree
-	std::vector< int > BoneHierarchy; 
+	std::vector< int > BoneHierarchy;
 	std::vector< BoneTransform > RefPoseOffsets_ComponentSpace;
 	std::map< std::string, AnimationClip > mAnimations;
 };
