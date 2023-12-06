@@ -276,25 +276,26 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 		}
 	};
 
-	FbxUtil::HarvestSceneData( scene, 
-							   this,  
-							   []( void * userData,
-								   fbxsdk::FbxAMatrix & localTransform,
-								   fbxsdk::FbxVector4 & translation_LS,
-								   fbxsdk::FbxVector4 & rotation_LS ) {
+	FbxUtil::HarvestSceneData( 
+		scene, 
+		this,  
+		[]( void * userData,
+			fbxsdk::FbxAMatrix & localTransform,
+			fbxsdk::FbxVector4 & translation_LS,
+			fbxsdk::FbxVector4 & rotation_LS ) {
 
-									SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
+		SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
 
-									local_t::ToBindPose( localTransform, translation_LS, rotation_LS );
+		local_t::ToBindPose( localTransform, translation_LS, rotation_LS );
 
-									// @TODO - push_back on the BoneOffsets_ComponentSpace, etc, etc
-									/*	( smtg like this )
-										for( ToBoneTransform( 
+		// @TODO - push_back on the BoneOffsets_ComponentSpace, etc, etc
+		/*	( smtg like this )
+			for( ToBoneTransform( 
 									
-									*/
+		*/
 
-									printf( "TODO - now that we found our bone, populate the data!" );
-								});
+		printf( "TODO - now that we found our bone, populate the data!" );
+	});
 }
 
 void SkinnedData::GetFinalTransforms( 

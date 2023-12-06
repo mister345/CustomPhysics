@@ -11,6 +11,9 @@ AnimationInstance::~AnimationInstance() {
 }
 
 void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay ) {
+
+	assert( !animData->mAnimations.empty() );
+
 	curClipName				   = clipToPlay;
 	bodiesToAnimate			   = bodies;
 	worldPos				   = startPos_WS;
