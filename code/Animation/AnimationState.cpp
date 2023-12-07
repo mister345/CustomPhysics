@@ -11,17 +11,17 @@ AnimationInstance::~AnimationInstance() {
 }
 
 void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay ) {
-
-	assert( !animData->mAnimations.empty() );
-
 	curClipName				   = clipToPlay;
 	bodiesToAnimate			   = bodies;
 	worldPos				   = startPos_WS;
-	const AnimationClip & clip = animData->mAnimations.at( curClipName );
-
 	std::vector< BoneTransform > initialTransforms;
-	animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 
+	if ( animData->mAnimations.empty() ) {
+		// if no anims, just T-pose
+		initialTransforms.assign( animData->RefPoseOffsets_ComponentSpace.begin(), animData->RefPoseOffsets_ComponentSpace.end() );
+	} else {
+		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
+	}
 	for ( int i = 0; i < numBodies; i++ ) {
 		Body * bodyToAnimate = bodiesToAnimate + i;
 		bodyToAnimate->m_position = worldPos + initialTransforms[ i ].translation;
@@ -35,6 +35,11 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 }
 
 void AnimationInstance::Update( float deltaT ) {
+	if ( animData->mAnimations.empty() ) {
+		// no anim data, so dont update the pose ( just stay in t-pose )
+		return;
+	}
+
 	// find our time bounds for looping
 	const AnimationClip curClip = animData->mAnimations.at( curClipName );
 	const float loopBoundary	= curClip.GetClipEndTime();

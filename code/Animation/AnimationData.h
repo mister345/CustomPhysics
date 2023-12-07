@@ -7,6 +7,8 @@
 
 namespace fbxsdk {
 class FbxScene;
+class FbxQuaternion;
+class FbxVector4;
 }
 
 struct Keyframe {
@@ -62,7 +64,9 @@ class SkinnedData {
 	friend class AnimationInstance;
 
 public:
-	inline uint32_t BoneCount() const { return BoneHierarchy.size(); };
+	inline uint32_t BoneCount() const { return RefPoseOffsets_ComponentSpace.size(); };
+
+	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
 	void Set( const std::vector< int > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
