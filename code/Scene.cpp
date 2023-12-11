@@ -15,7 +15,7 @@ Scene
 */
 
 // CONFIG
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 

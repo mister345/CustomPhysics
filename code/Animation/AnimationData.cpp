@@ -48,7 +48,8 @@ namespace AnimationAssets {
 									  { { 0, 0, 0, 1 }, { 0, 14 * 2.f, 0 }, false, },
 									  { { 0, 0, 0, 1 }, { 0, 16 * 2.f, 0 }, false, } } );
 
-				BoneAnimation boneAnim = MakeBoneAnim0();
+//				BoneAnimation boneAnim = MakeBoneAnim0();
+				BoneAnimation boneAnim = MakeBoneAnim1();
 				clip.BoneAnimations.assign( { { { } },
 											  boneAnim,
 											  boneAnim,
@@ -151,21 +152,26 @@ Quat Lerp( const Quat & from, const Quat & to, float t ) {
 }
 
 Quat Slerp( const Quat & from, const Quat & to, float t ) {
-	Vec4 a( from.x, from.y, from.z, from.w );
-	Vec4 b( to.x, to.y, to.z, to.w );
+	Vec4 qA( from.x, from.y, from.z, from.w );
+	Vec4 qB( to.x, to.y, to.z, to.w );
 
-	float cosPhi = a.Dot( b );
-	if ( cosPhi > ( 1.f - 0.001 ) ) {
-		// small angle so just lerp
-		return Lerp( from, to, t );
+	const float cosTheta = qA.Dot( qB );
+	if ( cosTheta > ( 1.f - 0.001 ) ) {		
+		return Lerp( from, to, t ); // small enough ang to just lerp
 	}
 
-	float phi    = acos( cosPhi );
-	float sinPhi = sin( phi );
+	const float theta		 = acos( cosTheta );
+	const float sinTheta	 = sin( theta );
+	const float denomInverse = 1.f / sinTheta;
+	const float weightA		 = sin( ( 1.f - t ) * theta ) * denomInverse;
+	const float weightB		 = sin(         t   * theta ) * denomInverse;
 
-	Vec4 result = a * ( sin( phi * ( 1.f - t ) ) / sinPhi ) + b * ( sin( phi * t ) / sinPhi );
-	Quat resultQ( result.x, result.y, result.z, result.w );
-//	resultQ.Normalize();
+	const Vec4 result	 = qA * weightA + qB * weightB;
+
+	// note - old way has more rounding errors bc not memoizing produces more operations, more opportunities for precision degradation
+//	const Vec4 resultOld = qA * ( sin( theta * ( 1.f - t ) ) / sinTheta ) + qB * ( sin( theta * t ) / sinTheta );
+
+	const Quat resultQ   = { result.x, result.y, result.z, result.w }; // quat ctor normalizes automatically
 	return resultQ;
 }
 
@@ -183,7 +189,7 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
 		outTransform.rotation = keyframes.back().transform.rotation;
 		outTransform.translation = keyframes.back().transform.translation;
 	} else {
-		// where does teh given time t fall within our list of keyframes?
+		// where does the given time t fall within our list of keyframes?
 		for ( size_t i = 0; i < keyframes.size() - 1; i++ ) {
 			const Keyframe & start = keyframes[ i ];
 			const Keyframe & end   = keyframes[ i + 1 ];
