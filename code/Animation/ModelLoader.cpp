@@ -3,67 +3,10 @@
 #include <cassert>
 
 namespace FbxUtil {
-	bool IsBone( fbxsdk::FbxNode * node ) {
-		return node->GetNodeAttribute() &&
-			node->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton;
-	}
-
-	void ProcessBoneNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * userData ) {
-		// @TODO - remove this redundant stuff
-		fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
-		fbxsdk::FbxVector4 translation = localTransform.GetT();
-		fbxsdk::FbxVector4 rotation = localTransform.GetR();
-		fbxsdk::FbxVector4 scaling = localTransform.GetS();
-		printf( "    Bone Transform:\n" );
-		printf( "        Translation: %f, %f, %f\n", translation[ 0 ], translation[ 1 ], translation[ 2 ] );
-		printf( "        Rotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
-		printf( "        Scaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
-
-		if ( onFoundBone == nullptr ) {
-			assert( !"ON FOUND BONE CALLBACK WAS NULLPTR!!!!" );
-		}
-		onFoundBone( userData, pNode );
-	}
-
-	void ProcessNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * dataRecipient ) {
-		if ( pNode != nullptr ) {
-			printf( "Node Name: %s\n", pNode->GetName() );
-
-			// Print rotation order
-			fbxsdk::FbxEuler::EOrder rotOrder;
-			pNode->GetRotationOrder( fbxsdk::FbxNode::eSourcePivot, rotOrder );
-			std::string rotOrderStr;
-			switch ( rotOrder ) {
-				case fbxsdk::FbxEuler::eEulerXYZ: rotOrderStr = "XYZ"; break;
-				case fbxsdk::FbxEuler::eEulerXZY: rotOrderStr = "XZY"; break;
-				case fbxsdk::FbxEuler::eEulerYZX: rotOrderStr = "YZX"; break;
-				case fbxsdk::FbxEuler::eEulerYXZ: rotOrderStr = "YXZ"; break;
-				case fbxsdk::FbxEuler::eEulerZXY: rotOrderStr = "ZXY"; break;
-				case fbxsdk::FbxEuler::eEulerZYX: rotOrderStr = "ZYX"; break;
-				case fbxsdk::FbxEuler::eSphericXYZ: rotOrderStr = "Spherical XYZ"; break;
-				default: rotOrderStr = "Unknown"; break;
-			}
-			printf( "    Rotation Order: %s\n", rotOrderStr.c_str() );
-
-			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
-				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
-				if ( pAttribute != nullptr ) {
-					fbxsdk::FbxString typeName = pAttribute->GetTypeName();
-					fbxsdk::FbxString attrName = pAttribute->GetName();
-					printf( "    Attribute Type: %s\n", typeName.Buffer() );
-					printf( "    Attribute Name: %s\n", attrName.Buffer() );
-					if ( IsBone( pNode ) ) {
-						ProcessBoneNode( pNode, onFoundBone, dataRecipient );
-					}
-				}
-			}
-			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				ProcessNode( pNode->GetChild( j ), onFoundBone, dataRecipient );
-			}
-		}
-	}
-
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, onFoundBoneNode_fn onFoundBone, void * caller ) {
+	/////////////////////////////////////
+	// Debug print functions
+	/////////////////////////////////////
+	void PrintScene( fbxsdk::FbxScene * pScene ) {
 		printf( "Scene Name: %s\n--------------------------------------\n", pScene->GetName() );
 
 		// Get and print coordinate system information
@@ -85,13 +28,95 @@ namespace FbxUtil {
 
 		// Determine Front Axis (assuming Z is the default front axis)
 		std::string frontAxisString = ( frontAxis == fbxsdk::FbxAxisSystem::eParityOdd ? "-Z" : "+Z" );
+		// @TODO - this is currently hardcoded and will no longer work if front axis isnt Z; fix
 
 		// Print axes in X, Y, Z order
 		printf( "Right Axis: %s\n", rightAxis.c_str() );
 		printf( "Up    Axis: %s\n", upAxisString.c_str() );
 		printf( "Fwd   Axis: %s\n", frontAxisString.c_str() );
+	}
 
-		// print nodes
+	void PrintNode( fbxsdk::FbxNode * pNode ) {
+		printf( "Node Name: %s\n", pNode->GetName() );
+
+		// Print rotation order
+		fbxsdk::FbxEuler::EOrder rotOrder;
+		pNode->GetRotationOrder( fbxsdk::FbxNode::eSourcePivot, rotOrder );
+		std::string rotOrderStr;
+		switch ( rotOrder ) {
+			case fbxsdk::FbxEuler::eEulerXYZ: rotOrderStr = "XYZ"; break;
+			case fbxsdk::FbxEuler::eEulerXZY: rotOrderStr = "XZY"; break;
+			case fbxsdk::FbxEuler::eEulerYZX: rotOrderStr = "YZX"; break;
+			case fbxsdk::FbxEuler::eEulerYXZ: rotOrderStr = "YXZ"; break;
+			case fbxsdk::FbxEuler::eEulerZXY: rotOrderStr = "ZXY"; break;
+			case fbxsdk::FbxEuler::eEulerZYX: rotOrderStr = "ZYX"; break;
+			case fbxsdk::FbxEuler::eSphericXYZ: rotOrderStr = "Spherical XYZ"; break;
+			default: rotOrderStr = "Unknown"; break;
+		}
+		printf( "    Rotation Order: %s\n", rotOrderStr.c_str() );
+	}
+
+	void PrintBone( fbxsdk::FbxNode * pNode ) {
+		fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
+		fbxsdk::FbxVector4 translation = localTransform.GetT();
+		fbxsdk::FbxVector4 rotation = localTransform.GetR();
+		fbxsdk::FbxVector4 scaling = localTransform.GetS();
+		printf( "    Bone Transform:\n" );
+		printf( "        Translation: %f, %f, %f\n", translation[ 0 ], translation[ 1 ], translation[ 2 ] );
+		printf( "        Rotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
+		printf( "        Scaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
+	}
+
+	void PrintAttribute( fbxsdk::FbxNodeAttribute * pAttribute ) {
+		fbxsdk::FbxString typeName = pAttribute->GetTypeName();
+		fbxsdk::FbxString attrName = pAttribute->GetName();
+		printf( "    Attribute Type: %s\n", typeName.Buffer() );
+		printf( "    Attribute Name: %s\n", attrName.Buffer() );
+	}
+
+	/////////////////////////////////////
+	// Data Extraction Functions
+	/////////////////////////////////////
+	void ProcessBoneNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * userData ) {
+		PrintBone( pNode );
+		if ( onFoundBone == nullptr ) {
+			assert( !"ON FOUND BONE CALLBACK WAS NULLPTR!!!!" );
+		}
+		onFoundBone( userData, pNode );
+	}
+
+	void ProcessNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * dataRecipient ) {
+		if ( pNode != nullptr ) {
+			PrintNode( pNode );
+			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
+				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
+				if ( pAttribute != nullptr ) {
+					PrintAttribute( pAttribute );
+					if ( pAttribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton ) {
+						ProcessBoneNode( pNode, onFoundBone, dataRecipient );
+					}
+				}
+			}
+			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
+				ProcessNode( pNode->GetChild( j ), onFoundBone, dataRecipient );
+			}
+		}
+	}
+
+	void ConvertScene( fbxsdk::FbxScene * pScene ) {
+		constexpr auto xIntoScreen  = fbxsdk::FbxAxisSystem::EFrontVector::eParityEven; // even = positive
+		constexpr auto xOutOfScreen = fbxsdk::FbxAxisSystem::EFrontVector::eParityOdd; // odd  = negative
+		fbxsdk::FbxAxisSystem newAxisSystem( fbxsdk::FbxAxisSystem::EUpVector::eZAxis, xIntoScreen, fbxsdk::FbxAxisSystem::ECoordSystem::eRightHanded );
+//		newAxisSystem.ConvertScene( pScene );
+		newAxisSystem.DeepConvertScene( pScene );
+	}
+
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, onFoundBoneNode_fn onFoundBone, void * caller ) {
+		PrintScene( pScene );
+		ConvertScene( pScene );
+		printf( "/nAFTER CONVERSION:/n" );
+		PrintScene( pScene );
+
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
 		if ( pRootNode != nullptr ) {
 			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {

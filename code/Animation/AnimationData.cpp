@@ -325,6 +325,12 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 
 			// finally add the bind pose bone to the list of ref ( bind pose transforms )
 			me->RefPoseOffsets_ComponentSpace.push_back( FbxToBoneTransform( &rotation, &translation ) );
+
+			const Vec3 & tRef = me->RefPoseOffsets_ComponentSpace.back().translation;
+			const Quat & qRef = me->RefPoseOffsets_ComponentSpace.back().rotation;
+			printf( "    Converted:\n" );
+			printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
+			printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
 		},
 		this
 	);

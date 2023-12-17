@@ -115,7 +115,8 @@ void Scene::Initialize() {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
 			const bool loaded = FbxUtil::LoadFBXFile(
-				"assets/humanDance.fbx", 
+//				"assets/humanDance.fbx", 
+				"assets/femaleDance.fbx", 
 				[]( bool status, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );
