@@ -28,12 +28,15 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
-	FbxManager * fbxManager = nullptr;
-	FbxImporter * fbxImporter = nullptr;
-	AnimationInstance animInstanceDemo;
-
-	std::vector< Body > m_bodies;
 	std::vector< Constraint * >	m_constraints;
 	ManifoldCollector m_manifolds;
+	std::vector< Body * > m_renderedBodies;
+
+private:
+	std::vector< Body > m_bodies;
+	std::vector< Body > m_animatedBodies;
+	AnimationInstance animInstanceDemo;
+	FbxManager * fbxManager = nullptr;
+	FbxImporter * fbxImporter = nullptr;
 };
 

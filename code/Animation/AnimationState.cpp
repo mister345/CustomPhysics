@@ -8,6 +8,7 @@ AnimationInstance::AnimationInstance() {
 AnimationInstance::~AnimationInstance() {
 	delete animData;
 	animData = nullptr;
+	bodiesToAnimate = nullptr;
 }
 
 void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay ) {
@@ -35,7 +36,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 }
 
 void AnimationInstance::Update( float deltaT ) {
-	if ( animData->mAnimations.empty() ) {
+	if ( animData->mAnimations.empty() || bodiesToAnimate == nullptr ) {
 		// no anim data, so dont update the pose ( just stay in t-pose )
 		return;
 	}

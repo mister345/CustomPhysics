@@ -168,8 +168,10 @@ Quat Slerp( const Quat & from, const Quat & to, float t ) {
 
 	const Vec4 result	 = qA * weightA + qB * weightB;
 
-	// note - old way has more rounding errors bc not memoizing produces more operations, more opportunities for precision degradation
-//	const Vec4 resultOld = qA * ( sin( theta * ( 1.f - t ) ) / sinTheta ) + qB * ( sin( theta * t ) / sinTheta );
+//	note - old way has more rounding errors bc not memoizing produces more operations, more opportunities for precision degradation
+//	const Vec4 resultOld = 
+//		qA * ( sin( theta * ( 1.f - t ) ) / sinTheta ) + 
+//		qB * ( sin( theta * t ) / sinTheta );
 
 	const Quat resultQ   = { result.x, result.y, result.z, result.w }; // quat ctor normalizes automatically
 	return resultQ;

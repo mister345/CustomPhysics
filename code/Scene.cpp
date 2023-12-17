@@ -5,6 +5,7 @@
 #include "Physics/Contact.h"
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
+#include <algorithm>
 
 /*
 ========================================================================================================
@@ -15,7 +16,7 @@ Scene
 */
 
 // CONFIG
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
@@ -25,11 +26,19 @@ Scene::~Scene
 ====================================================
 */
 Scene::~Scene() {
+	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
+		delete m_animatedBodies[ i ].m_shape;
+	}
+	m_animatedBodies.clear();
+
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
 	}
 	m_bodies.clear();
-}
+
+	// note - this does NOT call the destructor on these pointers!
+	m_renderedBodies.clear();
+} 
 
 /*
 ====================================================
@@ -37,10 +46,18 @@ Scene::Reset
 ====================================================
 */
 void Scene::Reset() {
+	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
+		delete m_animatedBodies[ i ].m_shape;
+	}
+	m_animatedBodies.clear();
+
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
 	}
 	m_bodies.clear();
+
+	// note - this does NOT call the destructor on these pointers!
+	m_renderedBodies.clear();
 
 	Initialize();
 }
@@ -51,6 +68,10 @@ Scene::Initialize
 ====================================================
 */
 void Scene::Initialize() {
+	///////////////////////////////////////////////////////////////////////
+	// physics bodies
+	///////////////////////////////////////////////////////////////////////
+
 	Body body;
 
 	// Dynamic bodies
@@ -87,11 +108,9 @@ void Scene::Initialize() {
 		}
 	}
 
-
 	///////////////////////////////////////////////////////////////////////
-	// animation
+	// animated bodies
 	///////////////////////////////////////////////////////////////////////
-
 	switch ( ANIM_TYPE ) {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
@@ -118,16 +137,26 @@ void Scene::Initialize() {
 	}
 
 	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
-	const int numBones    = animInstanceDemo.animData->BoneCount();
-	const int firstBodIdx = m_bodies.size();
+	const int numBones = animInstanceDemo.animData->BoneCount();
 	for ( int i = 0; i < numBones; i++ ) {
-		m_bodies.push_back( Body() );
+		m_animatedBodies.push_back( Body() );
 	}
 	animInstanceDemo.Initialize(
-		numBones > 0 ? &m_bodies[ firstBodIdx ] : nullptr,
+		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
-		Vec3( 0, 0, 15 ),
+		Vec3( 0, 0, 10 ),
 		AnimationAssets::animNames[ ANIM_TYPE ]
+	);
+
+	///////////////////////////////////////////////////////////////////////////////////
+	// list of pointers to both ( todo - use placement new to allocate in same block )
+	///////////////////////////////////////////////////////////////////////////////////
+	m_renderedBodies.resize( m_bodies.size() + m_animatedBodies.size() );
+	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), 
+		[]( Body & b ) { return &b; } 
+	);
+	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(),
+		[]( Body & b ) { return &b; }
 	);
 }
 
