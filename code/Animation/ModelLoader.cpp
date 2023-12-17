@@ -111,11 +111,13 @@ namespace FbxUtil {
 		newAxisSystem.DeepConvertScene( pScene );
 	}
 
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, onFoundBoneNode_fn onFoundBone, void * caller ) {
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, onFoundBoneNode_fn onFoundBone, void * caller ) {
 		PrintScene( pScene );
-		ConvertScene( pScene );
-		printf( "/nAFTER CONVERSION:/n" );
-		PrintScene( pScene );
+		if ( bConvert ) {
+			ConvertScene( pScene );
+			printf( "/nAFTER CONVERSION:/n" );
+			PrintScene( pScene );
+		}
 
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
 		if ( pRootNode != nullptr ) {

@@ -74,22 +74,22 @@ void Scene::Initialize() {
 
 	Body body;
 
-	// Dynamic bodies
-	for ( int x = 0; x < 6; x++ ) {
-		for ( int y = 0; y < 6; y++ ) {
-			float radius = 0.5f;
-			float xx = float( x - 1 ) * radius * 1.5f;
-			float yy = float( y - 1 ) * radius * 1.5f;
-			body.m_position = Vec3( xx, yy, 10.f );
-			body.m_orientation = Quat( 0, 0, 0, 1 );
-			body.m_linearVelocity.Zero();
-			body.m_invMass = 1.f;
-			body.m_elasticity = 0.5f;
-			body.m_friction = 0.5f;
-			body.m_shape = new ShapeSphere( radius );
-			m_bodies.push_back( body );
-		}
-	}
+	//// Dynamic bodies
+	//for ( int x = 0; x < 6; x++ ) {
+	//	for ( int y = 0; y < 6; y++ ) {
+	//		float radius = 0.5f;
+	//		float xx = float( x - 1 ) * radius * 1.5f;
+	//		float yy = float( y - 1 ) * radius * 1.5f;
+	//		body.m_position = Vec3( xx, yy, 10.f );
+	//		body.m_orientation = Quat( 0, 0, 0, 1 );
+	//		body.m_linearVelocity.Zero();
+	//		body.m_invMass = 1.f;
+	//		body.m_elasticity = 0.5f;
+	//		body.m_friction = 0.5f;
+	//		body.m_shape = new ShapeSphere( radius );
+	//		m_bodies.push_back( body );
+	//	}
+	//}
 
 	// Static floor
 	for ( int x = 0; x < 3; x++ ) {
@@ -115,8 +115,8 @@ void Scene::Initialize() {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
 			const bool loaded = FbxUtil::LoadFBXFile(
+				"assets/testSkeleton.fbx", 
 //				"assets/humanDance.fbx", 
-				"assets/femaleDance.fbx", 
 				[]( bool status, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );

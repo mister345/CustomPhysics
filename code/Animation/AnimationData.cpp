@@ -274,14 +274,15 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	using namespace fbxsdk;
 
 	FbxUtil::HarvestSceneData(
-		scene,
+		scene, 
+		false,
 		[]( void * userData, fbxsdk::FbxNode * node ) {
 			SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
 			fbxsdk::FbxVector4 translation;
 			fbxsdk::FbxQuaternion rotation;
 
 			// convert to bind pose
-			static constexpr bool useMethodA = true;
+			static constexpr bool useMethodA = false;
 			if ( useMethodA ) { 
 				// just trust fbx sdk and get the local transform directly ( naiive approach, see if it works )
 				fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
@@ -331,9 +332,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 			printf( "    Converted:\n" );
 			printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
 			printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
-		},
-		this
-	);
+		}, this);
 }
 
 void SkinnedData::GetFinalTransforms( 

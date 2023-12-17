@@ -9,6 +9,6 @@ namespace FbxUtil {
 
 	bool IsBone( fbxsdk::FbxNode * node );
 	void ProcessNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * dataRecipient );
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, onFoundBoneNode_fn onFoundBone, void * caller );
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, onFoundBoneNode_fn onFoundBone, void * caller );
 	bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData );
 } // namepsace fbx util
