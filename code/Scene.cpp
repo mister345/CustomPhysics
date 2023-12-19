@@ -18,6 +18,8 @@ Scene
 // CONFIG
 static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
+static constexpr bool RUN_ANIMATION					   = false;
+static constexpr bool RUN_PHYSICS_SIM				   = true;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
@@ -74,22 +76,24 @@ void Scene::Initialize() {
 
 	Body body;
 
-	//// Dynamic bodies
-	//for ( int x = 0; x < 6; x++ ) {
-	//	for ( int y = 0; y < 6; y++ ) {
-	//		float radius = 0.5f;
-	//		float xx = float( x - 1 ) * radius * 1.5f;
-	//		float yy = float( y - 1 ) * radius * 1.5f;
-	//		body.m_position = Vec3( xx, yy, 10.f );
-	//		body.m_orientation = Quat( 0, 0, 0, 1 );
-	//		body.m_linearVelocity.Zero();
-	//		body.m_invMass = 1.f;
-	//		body.m_elasticity = 0.5f;
-	//		body.m_friction = 0.5f;
-	//		body.m_shape = new ShapeSphere( radius );
-	//		m_bodies.push_back( body );
-	//	}
-	//}
+	// Dynamic bodies
+	if ( RUN_PHYSICS_SIM ) {
+		for ( int x = 0; x < 6; x++ ) {
+			for ( int y = 0; y < 6; y++ ) {
+				float radius = 0.5f;
+				float xx = float( x - 1 ) * radius * 1.5f;
+				float yy = float( y - 1 ) * radius * 1.5f;
+				body.m_position = Vec3( xx, yy, 10.f );
+				body.m_orientation = Quat( 0, 0, 0, 1 );
+				body.m_linearVelocity.Zero();
+				body.m_invMass = 1.f;
+				body.m_elasticity = 0.5f;
+				body.m_friction = 0.5f;
+				body.m_shape = new ShapeSphere( radius );
+				m_bodies.push_back( body );
+			}
+		}
+	}
 
 	// Static floor
 	for ( int x = 0; x < 3; x++ ) {
@@ -108,6 +112,23 @@ void Scene::Initialize() {
 		}
 	}
 
+	if ( RUN_ANIMATION ) {
+		InitializeAnimatedBodies();
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////
+	// list of pointers to both ( todo - use placement new to allocate in same block )
+	///////////////////////////////////////////////////////////////////////////////////
+	m_renderedBodies.resize( m_bodies.size() + m_animatedBodies.size() );
+	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(),
+					[]( Body & b ) { return &b; }
+	);
+	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(),
+					[]( Body & b ) { return &b; }
+	);
+}
+
+void Scene::InitializeAnimatedBodies() {
 	///////////////////////////////////////////////////////////////////////
 	// animated bodies
 	///////////////////////////////////////////////////////////////////////
@@ -115,8 +136,8 @@ void Scene::Initialize() {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
 			const bool loaded = FbxUtil::LoadFBXFile(
-				"assets/testSkeleton.fbx", 
-//				"assets/humanDance.fbx", 
+				"assets/testSkeleton.fbx",
+				//				"assets/humanDance.fbx", 
 				[]( bool status, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );
@@ -124,7 +145,7 @@ void Scene::Initialize() {
 					}
 					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
 					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
-				}, 
+				},
 				animInstanceDemo.animData
 			);
 			break;
@@ -147,17 +168,6 @@ void Scene::Initialize() {
 		numBones,
 		Vec3( 0, 0, 10 ),
 		AnimationAssets::animNames[ ANIM_TYPE ]
-	);
-
-	///////////////////////////////////////////////////////////////////////////////////
-	// list of pointers to both ( todo - use placement new to allocate in same block )
-	///////////////////////////////////////////////////////////////////////////////////
-	m_renderedBodies.resize( m_bodies.size() + m_animatedBodies.size() );
-	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), 
-		[]( Body & b ) { return &b; } 
-	);
-	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(),
-		[]( Body & b ) { return &b; }
 	);
 }
 

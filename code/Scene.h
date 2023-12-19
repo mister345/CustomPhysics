@@ -25,6 +25,7 @@ public:
 
 	void Reset();
 	void Initialize();
+	void InitializeAnimatedBodies();
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
