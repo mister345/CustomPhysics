@@ -282,7 +282,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 			fbxsdk::FbxQuaternion rotation;
 
 			// convert to bind pose
-			static constexpr bool useMethodA = false;
+			static constexpr bool useMethodA = true;
 			if ( useMethodA ) { 
 				// just trust fbx sdk and get the local transform directly ( naiive approach, see if it works )
 				fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
