@@ -5,6 +5,7 @@
 #include "Physics/Contact.h"
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
+#include "Physics/Shapes/ShapeAnimated.h"
 #include <algorithm>
 
 /*
@@ -16,10 +17,10 @@ Scene
 */
 
 // CONFIG
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
-static constexpr bool RUN_ANIMATION					   = false;
-static constexpr bool RUN_PHYSICS_SIM				   = true;
+static constexpr bool RUN_ANIMATION					   = true;
+static constexpr bool RUN_PHYSICS_SIM				   = false;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
@@ -159,6 +160,7 @@ void Scene::InitializeAnimatedBodies() {
 	}
 
 	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
+	const Vec3 worldPos = Vec3( 0, 0, 10 );
 	const int numBones = animInstanceDemo.animData->BoneCount();
 	for ( int i = 0; i < numBones; i++ ) {
 		m_animatedBodies.push_back( Body() );
@@ -166,9 +168,20 @@ void Scene::InitializeAnimatedBodies() {
 	animInstanceDemo.Initialize(
 		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
-		Vec3( 0, 0, 10 ),
+		worldPos,
 		AnimationAssets::animNames[ ANIM_TYPE ]
 	);
+
+	// spawn a single debug sphere to indicate the origin pos of the animated object
+	// put it at the end so it gets rendered on top ( hopefully )
+	m_animatedBodies.push_back( Body() );
+	m_animatedBodies.back().m_position = worldPos;
+	m_animatedBodies.back().m_orientation = { 0, 0, 0, 1 };
+	m_animatedBodies.back().m_linearVelocity.Zero();
+	m_animatedBodies.back().m_invMass = 0.f;	// no grav
+	m_animatedBodies.back().m_elasticity = 1.f;
+	m_animatedBodies.back().m_friction = 0.f;
+	m_animatedBodies.back().m_shape = new ShapeAnimated( 0.45f, true );
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {

@@ -86,6 +86,7 @@
     <ClInclude Include="code\Physics\Intersections.h" />
     <ClInclude Include="code\Physics\Manifold.h" />
     <ClInclude Include="code\Physics\Shapes.h" />
+    <ClInclude Include="code\Physics\Shapes\ShapeAnimated.h" />
     <ClInclude Include="code\Physics\Shapes\ShapeBase.h" />
     <ClInclude Include="code\Physics\Shapes\ShapeSphere.h" />
     <ClInclude Include="code\Renderer\Buffer.h" />

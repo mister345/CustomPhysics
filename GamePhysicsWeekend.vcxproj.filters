@@ -269,6 +269,9 @@
     <ClInclude Include="code\Animation\ModelLoader.h">
       <Filter>code\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="code\Physics\Shapes\ShapeAnimated.h">
+      <Filter>code\Physics\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">
