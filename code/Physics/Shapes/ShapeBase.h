@@ -8,6 +8,12 @@
 #include "../../Math/Bounds.h"
 #include <vector>
 
+enum shapeColor_t {
+	DEFAULT = 0,
+	RED = 1,
+	BLUE = 2,
+};
+
 /*
 ====================================================
 Shape
@@ -28,6 +34,7 @@ public:
 
 	virtual shapeType_t GetType() const = 0;
 
+	shapeColor_t color = DEFAULT;
 
 protected:
 	Vec3 m_centerOfMass;
