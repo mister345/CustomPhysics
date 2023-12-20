@@ -273,6 +273,16 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	using namespace fbxsdk;
 
+	// @TODO - how do we get the bind poses in model space?
+	// @TODO - are bone animations saved in fbx as deltas from bind pose bone transforms, or as raw transforms relative to the model origin?
+	// @TODO - 	we need to accumulate these local bone transforms as we do every frame when we evaluate the latest anim poses, so we can get the skeleton into T-pose
+	// 
+	//	for ( int i = 1; i < BoneCount(); i++ ) {
+	//		const int parentIdx = BoneHierarchy[ i ];
+	//		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
+	//		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
+	//	}
+
 	FbxUtil::HarvestSceneData(
 		scene, 
 		false,
@@ -291,7 +301,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 			} else if ( node->GetParent() != nullptr ) {
 				// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
 				// 1. The bind poses are stored as inverse world space transform matrices.
-				//Invert them, and you'll have world space TM's.
+				// Invert them, and you'll have world space TM's.
 				const fbxsdk::FbxAMatrix worldSpaceTransform = node->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
 
 				// 2. Multiply by the parents inverse TM's and you'll get the local space matrices.
@@ -335,7 +345,6 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 		}, this);
 }
 
-
 /*
 // Frank Luna uses EXTREMELY unclear language, so I reframe it here more explicitly:
 
@@ -361,9 +370,6 @@ a
 	5)								https://animcoding.com/post/animation-tech-intro-part-1-skinning/
 */
 
-// NOTE - if we want a flat hierarchy, it is the CONTENT CREATOR's job to add an identity root bone
-// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
-// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a particle shader )
 void SkinnedData::GetFinalTransforms( 
 	const std::string & clipName, 
 	float timePos, 
@@ -382,9 +388,6 @@ void SkinnedData::GetFinalTransforms(
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ];
 		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-
-		// first, get into bone space ( parent space ) by accumulated transform from parent
-		// now apply the current interpolated transform of THIS bone, in that space
 		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
 	}
 
@@ -396,8 +399,8 @@ void SkinnedData::GetFinalTransforms(
 	// 
 	/*	( READING LEFT TO RIGHT... )
 		FINAL VERT TRANSFORM ( WS ) = 
-			VERT TRANSFORM ( MS ) * [ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) * MODEL TRANSFORM ( WS )
-			* VIEW TRANSFORM ( INV CAM MATRIX WS ) * PROJECTION MATRIX ( -> NDC )
+			VERT TRANSFORM ( MS ) * [ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) * 
+			MODEL TRANSFORM ( WS ) * VIEW TRANSFORM ( INV CAM MATRIX WS ) * PROJECTION MATRIX ( -> NDC )
 
 			( note model -> world transform happens after the skinning stuff bc that stuff all happens in local space model space )
 	

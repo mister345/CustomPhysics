@@ -82,6 +82,9 @@ private:
 	std::map< std::string, AnimationClip > mAnimations;
 
 	// stored in parent - child order, as a flattened tree
+	// NOTE - if we want a flat hierarchy, it is the CONTENT CREATOR's job to add an identity root bone
+	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
+	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a particle shader )
 	std::vector< int > BoneHierarchy;
 
 // https://www.gamedevs.org/uploads/skinned-mesh-and-character-animation-with-directx9.pdf
