@@ -64,7 +64,7 @@ class SkinnedData {
 	friend class AnimationInstance;
 
 public:
-	inline uint32_t BoneCount() const { return RefPoseOffsets_ComponentSpace.size(); };
+	inline uint32_t BoneCount() const { return OffsetMatrices.size(); };
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
@@ -79,8 +79,18 @@ public:
 							 std::vector< BoneTransform > & outFinalTransforms ) const;
 
 private:
+	std::map< std::string, AnimationClip > mAnimations;
+
 	// stored in parent - child order, as a flattened tree
 	std::vector< int > BoneHierarchy;
-	std::vector< BoneTransform > RefPoseOffsets_ComponentSpace;
-	std::map< std::string, AnimationClip > mAnimations;
+
+// https://www.gamedevs.org/uploads/skinned-mesh-and-character-animation-with-directx9.pdf
+// Each bone in the skeleton has a corresponding offset matrix.
+// An offset matrix transforms vertices, in the bind pose, from bind space 
+// to the space of the respective bone ( WHEN THAT BONE IS IN BIND-POSE )
+
+// NOTE - these offset matrices ( HORRIBLE fucking name ), are the INVERSE bind pose matrices of each bone,
+// in MODEL SPACE ( see gif - https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1 )
+// - they undo the Bind Pose transformations of these bones, so that they can be REPLACED with the ANIMATED Pose transformations instead
+	std::vector< BoneTransform > OffsetMatrices;
 };

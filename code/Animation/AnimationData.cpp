@@ -252,7 +252,7 @@ void SkinnedData::Set(
 	}
 
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
-	RefPoseOffsets_ComponentSpace.assign( boneOffsets.begin(), boneOffsets.end() );
+	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
 	mAnimations.insert( animations.begin(), animations.end() );
 }
 
@@ -325,51 +325,60 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 			}
 
 			// finally add the bind pose bone to the list of ref ( bind pose transforms )
-			me->RefPoseOffsets_ComponentSpace.push_back( FbxToBoneTransform( &rotation, &translation ) );
+			me->OffsetMatrices.push_back( FbxToBoneTransform( &rotation, &translation ) );
 
-			const Vec3 & tRef = me->RefPoseOffsets_ComponentSpace.back().translation;
-			const Quat & qRef = me->RefPoseOffsets_ComponentSpace.back().rotation;
+			const Vec3 & tRef = me->OffsetMatrices.back().translation;
+			const Quat & qRef = me->OffsetMatrices.back().rotation;
 			printf( "    Converted:\n" );
 			printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
 			printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
 		}, this);
 }
 
+
+/*
+// Frank Luna uses EXTREMELY unclear language, so I reframe it here more explicitly:
+
+do only once at initialization time:
+0. accumulate transforms of bones 0 ~ n in BIND POSE, and store that info
+
+	every frame:
+1. interpolate the authored bone transforms ( as defined by the animator ) of bones 0~n as a flat array, 
+	each in bone space, based on keyframes ( do NOT concatenate them yet )
+2. accumulate transforms of bones 0 ~ n in the ANIMATED POSE that you just interpolated, and store that info
+3. multiply each of these bone transforms that you have stored, as a flat array ( dont accumulate ), 
+	with the INVERSE of their corresponding bindpose bone transforms stored in step 0, 
+	to define these accumulated bone transforms, RELATIVE to the accumulated bone transforms of the bind pose. 
+	now they are in model space, and RELATIVE to the bind pose.
+4. upload these model space, relative-to-bind-pose bone transforms, to the GPU.
+5. in the GPU ( pretend each vert is only influenced by one bone, ignore blending for now ), multiply each vertex by its corresponding bone transform from step 4.
+a
+	TODO - 
+	1) read							https://www.gamedevs.org/uploads/skinned-mesh-and-character-animation-with-directx9.pdf
+	2) tutorial						https://www.youtube.com/watch?v=f3Cr8Yx3GGA&list=PLRIWtICgwaX2tKWCxdeB7Wv_rTET9JtWW&index=1
+	3) look at how they do skinning https://github.com/vovan4ik123/assimp-Cpp-OpenGL-skeletal-animation
+	4) other refs					https://vladh.net/game-engine-skeletal-animation
+	5)								https://animcoding.com/post/animation-tech-intro-part-1-skinning/
+*/
+
+// NOTE - if we want a flat hierarchy, it is the CONTENT CREATOR's job to add an identity root bone
+// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
+// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a particle shader )
 void SkinnedData::GetFinalTransforms( 
 	const std::string & clipName, 
 	float timePos, 
 	std::vector<BoneTransform> & outFinalTransforms ) const {
 
-	// pre-multiply the ref pose offsets 
-	// ( T-Pose positions of bones, relative to which these bone animations are defined )
-	// @TODO - do these also need to be multiplied in accumulated fashion like hte other transforms,
-	outFinalTransforms.assign( RefPoseOffsets_ComponentSpace.begin(), RefPoseOffsets_ComponentSpace.end() );
-
-	// get all the individual bone transforms( still relative to their parents, as defined in the fbx file ),
-	// but interpolated in the TIME DOMAIN, across their keyframes at this exact time point
-	// @TODO - cache and reuse
+	// interpolate flat array of bone transforms in parent space, in the TIME DOMAIN, based on keyframes at this moment
 	AnimationClip clip = mAnimations.at( clipName );	
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
 	clip.Interpolate( timePos, interpolatedBoneSpaceTransforms );
 
-	/*
-		now concatenate all the transforms leading up to each leaf, to get the full transforms that take us
-		from component space ( skeletal root ), to each respective bone
-		this will be the final weight represented by each bone, that will deform each vertex in the skinning stage
-		( maybe be blended with multiple bones as a matrix palette )
-	*/
-	
-	// prepopulate tree root node because it has no parent
-	// NOTE - root will probably have NO animation so this value should always be identity
-	
-	// concatenate the rest, from root to leaf
-	// NOTE - if we want a flat hiearchy, it is the CONTENT CREATOR's job to add an identity root bone
-	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
-	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a partical shader )
-
-	// When you accumulate local bone transforms from teh ROOT to the leaf,
-	// you are bringing that bone from local space into component space
-
+	/********** Bring the flat array of interpolated bones, into MODEL SPACE **********
+		accumulating local space bone transforms from ROOT -> LEAF 
+			== 
+		converting that LEAF bone from local space -> COMPONENT space ( root space ) 
+	***********************************************************************************/
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ];
 		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
@@ -379,7 +388,24 @@ void SkinnedData::GetFinalTransforms(
 		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
 	}
 
-	// now that the bones are in component space
+	// NOTE - we are pre-concatenating the sequence: inv Bind Pose * Animated Pose
+	// normally, the vertex shader will directly multiply each vert by the inv Bind Pose, then the Animated Pose.
+	// the way we do it multiplies PER bone instead of per vert, so it's effectively representing each bone animation as a DELTA from its bind pose.
+	// ( mathematically same fucking thing ) we do this for debugging, we want to have access to that value to set body transforms directly.
+	// 
+	// 
+	/*	( READING LEFT TO RIGHT... )
+		FINAL VERT TRANSFORM ( WS ) = 
+			VERT TRANSFORM ( MS ) * [ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) * MODEL TRANSFORM ( WS )
+			* VIEW TRANSFORM ( INV CAM MATRIX WS ) * PROJECTION MATRIX ( -> NDC )
+
+			( note model -> world transform happens after the skinning stuff bc that stuff all happens in local space model space )
+	
+		>> Matrix multiplication is Associative ( can regroup ), so we do these two steps in advance, before sending the bones to the GPU:
+			[ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) *
+	*/
+
+	outFinalTransforms.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
 	for ( int i = 0; i < BoneCount(); i++ ) {
 		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
 	}
