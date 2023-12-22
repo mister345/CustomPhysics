@@ -19,11 +19,12 @@ namespace AnimationAssets {
 		switch ( whichAnim ) {
 			case SINGLE_BONE: {
 				int boneCount;
-				std::vector< int > hierarchy;
+				std::vector< BoneInfo_t > hierarchy;
 				std::vector< BoneTransform > boneOffsets;
 				AnimationClip clip;
 
-				hierarchy.assign( { -1 } );
+				BoneInfo_t bInfo = { -1 };
+				hierarchy.assign( { bInfo } );
 				boneOffsets.assign( { BoneTransform::Identity() } );
 				clip.BoneAnimations.assign( { MakeBoneAnim1(), } );
 
@@ -33,7 +34,7 @@ namespace AnimationAssets {
 			}
 			case MULTI_BONE: {
 				int boneCount;
-				std::vector< int > hierarchy;
+				std::vector< BoneInfo_t > hierarchy;
 				std::vector< BoneTransform > boneOffsets;
 				AnimationClip clip;
 
@@ -242,7 +243,7 @@ void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTrans
 }
 
 void SkinnedData::Set( 
-	const std::vector<int> & boneHierarchy, 
+	const std::vector<BoneInfo_t> & boneHierarchy,
 	std::vector<BoneTransform> & boneOffsets, 
 	std::map<std::string, AnimationClip> & animations ) {
 
@@ -342,7 +343,27 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 			printf( "    Converted:\n" );
 			printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
 			printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
-		}, this);
+
+// @TODO - populate the bone hierarchy from the file...
+//			me->BoneHierarchy.push_back( BoneInfo_t() );
+			//me->BoneHierarchy.back().name = //
+			//me->BoneHierarchy.back().transform = //
+			//me->BoneHierarchy.back().parentIdx = //
+
+// @TODO - keep the non - inverted refposes for debug purposes
+//			me->RefPoseTransforms.push_back( FbxToBoneTransform( &rotation, &translation ) );
+	}, this );
+	
+	// @TODO - now that we have populated OffsetMatrices, concatenate them as well
+	//for ( int i = 1; i < BoneCount(); i++ ) {
+	//	const int parentIdx = BoneHierarchy[ i ].parentIdx; // @TODO - modify like this
+	//	const BoneTransform parentSpaceTransform = OffsetMatrices[ parentIdx ];
+	//	OffsetMatrices[ i ] = parentSpaceTransform * OffsetMatrices[ i ];
+
+	//	printf( "    Concatenated:\n" );
+	//	printf( "        Translation: %f, %f, %f\n", OffsetMatrices[ i ].translation[ 0 ], OffsetMatrices[ i ].translation[ 1 ], OffsetMatrices[ i ].translation[ 2 ] );
+	//	printf( "        Rotation: %f, %f, %f\n", OffsetMatrices[ i ].rotation.x, OffsetMatrices[ i ].rotation.y, OffsetMatrices[ i ].rotation.z );
+	//}
 }
 
 /*
@@ -386,7 +407,7 @@ void SkinnedData::GetFinalTransforms(
 		converting that LEAF bone from local space -> COMPONENT space ( root space ) 
 	***********************************************************************************/
 	for ( int i = 1; i < BoneCount(); i++ ) {
-		const int parentIdx = BoneHierarchy[ i ];
+		const int parentIdx = BoneHierarchy[ i ].parentIdx;
 		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
 		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
 	}

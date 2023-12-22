@@ -36,7 +36,7 @@ struct AnimationClip {
 		return GetClipStartTime() >= 0.f;
 	}
 
-	// animation for each bone
+	// animation for each bone in the skeleton
 	std::vector< BoneAnimation > BoneAnimations;
 };
 
@@ -61,14 +61,14 @@ namespace AnimationAssets {
 
 // database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE!
 class SkinnedData {
-	friend class AnimationInstance;
+	friend struct AnimationInstance;
 
 public:
 	inline uint32_t BoneCount() const { return OffsetMatrices.size(); };
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
-	void Set( const std::vector< int > & boneHierarchy,
+	void Set( const std::vector< BoneInfo_t > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 
@@ -78,14 +78,16 @@ public:
 							 float timePos,
 							 std::vector< BoneTransform > & outFinalTransforms ) const;
 
-private:
+public:
 	std::map< std::string, AnimationClip > mAnimations;
 
 	// stored in parent - child order, as a flattened tree
 	// NOTE - if we want a flat hierarchy, it is the CONTENT CREATOR's job to add an identity root bone
 	// for consistency, we will still "concatenate" all the bones w that identity, and the hierarchy will look like this:
 	// const std::vector< int > HIERARCHY = { -1, 0, 0, 0, 0, 0, ... }; // ( could be used as a particle shader )
-	std::vector< int > BoneHierarchy;
+//	std::vector< int > BoneHierarchy;
+
+	std::vector< BoneInfo_t > BoneHierarchy;
 
 // https://www.gamedevs.org/uploads/skinned-mesh-and-character-animation-with-directx9.pdf
 // Each bone in the skeleton has a corresponding offset matrix.
@@ -96,4 +98,7 @@ private:
 // in MODEL SPACE ( see gif - https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1 )
 // - they undo the Bind Pose transformations of these bones, so that they can be REPLACED with the ANIMATED Pose transformations instead
 	std::vector< BoneTransform > OffsetMatrices;
+
+	// @TODO - add this exclusively for debug
+	//std::vector< BoneTransform > RefPoseTransforms;
 };

@@ -22,3 +22,16 @@ struct BoneTransform {
 	inline bool IsIdentity() const { return isIdentity; }
 	static BoneTransform Identity();
 };
+
+struct BoneInfo_t {
+	int parentIdx;
+
+	BoneInfo_t( int pi ) : parentIdx( pi ) {}
+
+	// @TODO - add additional mapping data later; 
+	// for now, we'll just do a one-to-one replacement for the sake of 
+	// stable porting old array of indices to this new struct array
+	
+//	BoneTransform transform;
+//	const char * name;
+};
