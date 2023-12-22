@@ -23,10 +23,14 @@ struct BoneTransform {
 	static BoneTransform Identity();
 };
 
-struct BoneInfo_t {
-	int parentIdx;
-
+class BoneInfo_t {
+public:
 	BoneInfo_t( int pi ) : parentIdx( pi ) {}
+
+	inline int GetParent() const { return parentIdx; }
+
+private:
+	int parentIdx;
 
 	// @TODO - add additional mapping data later; 
 	// for now, we'll just do a one-to-one replacement for the sake of 

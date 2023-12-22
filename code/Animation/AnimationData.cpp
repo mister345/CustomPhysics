@@ -23,8 +23,7 @@ namespace AnimationAssets {
 				std::vector< BoneTransform > boneOffsets;
 				AnimationClip clip;
 
-				BoneInfo_t bInfo = { -1 };
-				hierarchy.assign( { bInfo } );
+				hierarchy.assign( { -1 } );
 				boneOffsets.assign( { BoneTransform::Identity() } );
 				clip.BoneAnimations.assign( { MakeBoneAnim1(), } );
 
@@ -407,7 +406,7 @@ void SkinnedData::GetFinalTransforms(
 		converting that LEAF bone from local space -> COMPONENT space ( root space ) 
 	***********************************************************************************/
 	for ( int i = 1; i < BoneCount(); i++ ) {
-		const int parentIdx = BoneHierarchy[ i ].parentIdx;
+		const int parentIdx = BoneHierarchy[ i ].GetParent();
 		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
 		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
 	}
