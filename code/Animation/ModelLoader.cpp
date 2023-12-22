@@ -77,14 +77,6 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	// Data Extraction Functions
 	/////////////////////////////////////
-	void ProcessBoneNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * userData ) {
-		PrintBone( pNode );
-		if ( onFoundBone == nullptr ) {
-			assert( !"ON FOUND BONE CALLBACK WAS NULLPTR!!!!" );
-		}
-		onFoundBone( userData, pNode );
-	}
-
 	void ProcessNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
 			PrintNode( pNode );
@@ -92,8 +84,11 @@ namespace FbxUtil {
 				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 				if ( pAttribute != nullptr ) {
 					PrintAttribute( pAttribute );
-					if ( pAttribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton ) {
-						ProcessBoneNode( pNode, onFoundBone, dataRecipient );
+					if ( pAttribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton &&
+						 onFoundBone != nullptr ) {
+
+						PrintBone( pNode );
+						onFoundBone( dataRecipient, pNode );
 					}
 				}
 			}

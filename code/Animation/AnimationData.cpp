@@ -286,7 +286,9 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	FbxUtil::HarvestSceneData(
 		scene, 
 		false,
+		// fn_onFoundBone
 		[]( void * userData, fbxsdk::FbxNode * node ) {
+			
 			SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
 			fbxsdk::FbxVector4 translation;
 			fbxsdk::FbxQuaternion rotation;
@@ -313,14 +315,14 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 				// 4. Convert the matrix to a quaternion, and you'll get the combined PreRotate * Rotate * PostRotate.
 				// Pre and Post multiply the inverse Pre/Post rotate quats you get from the FBX sdk and you'll be able to extract the actual rotation values.
 				// ( mayube not necessary if u use the alt function, EvaluateLocalTransform, not go thru matrices )
-				const fbxsdk::FbxVector4 preV  = node->GetPreRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
+				const fbxsdk::FbxVector4 preV = node->GetPreRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
 				fbxsdk::FbxQuaternion preQ(
 					preV.mData[ 0 ],
 					preV.mData[ 1 ],
 					preV.mData[ 2 ],
 					preV.mData[ 3 ]
 				);
-				const fbxsdk::FbxVector4 postV  = node->GetPostRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
+				const fbxsdk::FbxVector4 postV = node->GetPostRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
 				fbxsdk::FbxQuaternion postQ(
 					postV.mData[ 0 ],
 					postV.mData[ 1 ],
@@ -334,14 +336,20 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 				const fbxsdk::FbxQuaternion Q = preQ * q * postQ;
 			}
 
-			// finally add the bind pose bone to the list of ref ( bind pose transforms )
 			me->OffsetMatrices.push_back( FbxToBoneTransform( &rotation, &translation ) );
+			const int boneIdx			 = me->OffsetMatrices.size() - 1;
+			const bool bProcessedAlready = !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second;
+			if ( bProcessedAlready ) {
+				return;
+			}
 
-			const Vec3 & tRef = me->OffsetMatrices.back().translation;
-			const Quat & qRef = me->OffsetMatrices.back().rotation;
-			printf( "    Converted:\n" );
-			printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
-			printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
+			const char * parentName = node->GetParent()->GetName();
+			if ( me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end() ) {
+				me->BoneHierarchy.push_back( { me->BoneIdxMap[ parentName ] } );
+			} else {
+				// no parent
+				me->BoneHierarchy.push_back( { -1 } );
+			}
 
 // @TODO - populate the bone hierarchy from the file...
 //			me->BoneHierarchy.push_back( BoneInfo_t() );
@@ -352,17 +360,24 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 // @TODO - keep the non - inverted refposes for debug purposes
 //			me->RefPoseTransforms.push_back( FbxToBoneTransform( &rotation, &translation ) );
 	}, this );
-	
-	// @TODO - now that we have populated OffsetMatrices, concatenate them as well
-	//for ( int i = 1; i < BoneCount(); i++ ) {
-	//	const int parentIdx = BoneHierarchy[ i ].parentIdx; // @TODO - modify like this
-	//	const BoneTransform parentSpaceTransform = OffsetMatrices[ parentIdx ];
-	//	OffsetMatrices[ i ] = parentSpaceTransform * OffsetMatrices[ i ];
 
-	//	printf( "    Concatenated:\n" );
-	//	printf( "        Translation: %f, %f, %f\n", OffsetMatrices[ i ].translation[ 0 ], OffsetMatrices[ i ].translation[ 1 ], OffsetMatrices[ i ].translation[ 2 ] );
-	//	printf( "        Rotation: %f, %f, %f\n", OffsetMatrices[ i ].rotation.x, OffsetMatrices[ i ].rotation.y, OffsetMatrices[ i ].rotation.z );
-	//}
+	//const Vec3 & tRef = me->OffsetMatrices.back().translation;
+	//const Quat & qRef = me->OffsetMatrices.back().rotation;
+	//printf( "    Converted:\n" );
+	//printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
+	//printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
+
+	// @TODO - now that we have populated OffsetMatrices, concatenate them as well
+	for ( int i = 1; i < BoneCount(); i++ ) {
+		const int parentIdx = BoneHierarchy[ i ].GetParent(); // @TODO - modify like this
+		if ( parentIdx >= 0 ) {
+			const BoneTransform parentSpaceTransform = OffsetMatrices[ parentIdx ];
+			OffsetMatrices[ i ] = parentSpaceTransform * OffsetMatrices[ i ];
+			printf( "    Concatenated:\n" );
+			printf( "        Translation: %f, %f, %f\n", OffsetMatrices[ i ].translation[ 0 ], OffsetMatrices[ i ].translation[ 1 ], OffsetMatrices[ i ].translation[ 2 ] );
+			printf( "        Rotation: %f, %f, %f\n", OffsetMatrices[ i ].rotation.x, OffsetMatrices[ i ].rotation.y, OffsetMatrices[ i ].rotation.z );
+		}
+	}
 }
 
 /*

@@ -26,7 +26,6 @@ struct BoneTransform {
 class BoneInfo_t {
 public:
 	BoneInfo_t( int pi ) : parentIdx( pi ) {}
-
 	inline int GetParent() const { return parentIdx; }
 
 private:
@@ -37,5 +36,4 @@ private:
 	// stable porting old array of indices to this new struct array
 	
 //	BoneTransform transform;
-//	const char * name;
 };

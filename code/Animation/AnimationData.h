@@ -4,6 +4,7 @@
 #include <string>
 #include "../Physics/Body.h"
 #include "Bone.h"
+#include <unordered_map>
 
 namespace fbxsdk {
 class FbxScene;
@@ -99,6 +100,7 @@ public:
 // - they undo the Bind Pose transformations of these bones, so that they can be REPLACED with the ANIMATED Pose transformations instead
 	std::vector< BoneTransform > OffsetMatrices;
 
+	std::unordered_map< const char *, int > BoneIdxMap;
 	// @TODO - add this exclusively for debug
 	//std::vector< BoneTransform > RefPoseTransforms;
 };
