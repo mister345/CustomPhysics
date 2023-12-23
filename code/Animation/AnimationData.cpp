@@ -270,104 +270,92 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 	};
 }
 
+//// legacy broken method
+//// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
+//// 1. The bind poses are stored as inverse world space transform matrices.
+//// Invert them, and you'll have world space TM's.
+//const fbxsdk::FbxAMatrix worldSpaceTransform = node->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
+
+//// 2. Multiply by the parents inverse TM's and you'll get the local space matrices.
+//const fbxsdk::FbxAMatrix localSpaceTransform = worldSpaceTransform * node->GetParent()->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
+
+//// 3. Extract the translation direct from the matrix. ( skip scale )
+//const fbxsdk::FbxVector4 localSpaceTrans = localSpaceTransform.GetT();
+
+//// 4. Convert the matrix to a quaternion, and you'll get the combined PreRotate * Rotate * PostRotate.
+//// Pre and Post multiply the inverse Pre/Post rotate quats you get from the FBX sdk and you'll be able to extract the actual rotation values.
+//// ( mayube not necessary if u use the alt function, EvaluateLocalTransform, not go thru matrices )
+//const fbxsdk::FbxVector4 preV = node->GetPreRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
+//fbxsdk::FbxQuaternion preQ(
+//	preV.mData[ 0 ],
+//	preV.mData[ 1 ],
+//	preV.mData[ 2 ],
+//	preV.mData[ 3 ]
+//);
+//const fbxsdk::FbxVector4 postV = node->GetPostRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
+//fbxsdk::FbxQuaternion postQ(
+//	postV.mData[ 0 ],
+//	postV.mData[ 1 ],
+//	postV.mData[ 2 ],
+//	postV.mData[ 3 ]
+//);
+
+//preQ.Inverse();
+//fbxsdk::FbxQuaternion q = localSpaceTransform.GetQ();
+//postQ.Inverse();
+//const fbxsdk::FbxQuaternion Q = preQ * q * postQ;
+
+//const Vec3 & tRef = me->OffsetMatrices.back().translation;
+//const Quat & qRef = me->OffsetMatrices.back().rotation;
+//printf( "    Converted:\n" );
+//printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
+//printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
+
+void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
+
+	SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
+
+	fbxsdk::FbxVector4 translation;
+	fbxsdk::FbxQuaternion rotation;
+
+	// convert to bind pose
+	// just trust fbx sdk and get the local transform directly ( naiive approach, see if it works )
+	fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
+	translation = localTransform.GetT();
+	rotation = localTransform.GetQ();
+
+	me->OffsetMatrices.push_back( SkinnedData::FbxToBoneTransform( &rotation, &translation ) );
+	const int boneIdx = me->OffsetMatrices.size() - 1;
+	const bool bProcessedAlready = !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second;
+	if ( bProcessedAlready ) {
+		return;
+	}
+
+	const char * parentName = node->GetParent()->GetName();
+	if ( me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end() ) {
+		me->BoneHierarchy.push_back( { me->BoneIdxMap[ parentName ] } );
+	} else {
+		// no parent
+		me->BoneHierarchy.push_back( { -1 } );
+	}
+
+	// @TODO - populate the bone hierarchy from the file...
+	//			me->BoneHierarchy.push_back( BoneInfo_t() );
+				//me->BoneHierarchy.back().name = //
+				//me->BoneHierarchy.back().transform = //
+				//me->BoneHierarchy.back().parentIdx = //
+
+	// @TODO - keep the non - inverted refposes for debug purposes
+	//			me->RefPoseTransforms.push_back( FbxToBoneTransform( &rotation, &translation ) );
+}
+
+// @TODO - how do we get the bind poses in model space?
+// @TODO - are bone animations saved in fbx as deltas from bind pose bone transforms, or as raw transforms relative to the model origin?
+// @TODO - 	we need to accumulate these local bone transforms as we do every frame when we evaluate the latest anim poses, so we can get the skeleton into T-pose
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
-	using namespace fbxsdk;
+	FbxUtil::HarvestSceneData( scene, false, &OnFoundBoneCB, this );
 
-	// @TODO - how do we get the bind poses in model space?
-	// @TODO - are bone animations saved in fbx as deltas from bind pose bone transforms, or as raw transforms relative to the model origin?
-	// @TODO - 	we need to accumulate these local bone transforms as we do every frame when we evaluate the latest anim poses, so we can get the skeleton into T-pose
-	// 
-	//	for ( int i = 1; i < BoneCount(); i++ ) {
-	//		const int parentIdx = BoneHierarchy[ i ];
-	//		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-	//		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
-	//	}
-
-	FbxUtil::HarvestSceneData(
-		scene, 
-		false,
-		// fn_onFoundBone
-		[]( void * userData, fbxsdk::FbxNode * node ) {
-			
-			SkinnedData * me = reinterpret_cast< SkinnedData * >( userData );
-			fbxsdk::FbxVector4 translation;
-			fbxsdk::FbxQuaternion rotation;
-
-			// convert to bind pose
-			static constexpr bool useMethodA = true;
-			if ( useMethodA ) { 
-				// just trust fbx sdk and get the local transform directly ( naiive approach, see if it works )
-				fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
-				translation = localTransform.GetT();
-				rotation	= localTransform.GetQ();
-			} else if ( node->GetParent() != nullptr ) {
-				// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
-				// 1. The bind poses are stored as inverse world space transform matrices.
-				// Invert them, and you'll have world space TM's.
-				const fbxsdk::FbxAMatrix worldSpaceTransform = node->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
-
-				// 2. Multiply by the parents inverse TM's and you'll get the local space matrices.
-				const fbxsdk::FbxAMatrix localSpaceTransform = worldSpaceTransform * node->GetParent()->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
-
-				// 3. Extract the translation direct from the matrix. ( skip scale )
-				const fbxsdk::FbxVector4 localSpaceTrans = localSpaceTransform.GetT();
-
-				// 4. Convert the matrix to a quaternion, and you'll get the combined PreRotate * Rotate * PostRotate.
-				// Pre and Post multiply the inverse Pre/Post rotate quats you get from the FBX sdk and you'll be able to extract the actual rotation values.
-				// ( mayube not necessary if u use the alt function, EvaluateLocalTransform, not go thru matrices )
-				const fbxsdk::FbxVector4 preV = node->GetPreRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
-				fbxsdk::FbxQuaternion preQ(
-					preV.mData[ 0 ],
-					preV.mData[ 1 ],
-					preV.mData[ 2 ],
-					preV.mData[ 3 ]
-				);
-				const fbxsdk::FbxVector4 postV = node->GetPostRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
-				fbxsdk::FbxQuaternion postQ(
-					postV.mData[ 0 ],
-					postV.mData[ 1 ],
-					postV.mData[ 2 ],
-					postV.mData[ 3 ]
-				);
-
-				preQ.Inverse();
-				fbxsdk::FbxQuaternion q = localSpaceTransform.GetQ();
-				postQ.Inverse();
-				const fbxsdk::FbxQuaternion Q = preQ * q * postQ;
-			}
-
-			me->OffsetMatrices.push_back( FbxToBoneTransform( &rotation, &translation ) );
-			const int boneIdx			 = me->OffsetMatrices.size() - 1;
-			const bool bProcessedAlready = !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second;
-			if ( bProcessedAlready ) {
-				return;
-			}
-
-			const char * parentName = node->GetParent()->GetName();
-			if ( me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end() ) {
-				me->BoneHierarchy.push_back( { me->BoneIdxMap[ parentName ] } );
-			} else {
-				// no parent
-				me->BoneHierarchy.push_back( { -1 } );
-			}
-
-// @TODO - populate the bone hierarchy from the file...
-//			me->BoneHierarchy.push_back( BoneInfo_t() );
-			//me->BoneHierarchy.back().name = //
-			//me->BoneHierarchy.back().transform = //
-			//me->BoneHierarchy.back().parentIdx = //
-
-// @TODO - keep the non - inverted refposes for debug purposes
-//			me->RefPoseTransforms.push_back( FbxToBoneTransform( &rotation, &translation ) );
-	}, this );
-
-	//const Vec3 & tRef = me->OffsetMatrices.back().translation;
-	//const Quat & qRef = me->OffsetMatrices.back().rotation;
-	//printf( "    Converted:\n" );
-	//printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
-	//printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
-
-	// @TODO - now that we have populated OffsetMatrices, concatenate them as well
+	// accumulate local bone transforms to bring into component space
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ].GetParent(); // @TODO - modify like this
 		if ( parentIdx >= 0 ) {

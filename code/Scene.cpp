@@ -114,6 +114,7 @@ void Scene::Initialize() {
 	}
 
 	if ( RUN_ANIMATION ) {
+		InitializeAnimInstanceDemo();
 		InitializeAnimatedBodies();
 	}
 
@@ -129,10 +130,10 @@ void Scene::Initialize() {
 	);
 }
 
-void Scene::InitializeAnimatedBodies() {
-	///////////////////////////////////////////////////////////////////////
-	// animated bodies
-	///////////////////////////////////////////////////////////////////////
+void Scene::InitializeAnimInstanceDemo() {
+	if ( bAnimDataInitialized ) {
+		return;
+	}
 	switch ( ANIM_TYPE ) {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
@@ -158,7 +159,10 @@ void Scene::InitializeAnimatedBodies() {
 			break;
 		}
 	}
+	bAnimDataInitialized = true;
+}
 
+void Scene::InitializeAnimatedBodies() {
 	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
 	const Vec3 worldPos = Vec3( 0, 0, 10 );
 	const int numBones = animInstanceDemo.animData->BoneCount();

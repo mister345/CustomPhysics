@@ -10,6 +10,7 @@ namespace fbxsdk {
 class FbxScene;
 class FbxQuaternion;
 class FbxVector4;
+class FbxNode;
 }
 
 struct Keyframe {
