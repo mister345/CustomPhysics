@@ -271,47 +271,6 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 	};
 }
 
-//// legacy broken method
-//// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
-//// 1. The bind poses are stored as inverse world space transform matrices.
-//// Invert them, and you'll have world space TM's.
-//const fbxsdk::FbxAMatrix worldSpaceTransform = node->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
-
-//// 2. Multiply by the parents inverse TM's and you'll get the local space matrices.
-//const fbxsdk::FbxAMatrix localSpaceTransform = worldSpaceTransform * node->GetParent()->EvaluateGlobalTransform( FBXSDK_TIME_INFINITE ).Inverse();
-
-//// 3. Extract the translation direct from the matrix. ( skip scale )
-//const fbxsdk::FbxVector4 localSpaceTrans = localSpaceTransform.GetT();
-
-//// 4. Convert the matrix to a quaternion, and you'll get the combined PreRotate * Rotate * PostRotate.
-//// Pre and Post multiply the inverse Pre/Post rotate quats you get from the FBX sdk and you'll be able to extract the actual rotation values.
-//// ( mayube not necessary if u use the alt function, EvaluateLocalTransform, not go thru matrices )
-//const fbxsdk::FbxVector4 preV = node->GetPreRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
-//fbxsdk::FbxQuaternion preQ(
-//	preV.mData[ 0 ],
-//	preV.mData[ 1 ],
-//	preV.mData[ 2 ],
-//	preV.mData[ 3 ]
-//);
-//const fbxsdk::FbxVector4 postV = node->GetPostRotation( fbxsdk::FbxNode::EPivotSet::eSourcePivot );
-//fbxsdk::FbxQuaternion postQ(
-//	postV.mData[ 0 ],
-//	postV.mData[ 1 ],
-//	postV.mData[ 2 ],
-//	postV.mData[ 3 ]
-//);
-
-//preQ.Inverse();
-//fbxsdk::FbxQuaternion q = localSpaceTransform.GetQ();
-//postQ.Inverse();
-//const fbxsdk::FbxQuaternion Q = preQ * q * postQ;
-
-//const Vec3 & tRef = me->OffsetMatrices.back().translation;
-//const Quat & qRef = me->OffsetMatrices.back().rotation;
-//printf( "    Converted:\n" );
-//printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
-//printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
-
 // @TODO - do we need to undo the pre- and pos- rotation quats?
 // https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
 void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
@@ -333,9 +292,6 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
 	me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
 }
 
-// @TODO - how do we get the bind poses in model space?
-// @TODO - are bone animations saved in fbx as deltas from bind pose bone transforms, or as raw transforms relative to the model origin?
-// @TODO - 	we need to accumulate these local bone transforms as we do every frame when we evaluate the latest anim poses, so we can get the skeleton into T-pose
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	FbxUtil::HarvestSceneData( scene, false, &OnFoundBoneCB, this );
 
