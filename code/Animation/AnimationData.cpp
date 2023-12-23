@@ -4,6 +4,7 @@
 #include "../Math/Quat.h"
 #include "AnimationData.h"
 #include "AnimationState.h"
+#include <algorithm>
 
 namespace AnimationAssets {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
@@ -311,42 +312,25 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 //printf( "        Translation: %f, %f, %f\n", tRef[ 0 ], tRef[ 1 ], tRef[ 2 ] );
 //printf( "        Rotation: %f, %f, %f\n", qRef.x, qRef.y, qRef.z );
 
+// @TODO - do we need to undo the pre- and pos- rotation quats?
+// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
 void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
 
 	SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
 
-	fbxsdk::FbxVector4 translation;
-	fbxsdk::FbxQuaternion rotation;
-
-	// convert to bind pose
-	// just trust fbx sdk and get the local transform directly ( naiive approach, see if it works )
 	fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
-	translation = localTransform.GetT();
-	rotation = localTransform.GetQ();
+	fbxsdk::FbxVector4 translation    = localTransform.GetT();
+	fbxsdk::FbxQuaternion rotation    = localTransform.GetQ();
 
 	me->OffsetMatrices.push_back( SkinnedData::FbxToBoneTransform( &rotation, &translation ) );
 	const int boneIdx = me->OffsetMatrices.size() - 1;
-	const bool bProcessedAlready = !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second;
-	if ( bProcessedAlready ) {
+	if ( !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second ) {
 		return;
 	}
 
 	const char * parentName = node->GetParent()->GetName();
-	if ( me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end() ) {
-		me->BoneHierarchy.push_back( { me->BoneIdxMap[ parentName ] } );
-	} else {
-		// no parent
-		me->BoneHierarchy.push_back( { -1 } );
-	}
-
-	// @TODO - populate the bone hierarchy from the file...
-	//			me->BoneHierarchy.push_back( BoneInfo_t() );
-				//me->BoneHierarchy.back().name = //
-				//me->BoneHierarchy.back().transform = //
-				//me->BoneHierarchy.back().parentIdx = //
-
-	// @TODO - keep the non - inverted refposes for debug purposes
-	//			me->RefPoseTransforms.push_back( FbxToBoneTransform( &rotation, &translation ) );
+	const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
+	me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
 }
 
 // @TODO - how do we get the bind poses in model space?
@@ -357,15 +341,16 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 
 	// accumulate local bone transforms to bring into component space
 	for ( int i = 1; i < BoneCount(); i++ ) {
-		const int parentIdx = BoneHierarchy[ i ].GetParent(); // @TODO - modify like this
+		const int parentIdx = BoneHierarchy[ i ].GetParent();
 		if ( parentIdx >= 0 ) {
 			const BoneTransform parentSpaceTransform = OffsetMatrices[ parentIdx ];
 			OffsetMatrices[ i ] = parentSpaceTransform * OffsetMatrices[ i ];
-			printf( "    Concatenated:\n" );
-			printf( "        Translation: %f, %f, %f\n", OffsetMatrices[ i ].translation[ 0 ], OffsetMatrices[ i ].translation[ 1 ], OffsetMatrices[ i ].translation[ 2 ] );
-			printf( "        Rotation: %f, %f, %f\n", OffsetMatrices[ i ].rotation.x, OffsetMatrices[ i ].rotation.y, OffsetMatrices[ i ].rotation.z );
 		}
 	}
+
+	OffsetMatrices_DIRECT_DEBUG.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
+	std::transform( OffsetMatrices.begin(), OffsetMatrices.end(), OffsetMatrices.begin(),
+					[]( BoneTransform & bTransform ) { return bTransform.Inverse(); } );
 }
 
 /*
@@ -393,15 +378,11 @@ a
 	5)								https://animcoding.com/post/animation-tech-intro-part-1-skinning/
 */
 
-void SkinnedData::GetFinalTransforms( 
-	const std::string & clipName, 
-	float timePos, 
-	std::vector<BoneTransform> & outFinalTransforms ) const {
-
+void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	// interpolate flat array of bone transforms in parent space, in the TIME DOMAIN, based on keyframes at this moment
-	AnimationClip clip = mAnimations.at( clipName );	
+	AnimationClip clip = mAnimations.at( cName );
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
-	clip.Interpolate( timePos, interpolatedBoneSpaceTransforms );
+	clip.Interpolate( time, interpolatedBoneSpaceTransforms );
 
 	/********** Bring the flat array of interpolated bones, into MODEL SPACE **********
 		accumulating local space bone transforms from ROOT -> LEAF 

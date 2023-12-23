@@ -17,7 +17,10 @@ Scene
 */
 
 // CONFIG
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
+//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
+//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static constexpr bool RUN_ANIMATION					   = true;
 static constexpr bool RUN_PHYSICS_SIM				   = false;

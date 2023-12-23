@@ -21,6 +21,9 @@ struct BoneTransform {
 
 	inline bool IsIdentity() const { return isIdentity; }
 	static BoneTransform Identity();
+	BoneTransform Inverse() const {
+		return isIdentity ? *this : BoneTransform( rotation.Inverse(), translation * -1.f, isIdentity );
+	}
 };
 
 class BoneInfo_t {

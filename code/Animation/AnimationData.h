@@ -100,8 +100,7 @@ public:
 // in MODEL SPACE ( see gif - https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1 )
 // - they undo the Bind Pose transformations of these bones, so that they can be REPLACED with the ANIMATED Pose transformations instead
 	std::vector< BoneTransform > OffsetMatrices;
+	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
 
 	std::unordered_map< const char *, int > BoneIdxMap;
-	// @TODO - add this exclusively for debug
-	//std::vector< BoneTransform > RefPoseTransforms;
 };

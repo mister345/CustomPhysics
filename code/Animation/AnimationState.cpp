@@ -20,7 +20,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 
 	if ( animData->mAnimations.empty() ) {
 		// if no anims, just T-pose
-		initialTransforms.assign( animData->OffsetMatrices.begin(), animData->OffsetMatrices.end() );
+		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
 	} else {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	}
