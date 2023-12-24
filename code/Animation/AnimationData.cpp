@@ -6,6 +6,10 @@
 #include "AnimationState.h"
 #include <algorithm>
 
+#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimstack.h"
+#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimcurve.h"
+#include <cassert>
+
 namespace AnimationAssets {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
 	const char * animNames[ eWhichAnim::COUNT + 1 ] = {
@@ -22,7 +26,7 @@ namespace AnimationAssets {
 				int boneCount;
 				std::vector< BoneInfo_t > hierarchy;
 				std::vector< BoneTransform > boneOffsets;
-				AnimationClip clip;
+				AnimationClip clip( 1 );
 
 				hierarchy.assign( { -1 } );
 				boneOffsets.assign( { BoneTransform::Identity() } );
@@ -33,10 +37,11 @@ namespace AnimationAssets {
 				break;
 			}
 			case MULTI_BONE: {
-				int boneCount;
+				constexpr int boneCount = 9;
+
 				std::vector< BoneInfo_t > hierarchy;
 				std::vector< BoneTransform > boneOffsets;
-				AnimationClip clip;
+				AnimationClip clip( boneCount );
 
 				hierarchy.assign( { -1, 0, 1, 2, 3, 4, 5, 6, 7 } );
 				boneOffsets.assign( { { { 0, 0, 0, 1 }, { 0, 0 * 2.f, 0 }, true, },
@@ -48,8 +53,8 @@ namespace AnimationAssets {
 									  { { 0, 0, 0, 1 }, { 0, 12 * 2.f, 0 }, false, },
 									  { { 0, 0, 0, 1 }, { 0, 14 * 2.f, 0 }, false, },
 									  { { 0, 0, 0, 1 }, { 0, 16 * 2.f, 0 }, false, } } );
+				assert( hierarchy.size() == boneCount && boneOffsets.size() == boneCount );
 
-//				BoneAnimation boneAnim = MakeBoneAnim0();
 				BoneAnimation boneAnim = MakeBoneAnim1();
 				clip.BoneAnimations.assign( { { { } },
 											  boneAnim,
@@ -60,6 +65,7 @@ namespace AnimationAssets {
 											  boneAnim,
 											  boneAnim,
 											  boneAnim } );
+				assert( clip.BoneAnimations.size() == boneCount );
 
 				std::map< std::string, AnimationClip > animMap = { { animNames[ whichAnim ], clip } };
 				skinnedData->Set( hierarchy, boneOffsets, animMap );
@@ -271,11 +277,17 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 	};
 }
 
+std::string MakePropName( const std::string & nodeName, const fbxsdk::FbxProperty & prop ) {
+	return nodeName + "_" + std::string( prop.GetHierarchicalName() );
+}
+
 // @TODO - do we need to undo the pre- and pos- rotation quats?
 // https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
 void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
+	assert( node->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
 
-	SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
+	SkinnedData * me	  = reinterpret_cast< SkinnedData * >( user );
+	const char * boneName = node->GetName();
 
 	fbxsdk::FbxAMatrix localTransform = node->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
 	fbxsdk::FbxVector4 translation    = localTransform.GetT();
@@ -283,18 +295,119 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
 
 	me->OffsetMatrices.push_back( SkinnedData::FbxToBoneTransform( &rotation, &translation ) );
 	const int boneIdx = me->OffsetMatrices.size() - 1;
-	if ( !me->BoneIdxMap.insert( { node->GetName(), boneIdx } ).second ) {
+	if ( !me->BoneIdxMap.insert( { boneName, boneIdx } ).second ) {
 		return;
 	}
 
 	const char * parentName = node->GetParent()->GetName();
 	const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
 	me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
+
+	// map bone names to properties so we can find them later from animations
+	// @TODO - this way of uniquely mapping is obviously broken; need to get the unique identifier from curve instead
+	// so we can later map the curve to the bone name when we find animations inside of OnFoundAnimCB
+	fbxsdk::FbxAnimLayer * layer = me->activeLayer;
+	std::string curveNameS = node->LclScaling.GetCurve( layer )->GetName();
+	std::string curveNameR = node->LclRotation.GetCurve( layer )->GetName();
+	std::string curveNameT = node->LclTranslation.GetCurve( layer )->GetName();
+
+	std::string nodeName = node->GetName();
+	std::string s0 = MakePropName( nodeName, node->LclScaling );
+	std::string s1 = MakePropName( nodeName, node->LclRotation );
+	std::string s2 = MakePropName( nodeName, node->LclTranslation );
+	me->propsToBoneNames[ s0 ] = boneName;
+	me->propsToBoneNames[ s1 ] = boneName;
+	me->propsToBoneNames[ s2 ] = boneName;
+}
+
+const char * SkinnedData::FindBoneFromCurve( fbxsdk::FbxNode * node, fbxsdk::FbxAnimCurve * curve ) const {
+	fbxsdk::FbxProperty prop = curve->GetDstProperty();
+	if ( !prop.IsValid() ) {
+		return nullptr;
+	}
+
+	const std::string propName = MakePropName( node->GetName(), prop );
+//	const std::string propName = prop.GetHierarchicalName();
+	if ( propName.empty() ) {
+		return nullptr;
+	}
+
+	if ( propsToBoneNames.find( propName ) == propsToBoneNames.end() ) {
+		return nullptr;
+	}
+
+	return propsToBoneNames.at( propName ).data();
+}
+
+void OnFoundAnimCB( void * user, fbxsdk::FbxNode * node ) {
+	SkinnedData * me			 = reinterpret_cast< SkinnedData * >( user );
+	fbxsdk::FbxAnimLayer * layer = me->activeLayer;
+	
+	// try all three
+	fbxsdk::FbxAnimCurve * curveX = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
+	fbxsdk::FbxAnimCurve * curveY = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
+	fbxsdk::FbxAnimCurve * curveZ = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
+	const char * boneName = me->FindBoneFromCurve( node, curveX );
+	if ( !boneName ){
+		boneName = me->FindBoneFromCurve( node, curveY );
+		if ( !boneName ) {
+			boneName = me->FindBoneFromCurve( node, curveZ );
+			if ( !boneName ) {
+				assert( !"FOUND NO BONES ASSOCIATED WITH THIS CURVE!!!!" );
+				return;
+			}
+		}
+	}
+
+	BoneAnimation & bAnim = me->mAnimations[ me->activeAnimName.data() ].BoneAnimations[ me->BoneIdxMap.at( boneName ) ];
+	me->FillBoneAnimKeyframes( node, layer, bAnim );
+}
+
+void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
+	fbxsdk::FbxAnimCurve * curveX = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
+	fbxsdk::FbxAnimCurve * curveY = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
+	fbxsdk::FbxAnimCurve * curveZ = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
+
+	// Determine the number of keyframes. For simplicity, assuming all curves have the same number of keyframes
+	int keyframeCount = curveX ? curveX->KeyGetCount() : 0;
+
+	for ( int k = 0; k < keyframeCount; k++ ) {
+		Keyframe keyframe;
+
+		// Extract time position
+		keyframe.timePos = static_cast< float >( curveX->KeyGetTime( k ).GetSecondDouble() );
+
+		// Extract transforms (translation, rotation, scaling...)
+		// This is a simplified example. You will need to extract and convert rotation and scaling as well
+		keyframe.transform.translation.x = static_cast< float >( curveX->KeyGetValue( k ) );
+		keyframe.transform.translation.y = static_cast< float >( curveY->KeyGetValue( k ) );
+		keyframe.transform.translation.z = static_cast< float >( curveZ->KeyGetValue( k ) );
+
+		// Add the keyframe to the bone animation
+		outBoneAnim.keyframes.push_back( keyframe );
+	}
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
-	FbxUtil::HarvestSceneData( scene, false, &OnFoundBoneCB, this );
+	// set active layer first so that the per-node callbacks can access it later
+	fbxsdk::FbxAnimStack * animStack = scene->GetCurrentAnimationStack();
+	activeLayer = animStack->GetMember<fbxsdk::FbxAnimLayer>();
+	activeAnimName = animStack->GetName();
+	assert( activeLayer != nullptr && !activeAnimName.empty() );
 
+	std::string layerName = activeLayer->GetName();
+
+	// first we need to get the bone hierarchy and populat the bone property map
+	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
+	FbxUtil::HarvestSceneData( scene, false, cb, this );
+
+	assert( BoneCount() > 0 );
+	mAnimations.insert( { activeAnimName.data(), BoneCount() } );
+
+	// then we can populate the anim data
+	cb = { nullptr, &OnFoundAnimCB };
+	FbxUtil::HarvestSceneData( scene, false, cb, this );
+	
 	// accumulate local bone transforms to bring into component space
 	for ( int i = 1; i < BoneCount(); i++ ) {
 		const int parentIdx = BoneHierarchy[ i ].GetParent();

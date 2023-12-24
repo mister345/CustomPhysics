@@ -77,23 +77,31 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	// Data Extraction Functions
 	/////////////////////////////////////
-	void ProcessNode( fbxsdk::FbxNode * pNode, onFoundBoneNode_fn onFoundBone, void * dataRecipient ) {
+	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
 			PrintNode( pNode );
 			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
 				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 				if ( pAttribute != nullptr ) {
 					PrintAttribute( pAttribute );
-					if ( pAttribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton &&
-						 onFoundBone != nullptr ) {
+
+					if( pNode->GetNodeAttribute()->GetAttributeType() == 
+						fbxsdk::FbxNodeAttribute::EType::eSkeleton && 
+						callback.onFoundBone != nullptr ) {
 
 						PrintBone( pNode );
-						onFoundBone( dataRecipient, pNode );
+						callback.onFoundBone( dataRecipient, pNode );
+					}
+
+					fbxsdk::FbxAnimStack * animStack = pNode->GetScene()->GetCurrentAnimationStack();
+					if ( animStack != nullptr && 
+						 callback.onFoundAnimNode != nullptr ) {
+						callback.onFoundAnimNode( dataRecipient, pNode );
 					}
 				}
 			}
 			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				ProcessNode( pNode->GetChild( j ), onFoundBone, dataRecipient );
+				ProcessNode( pNode->GetChild( j ), callback, dataRecipient );
 			}
 		}
 	}
@@ -106,7 +114,7 @@ namespace FbxUtil {
 		newAxisSystem.DeepConvertScene( pScene );
 	}
 
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, onFoundBoneNode_fn onFoundBone, void * caller ) {
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const callbackAPI_t & callback, void * caller ) {
 		PrintScene( pScene );
 		if ( bConvert ) {
 			ConvertScene( pScene );
@@ -117,7 +125,7 @@ namespace FbxUtil {
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
 		if ( pRootNode != nullptr ) {
 			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-				ProcessNode( pRootNode->GetChild( i ), onFoundBone, caller );
+				ProcessNode( pRootNode->GetChild( i ), callback, caller );
 			}
 		}
 	}
@@ -141,7 +149,7 @@ namespace FbxUtil {
 		return true;
 	}
 
-	bool LoadFBXFile( const char * filename, onLoadedCallback_t onLoaded, void * userData ) {
+	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData ) {
 		fbxsdk::FbxManager * pManager = nullptr;
 		fbxsdk::FbxImporter * pImporter = nullptr;
 
