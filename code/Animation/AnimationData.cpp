@@ -306,18 +306,18 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * node ) {
 	// map bone names to properties so we can find them later from animations
 	// @TODO - this way of uniquely mapping is obviously broken; need to get the unique identifier from curve instead
 	// so we can later map the curve to the bone name when we find animations inside of OnFoundAnimCB
-	fbxsdk::FbxAnimLayer * layer = me->activeLayer;
-	std::string curveNameS = node->LclScaling.GetCurve( layer )->GetName();
-	std::string curveNameR = node->LclRotation.GetCurve( layer )->GetName();
-	std::string curveNameT = node->LclTranslation.GetCurve( layer )->GetName();
+	//fbxsdk::FbxAnimLayer * layer = me->activeLayer;
+	//std::string curveNameS = node->LclScaling.GetCurve( layer )->GetName();
+	//std::string curveNameR = node->LclRotation.GetCurve( layer )->GetName();
+	//std::string curveNameT = node->LclTranslation.GetCurve( layer )->GetName();
 
-	std::string nodeName = node->GetName();
-	std::string s0 = MakePropName( nodeName, node->LclScaling );
-	std::string s1 = MakePropName( nodeName, node->LclRotation );
-	std::string s2 = MakePropName( nodeName, node->LclTranslation );
-	me->propsToBoneNames[ s0 ] = boneName;
-	me->propsToBoneNames[ s1 ] = boneName;
-	me->propsToBoneNames[ s2 ] = boneName;
+	//std::string nodeName = node->GetName();
+	//std::string s0 = MakePropName( nodeName, node->LclScaling );
+	//std::string s1 = MakePropName( nodeName, node->LclRotation );
+	//std::string s2 = MakePropName( nodeName, node->LclTranslation );
+	//me->propsToBoneNames[ s0 ] = boneName;
+	//me->propsToBoneNames[ s1 ] = boneName;
+	//me->propsToBoneNames[ s2 ] = boneName;
 }
 
 const char * SkinnedData::FindBoneFromCurve( fbxsdk::FbxNode * node, fbxsdk::FbxAnimCurve * curve ) const {
@@ -401,12 +401,12 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
 	FbxUtil::HarvestSceneData( scene, false, cb, this );
 
-	assert( BoneCount() > 0 );
-	mAnimations.insert( { activeAnimName.data(), BoneCount() } );
 
-	// then we can populate the anim data
-	cb = { nullptr, &OnFoundAnimCB };
-	FbxUtil::HarvestSceneData( scene, false, cb, this );
+	// populate the anim data
+	//assert( BoneCount() > 0 );
+	//mAnimations.insert( { activeAnimName.data(), BoneCount() } );
+//	cb = { nullptr, &OnFoundAnimCB };
+//	FbxUtil::HarvestSceneData( scene, false, cb, this );
 	
 	// accumulate local bone transforms to bring into component space
 	for ( int i = 1; i < BoneCount(); i++ ) {

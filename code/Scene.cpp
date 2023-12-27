@@ -19,8 +19,8 @@ Scene
 // CONFIG
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
-//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static constexpr bool RUN_ANIMATION					   = true;
 static constexpr bool RUN_PHYSICS_SIM				   = false;
@@ -141,8 +141,9 @@ void Scene::InitializeAnimInstanceDemo() {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
 			const bool loaded = FbxUtil::LoadFBXFile(
-				//"assets/testSkeleton.fbx",
-				"assets/humanDance.fbx", 
+				// "assets/testSkeleton.fbx",
+				// "assets/human.fbx", 
+				"assets/human_idle.fbx", 
 				[]( bool status, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );

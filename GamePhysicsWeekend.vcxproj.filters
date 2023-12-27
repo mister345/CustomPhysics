@@ -277,8 +277,5 @@
     <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">
       <Filter>code\Animation\assets</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\humanDance.fbx">
-      <Filter>code\Animation\assets</Filter>
-    </CopyFileToFolders>
   </ItemGroup>
 </Project>

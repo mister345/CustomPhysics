@@ -79,7 +79,7 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
-			PrintNode( pNode );
+//			PrintNode( pNode );
 			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
 				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 				if ( pAttribute != nullptr ) {
@@ -89,7 +89,7 @@ namespace FbxUtil {
 						fbxsdk::FbxNodeAttribute::EType::eSkeleton && 
 						callback.onFoundBone != nullptr ) {
 
-						PrintBone( pNode );
+//						PrintBone( pNode );
 						callback.onFoundBone( dataRecipient, pNode );
 					}
 
