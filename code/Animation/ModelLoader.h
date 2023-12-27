@@ -14,7 +14,7 @@ namespace FbxUtil {
 
 	struct callbackAPI_t {
 		onFoundBoneNode_fn onFoundBone;
-		onFoundAnimNode_fn onFoundAnimNode;
+		onFoundAnimNode_fn onFoundAnimCurve;
 	};
 
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );

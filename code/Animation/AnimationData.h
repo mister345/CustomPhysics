@@ -83,7 +83,7 @@ public:
 	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
-	const char * FindBoneFromCurve( fbxsdk::FbxNode * node, fbxsdk::FbxAnimCurve * curve ) const;
+	std::string BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve );
 	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & boneAnim );
 
 //	RUNTIME DATA PROCESSING ( Playback )
@@ -106,7 +106,5 @@ public:
 // https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1
 	std::vector< BoneTransform > OffsetMatrices;
 	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
-	std::unordered_map< const char *, int > BoneIdxMap;
-	// used to find a bone from its associated animation curve
-	std::unordered_map< std::string, std::string > propsToBoneNames;
+	std::unordered_map< std::string, int > BoneIdxMap;
 };

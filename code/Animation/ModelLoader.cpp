@@ -85,21 +85,15 @@ namespace FbxUtil {
 				if ( pAttribute != nullptr ) {
 					PrintAttribute( pAttribute );
 
-					if( pNode->GetNodeAttribute()->GetAttributeType() == 
-						fbxsdk::FbxNodeAttribute::EType::eSkeleton && 
-						callback.onFoundBone != nullptr ) {
+					if( pNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton 
+						&& callback.onFoundBone != nullptr ) {
 
 //						PrintBone( pNode );
 						callback.onFoundBone( dataRecipient, pNode );
 					}
-
-					fbxsdk::FbxAnimStack * animStack = pNode->GetScene()->GetCurrentAnimationStack();
-					if ( animStack != nullptr && 
-						 callback.onFoundAnimNode != nullptr ) {
-						callback.onFoundAnimNode( dataRecipient, pNode );
-					}
 				}
 			}
+
 			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
 				ProcessNode( pNode->GetChild( j ), callback, dataRecipient );
 			}
