@@ -1,7 +1,8 @@
 
-x64/
-Debug/
-.vs/
+/x64
+/Debug
+/.vs
+/libs/FBX/2020.3.4/lib/
 GamePhysicsWeekend.vcxproj.user
 libs/FBX/2020.3.4/samples/
 libs/FBX/2020.3.4/lib/vs2022/arm64
