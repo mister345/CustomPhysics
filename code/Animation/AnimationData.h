@@ -11,6 +11,7 @@ class FbxScene;
 class FbxQuaternion;
 class FbxVector4;
 class FbxNode;
+class FbxAnimStack;
 class FbxAnimLayer;
 class FbxAnimCurve;
 }
@@ -98,8 +99,9 @@ public:
 	std::vector< BoneInfo_t > BoneHierarchy;
 
 	// @TODO - will have to expand this to contain ALL layers
+	fbxsdk::FbxAnimStack * animStack   = nullptr;
 	fbxsdk::FbxAnimLayer * activeLayer = nullptr;
-	std::string activeAnimName;
+	const char * curAnimName = nullptr;
 
 // INVERSE bind pose matrices of each bone, in MODEL SPACE - they undo the Bind Pose transformations of these bones, 
 // so that they can be REPLACED with the ANIMATED Pose ( interpolated bone transforms @ curr time ) 

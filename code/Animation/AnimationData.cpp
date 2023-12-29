@@ -8,7 +8,9 @@
 
 #include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimstack.h"
 #include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimcurve.h"
+#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimevaluator.h"
 #include <cassert>
+
 
 namespace AnimationAssets {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
@@ -285,11 +287,14 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	SkinnedData * me	  = reinterpret_cast< SkinnedData * >( user );
 	const char * boneName = boneNode->GetName();
 
+	/////////////////////////////////////////////////////////////////
+	// Populate OffsetMatrices array Bone Map, and Bone Hierarchy
+	/////////////////////////////////////////////////////////////////
 	fbxsdk::FbxAMatrix localTransform = boneNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
 	fbxsdk::FbxVector4 translation    = localTransform.GetT();
 	fbxsdk::FbxQuaternion rotation    = localTransform.GetQ();
-
 	me->OffsetMatrices.push_back( SkinnedData::FbxToBoneTransform( &rotation, &translation ) );
+
 	const int boneIdx = me->OffsetMatrices.size() - 1;
 	if ( !me->BoneIdxMap.insert( { boneName, boneIdx } ).second ) {
 		return;
@@ -299,69 +304,89 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
 	me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
 
-	// Populate anim data
-	fbxsdk::FbxProperty lProperty = boneNode->GetFirstProperty();
-	while ( lProperty.IsValid() ) {
-		if ( lProperty.GetPropertyDataType().GetType() == eFbxDouble3 ||
-			 lProperty.GetPropertyDataType().GetType() == eFbxDouble4 ||
-			 lProperty.GetPropertyDataType().GetType() == eFbxFloat ) {
-			// This property is a possible candidate for keyframe animation data
+	//////////////////////////////////////
+	// Get all animations for this bone
+	//////////////////////////////////////
+	fbxsdk::FbxAnimStack * curAnimStack = me->animStack;
+	fbxsdk::FbxAnimLayer * curAnimLayer = curAnimStack->GetMember< fbxsdk::FbxAnimLayer >(); // Assume only one layer for now
 
-			fbxsdk::FbxAnimCurveNode * lCurveNode = lProperty.GetCurveNode( me->activeLayer );
-			if ( !lCurveNode ) {
-				// No curve node, so no animation data for this property
-				lProperty = boneNode->GetNextProperty( lProperty );
-				continue;
-			}
+	// @TODO - curAnimName shouldnt be a thing bc this is not STATEFUL
+	AnimationClip & clip = me->mAnimations[ me->curAnimName ];
 
-			// @TODO reconcile this w line 334 ( its already iterating all the channels down there!!! )
-			// If there is a curve node, process each channel (X, Y, Z)
-			for ( int n = 0; n < lCurveNode->GetChannelsCount(); ++n ) {
-				fbxsdk::FbxAnimCurve * lCurve = lCurveNode->GetCurve( n );
-				if ( lCurve ) {
-					const int boneIdx		   = me->BoneIdxMap[ boneName ];
-					AnimationClip & clip	   = me->mAnimations[ me->activeAnimName ];
-					BoneAnimation & boneAnim   = clip.BoneAnimations[ boneIdx ];
-					me->FillBoneAnimKeyframes( boneNode, me->activeLayer, boneAnim );
-				}
-			}
-		}
-		// Move to the next property
-		lProperty = boneNode->GetNextProperty( lProperty );
-	}
+	// Now we pass the responsibility to FillBoneAnimKeyframes to populate the animation
+	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip.BoneAnimations[ boneIdx ] );
+
+	//fbxsdk::FbxProperty lProperty = boneNode->GetFirstProperty();
+	//while ( lProperty.IsValid() ) {
+	//	if ( lProperty.GetPropertyDataType().GetType() == eFbxDouble3 ||
+	//		 lProperty.GetPropertyDataType().GetType() == eFbxDouble4 ||
+	//		 lProperty.GetPropertyDataType().GetType() == eFbxFloat ) {
+	//		// This property is a possible candidate for keyframe animation data
+
+	//		fbxsdk::FbxAnimCurveNode * lCurveNode = lProperty.GetCurveNode( me->activeLayer );
+	//		if ( !lCurveNode ) {
+	//			// No curve node, so no animation data for this property
+	//			lProperty = boneNode->GetNextProperty( lProperty );
+	//			continue;
+	//		}
+
+	//		// @TODO reconcile this w line 334 ( its already iterating all the channels down there!!! )
+	//		// If there is a curve node, process each channel (X, Y, Z)
+	//		for ( int n = 0; n < lCurveNode->GetChannelsCount(); ++n ) {
+	//			fbxsdk::FbxAnimCurve * lCurve = lCurveNode->GetCurve( n );
+	//			if ( lCurve ) {
+	//				const int boneIdx		   = me->BoneIdxMap[ boneName ];
+	//				AnimationClip & clip	   = me->mAnimations[ me->activeAnimName ];
+	//				BoneAnimation & boneAnim   = clip.BoneAnimations[ boneIdx ];
+	//				me->FillBoneAnimKeyframes( boneNode, me->activeLayer, boneAnim );
+	//			}
+	//		}
+	//	}
+	//	// Move to the next property
+	//	lProperty = boneNode->GetNextProperty( lProperty );
+	//}
 }
 
-// @TODO reconcile this w line 320 ( its already iterating all the channels up there!!! )
+// This function assumes that the animation curves for translation and rotation are directly associated with the node,
+// and that the curves are for the node's local translation and rotation
 void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
+	auto GetCurveValue = []( fbxsdk::FbxAnimCurve * curve, int keyIndex ) {
+		return curve ? static_cast< float >( curve->KeyGetValue( keyIndex ) ) : 0.0f;
+	};
+	auto CurveKeyCount = []( fbxsdk::FbxAnimCurve * curve ) {
+		return curve ? curve->KeyGetCount() : 0;
+	};
+
+	// Extract the animation curves for translation
 	fbxsdk::FbxAnimCurve * tCurveX = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
 	fbxsdk::FbxAnimCurve * tCurveY = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
 	fbxsdk::FbxAnimCurve * tCurveZ = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
 
+	// Extract the animation curves for rotation
 	fbxsdk::FbxAnimCurve * rCurveX = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
 	fbxsdk::FbxAnimCurve * rCurveY = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
 	fbxsdk::FbxAnimCurve * rCurveZ = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
 
-	// assume xyzw all same number of keyframes
-	const int keyframeCount  = ( tCurveX ) ? tCurveX->KeyGetCount() : 0;
+	// Ensure we have valid curves and determine the keyframe count
+	int keyframeCount = std::max( { CurveKeyCount( tCurveX ), CurveKeyCount( tCurveY ), CurveKeyCount( tCurveZ ),
+								  CurveKeyCount( rCurveX ), CurveKeyCount( rCurveY ), CurveKeyCount( rCurveZ ) } );
+
 	for ( int k = 0; k < keyframeCount; k++ ) {
 		Keyframe keyframe;
 
-		keyframe.timePos = static_cast< float >( tCurveX->KeyGetTime( k ).GetSecondDouble() );
-		keyframe.transform.translation.x = static_cast< float >( tCurveX->KeyGetValue( k ) );
-		keyframe.transform.translation.y = static_cast< float >( tCurveY->KeyGetValue( k ) );
-		keyframe.transform.translation.z = static_cast< float >( tCurveZ->KeyGetValue( k ) );
+		// Assume the time is the same for all translation and rotation curves
+		keyframe.timePos = static_cast< float >( ( tCurveX ? tCurveX : rCurveX )->KeyGetTime( k ).GetSecondDouble() );
 
-		fbxsdk::FbxVector4 euler(
-			static_cast< float >( rCurveX->KeyGetValue( k ) ),
-			static_cast< float >( rCurveY->KeyGetValue( k ) ),
-			static_cast< float >( rCurveZ->KeyGetValue( k ) )
-		);
+		// Translation
+		keyframe.transform.translation.x = GetCurveValue( tCurveX, k );
+		keyframe.transform.translation.y = GetCurveValue( tCurveY, k );
+		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k );
+
+		// Rotation - converting from Euler to quaternion
+		fbxsdk::FbxVector4 euler( GetCurveValue( rCurveX, k ), GetCurveValue( rCurveY, k ), GetCurveValue( rCurveZ, k ) );	
 		fbxsdk::FbxQuaternion fbxQuat;
 		fbxQuat.ComposeSphericalXYZ( euler );
-		keyframe.transform.rotation = Quat( static_cast< float >( fbxQuat.mData[ 0 ] ),
-											static_cast< float >( fbxQuat.mData[ 1 ] ),
-											static_cast< float >( fbxQuat.mData[ 2 ] ),
-											static_cast< float >( fbxQuat.mData[ 3 ] ) );
+		keyframe.transform.rotation = Quat( fbxQuat[ 0 ], fbxQuat[ 1 ], fbxQuat[ 2 ], fbxQuat[ 3 ] );
 
 		outBoneAnim.keyframes.push_back( keyframe );
 	}
@@ -398,16 +423,18 @@ int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
 // https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	// set active layer first so that the per-node callbacks can access it later
-	fbxsdk::FbxAnimStack * animStack = scene->GetCurrentAnimationStack();
-	activeLayer = animStack->GetMember<fbxsdk::FbxAnimLayer>();
-	activeAnimName = animStack->GetName();
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = activeAnimName.c_str();
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = activeAnimName.c_str();
-	assert( activeLayer != nullptr && !activeAnimName.empty() );
+	animStack				   = scene->GetCurrentAnimationStack();
+	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
+	const std::string animName = animStack->GetName();
+	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName.c_str();
+	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName.c_str();
+	assert( activeLayer != nullptr && !animName.empty() );
 
-	int boneCount = CountBonesInSkeleton( scene->GetRootNode() );
-	mAnimations.insert( { activeAnimName.data(), AnimationClip( boneCount ) } );
+	const int boneCount = CountBonesInSkeleton( scene->GetRootNode() );
+	mAnimations.insert( { animName.data(), AnimationClip( boneCount ) } );
 
+	// @TODO - temp hack to convey this info to bones callback
+	curAnimName = animName.c_str();
 	// first we need to get the bone hierarchy and populat the bone property map
 	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
 	FbxUtil::HarvestSceneData( scene, false, cb, this );

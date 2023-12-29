@@ -143,7 +143,8 @@ void Scene::InitializeAnimInstanceDemo() {
 			const bool loaded = FbxUtil::LoadFBXFile(
 				// "assets/testSkeleton.fbx",
 				// "assets/human.fbx", 
-				"assets/human_idle.fbx", 
+//				"assets/human_idle.fbx", 
+				"assets/humanoid.fbx", 
 				[]( bool status, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );
