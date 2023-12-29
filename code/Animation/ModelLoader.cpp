@@ -35,7 +35,27 @@ namespace FbxUtil {
 		printf( "Up    Axis: %s\n", upAxisString.c_str() );
 		printf( "Fwd   Axis: %s\n", frontAxisString.c_str() );
 	}
-
+	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter ) {
+		// print anim data
+		FBXSDK_printf( "Animation Stack Information\n" );
+		int lAnimStackCount = pImporter->GetAnimStackCount();
+		FBXSDK_printf( "    Number of Animation Stacks: %d\n", lAnimStackCount );
+		FBXSDK_printf( "    Current Animation Stack: \"%s\"\n", pImporter->GetActiveAnimStackName().Buffer() );
+		FBXSDK_printf( "\n" );
+		for ( int i = 0; i < lAnimStackCount; i++ ) {
+			FbxTakeInfo * lTakeInfo = pImporter->GetTakeInfo( i );
+			FBXSDK_printf( "    Animation Stack %d\n", i );
+			FBXSDK_printf( "         Name: \"%s\"\n", lTakeInfo->mName.Buffer() );
+			FBXSDK_printf( "         Description: \"%s\"\n", lTakeInfo->mDescription.Buffer() );
+			// Change the value of the import name if the animation stack should be imported 
+			// under a different name.
+			FBXSDK_printf( "         Import Name: \"%s\"\n", lTakeInfo->mImportName.Buffer() );
+			// Set the value of the import state to false if the animation stack should be not
+			// be imported. 
+			FBXSDK_printf( "         Import State: %s\n", lTakeInfo->mSelect ? "true" : "false" );
+			FBXSDK_printf( "\n" );
+		}
+	}
 	void PrintNode( fbxsdk::FbxNode * pNode ) {
 		printf( "Node Name: %s\n", pNode->GetName() );
 
@@ -55,7 +75,6 @@ namespace FbxUtil {
 		}
 		printf( "    Rotation Order: %s\n", rotOrderStr.c_str() );
 	}
-
 	void PrintBone( fbxsdk::FbxNode * pNode ) {
 		fbxsdk::FbxAMatrix localTransform = pNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
 		fbxsdk::FbxVector4 translation = localTransform.GetT();
@@ -66,7 +85,6 @@ namespace FbxUtil {
 		printf( "        Rotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
 		printf( "        Scaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
 	}
-
 	void PrintAttribute( fbxsdk::FbxNodeAttribute * pAttribute ) {
 		fbxsdk::FbxString typeName = pAttribute->GetTypeName();
 		fbxsdk::FbxString attrName = pAttribute->GetName();
@@ -162,26 +180,7 @@ namespace FbxUtil {
 		// Import the contents of the file into the scene
 		bool lStatus = pImporter->Import( pScene );
 
-		// print anim data
-		FBXSDK_printf( "Animation Stack Information\n" );
-		int lAnimStackCount = pImporter->GetAnimStackCount();
-		FBXSDK_printf( "    Number of Animation Stacks: %d\n", lAnimStackCount );
-		FBXSDK_printf( "    Current Animation Stack: \"%s\"\n", pImporter->GetActiveAnimStackName().Buffer() );
-		FBXSDK_printf( "\n" );
-		for ( int i = 0; i < lAnimStackCount; i++ ) {
-			FbxTakeInfo * lTakeInfo = pImporter->GetTakeInfo( i );
-			FBXSDK_printf( "    Animation Stack %d\n", i );
-			FBXSDK_printf( "         Name: \"%s\"\n", lTakeInfo->mName.Buffer() );
-			FBXSDK_printf( "         Description: \"%s\"\n", lTakeInfo->mDescription.Buffer() );
-			// Change the value of the import name if the animation stack should be imported 
-			// under a different name.
-			FBXSDK_printf( "         Import Name: \"%s\"\n", lTakeInfo->mImportName.Buffer() );
-			// Set the value of the import state to false if the animation stack should be not
-			// be imported. 
-			FBXSDK_printf( "         Import State: %s\n", lTakeInfo->mSelect ? "true" : "false" );
-			FBXSDK_printf( "\n" );
-		}
-		onLoaded( lStatus, pScene, userData );
+		onLoaded( lStatus, pImporter, pScene, userData );
 
 		// Destroy the SDK manager and all other objects it was handling
 		// Destroy the importer

@@ -145,11 +145,12 @@ void Scene::InitializeAnimInstanceDemo() {
 				// "assets/human.fbx", 
 //				"assets/human_idle.fbx", 
 				"assets/humanoid.fbx", 
-				[]( bool status, FbxScene * scene, void * userData ) {
+				[]( bool status, fbxsdk::FbxImporter * pImporter, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );
 						return;
 					}
+					FbxUtil::PrintSceneAnimData( pImporter );
 					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
 					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
 				},
