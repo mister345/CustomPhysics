@@ -267,15 +267,17 @@ void SkinnedData::Set(
 }
 
 BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t ) {
+	const float scale = FbxUtil::g_scale;
+
 	return { { 
 			static_cast< float >( q->mData[ 0 ] ), 
 			static_cast< float >( q->mData[ 1 ] ), 
 			static_cast< float >( q->mData[ 2 ] ), 
 			static_cast< float >( q->mData[ 3 ]  ) 
 		}, { 
-			static_cast< float >( t->mData[ 0 ] ), 
-			static_cast< float >( t->mData[ 1 ] ), 
-			static_cast< float >( t->mData[ 2 ] ) 
+			static_cast< float >( t->mData[ 0 ] * scale ),
+			static_cast< float >( t->mData[ 1 ] * scale ),
+			static_cast< float >( t->mData[ 2 ] * scale )
 		}, false 
 	};
 }
@@ -353,6 +355,8 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 // and that the curves are for the node's local translation and rotation
 //void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
 void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
+	const float scale = FbxUtil::g_scale;
+
 	BoneAnimation & outBoneAnim = clip.BoneAnimations [ whichBoneIdx ];
 
 	auto GetCurveValue = []( fbxsdk::FbxAnimCurve * curve, int keyIndex ) {
@@ -398,9 +402,9 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 		keyframe.timePos = static_cast< float >( ( tCurveX ? tCurveX : rCurveX )->KeyGetTime( k ).GetSecondDouble() );
 
 		// Translation
-		keyframe.transform.translation.x = GetCurveValue( tCurveX, k );
-		keyframe.transform.translation.y = GetCurveValue( tCurveY, k );
-		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k );
+		keyframe.transform.translation.x = GetCurveValue( tCurveX, k ) * scale;
+		keyframe.transform.translation.y = GetCurveValue( tCurveY, k ) * scale;
+		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k ) * scale;
 
 		// Rotation - converting from Euler to quaternion
 		fbxsdk::FbxVector4 euler( GetCurveValue( rCurveX, k ), GetCurveValue( rCurveY, k ), GetCurveValue( rCurveZ, k ) );	

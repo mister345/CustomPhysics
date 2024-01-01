@@ -8,6 +8,8 @@ https://help.autodesk.com/view/FBX/2018/ENU/?guid=FBX_Developer_Help_getting_sta
 #include <fbxsdk.h>
 
 namespace FbxUtil {
+	extern float g_scale;
+
 	typedef void ( *onFoundBoneNode_fn ) ( void * userData, fbxsdk::FbxNode * boneNode );
 	typedef void ( *onFoundAnimNode_fn ) ( void * userData, fbxsdk::FbxNode * animNode );
 	typedef void ( *onLoadedCallback_fn )( bool status, fbxsdk::FbxImporter * pImporter, fbxsdk::FbxScene * scene, void * userData );
@@ -20,5 +22,5 @@ namespace FbxUtil {
 	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const callbackAPI_t & callback, void * caller );
-	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData );
+	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, float scale = 1.f );
 } // namepsace fbx util

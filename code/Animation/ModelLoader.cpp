@@ -3,6 +3,8 @@
 #include <cassert>
 
 namespace FbxUtil {
+	float g_scale = 1.f;
+
 	/////////////////////////////////////
 	// Debug print functions
 	/////////////////////////////////////
@@ -161,7 +163,9 @@ namespace FbxUtil {
 		return true;
 	}
 
-	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData ) {
+	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, float scale /* = 1.f */ ) {
+		g_scale = scale;
+
 		fbxsdk::FbxManager * pManager = nullptr;
 		fbxsdk::FbxImporter * pImporter = nullptr;
 
