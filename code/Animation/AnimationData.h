@@ -82,15 +82,16 @@ public:
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
+	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 	std::string BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve );
-//	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & boneAnim );
 	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
 
 
 //	RUNTIME DATA PROCESSING ( Playback )
-	void GetFinalTransforms( const std::string & clipName,
+	void GetFinalTransforms_OLD( const std::string & clipName,
 							 float timePos,
 							 std::vector< BoneTransform > & outFinalTransforms ) const;
 

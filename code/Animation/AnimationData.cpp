@@ -444,6 +444,16 @@ int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
 	return boneCount;
 }
 
+void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
+	const int parentIdx = BoneHierarchy[ boneIdx ].GetParent();
+	if ( parentIdx < 0 ) {
+		return;
+	}
+
+	BoneTransform & outBoneTransform = inOutBoneTransforms[ boneIdx ];
+	outBoneTransform = inOutBoneTransforms[ parentIdx ] * outBoneTransform;
+}
+
 // https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	// set active layer first so that the per-node callbacks can access it later
@@ -453,30 +463,55 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName;
 	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName;
 	assert( activeLayer != nullptr && !animName.empty() );
-
 	const int boneCount = CountBonesInSkeleton( scene->GetRootNode() );
-	mAnimations.insert( { animName.data(), AnimationClip( boneCount ) } );
 
-	// @TODO - temp hack to convey this info to bones callback
 	curAnimName = animName.c_str();
-	// first we need to get the bone hierarchy and populat the bone property map
+	mAnimations.insert( { curAnimName, AnimationClip( boneCount ) } );
 	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
 	FbxUtil::HarvestSceneData( scene, false, cb, this );
 
-	// @TODO - we already populate the anim data above but we need the bone count
-	
 	// accumulate local bone transforms to bring into component space
-	for ( int i = 1; i < BoneCount(); i++ ) {
-		const int parentIdx = BoneHierarchy[ i ].GetParent();
-		if ( parentIdx >= 0 ) {
-			const BoneTransform parentSpaceTransform = OffsetMatrices[ parentIdx ];
-			OffsetMatrices[ i ] = parentSpaceTransform * OffsetMatrices[ i ];
-		}
+	for ( int i = 1; i < boneCount; i++ ) {
+		BoneSpaceToModelSpace( i, OffsetMatrices );
 	}
 
 	OffsetMatrices_DIRECT_DEBUG.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
 	std::transform( OffsetMatrices.begin(), OffsetMatrices.end(), OffsetMatrices.begin(),
 					[]( BoneTransform & bTransform ) { return bTransform.Inverse(); } );
+}
+
+void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+	const int boneCount = BoneCount();
+	AnimationClip clip = mAnimations.at( cName );
+
+	// get interpolated transform for every bone at THIS TIME
+	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( boneCount );
+	clip.Interpolate( time, interpolatedBoneSpaceTransforms );
+
+	// bring all the interpolated bones into model space ( accumulate from root to leaf )
+	for ( int i = 1; i < boneCount; i++ ) {
+		BoneSpaceToModelSpace( i, interpolatedBoneSpaceTransforms );
+	}
+
+	// premultiply these animated poses, by the inverse bind pose matrices
+	// need for vertices, bc the vert deformations must be relative to bind space, not model space ( as they are defined in the fbx )
+// expected - exploded bone values
+	//outFinalTransforms.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
+	//for ( int i = 0; i < boneCount; i++ ) {
+	//	outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
+	//}
+
+// experiment 1 ( reverse ) - exploaded bone positions
+	//outFinalTransforms = interpolatedBoneSpaceTransforms;
+	//for ( int i = 0; i < boneCount; i++ ) {
+	//	outFinalTransforms[ i ] *= OffsetMatrices[ i ];
+	//}
+
+// experiment 2 - skewed bone values
+	outFinalTransforms = std::vector< BoneTransform >( boneCount, BoneTransform::Identity() );
+	for ( int i = 0; i < boneCount; i++ ) {
+		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
+	}
 }
 
 /*
@@ -504,21 +539,26 @@ a
 	5)								https://animcoding.com/post/animation-tech-intro-part-1-skinning/
 */
 
-void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+void SkinnedData::GetFinalTransforms_OLD( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	// interpolate flat array of bone transforms in parent space, in the TIME DOMAIN, based on keyframes at this moment
 	AnimationClip clip = mAnimations.at( cName );
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
 	clip.Interpolate( time, interpolatedBoneSpaceTransforms );
+	const int boneCount = BoneCount();
+	assert( boneCount > 0 );
 
 	/********** Bring the flat array of interpolated bones, into MODEL SPACE **********
 		accumulating local space bone transforms from ROOT -> LEAF 
 			== 
 		converting that LEAF bone from local space -> COMPONENT space ( root space ) 
 	***********************************************************************************/
-	for ( int i = 1; i < BoneCount(); i++ ) {
-		const int parentIdx = BoneHierarchy[ i ].GetParent();
-		const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-		interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
+	//for ( int i = 1; i < BoneCount(); i++ ) {
+	//	const int parentIdx = BoneHierarchy[ i ].GetParent();
+	//	const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
+	//	interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
+	//}
+	for ( int i = 1; i < boneCount; i++ ) {
+		BoneSpaceToModelSpace( i, interpolatedBoneSpaceTransforms );
 	}
 
 	// NOTE - we are pre-concatenating the sequence: inv Bind Pose * Animated Pose

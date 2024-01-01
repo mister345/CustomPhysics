@@ -18,9 +18,10 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 	worldPos				   = startPos_WS;
 	std::vector< BoneTransform > initialTransforms;
 
-	if ( animData->mAnimations.empty() ) {
-		// if no anims, just T-pose
+	if ( animData->mAnimations.empty() ) { // if no anims, just T-pose
+//	if ( true ) {		
 		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
+//		initialTransforms.assign( animData->OffsetMatrices.begin(), animData->OffsetMatrices.end() );
 	} else {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	}
@@ -32,7 +33,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 		bodyToAnimate->m_invMass = 0.f;	// no grav
 		bodyToAnimate->m_elasticity = 1.f;
 		bodyToAnimate->m_friction = 0.f;
-		bodyToAnimate->m_shape = new ShapeAnimated( 0.25f, false );
+		bodyToAnimate->m_shape = new ShapeAnimated( 0.075f, false );
 	}
 }
 
@@ -58,6 +59,7 @@ void AnimationInstance::Update( float deltaT ) {
 	// to get the final COMPONENT SPACE transforms of our bones
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
 	animData->GetFinalTransforms( curClipName, timePos, boneTransforms );
+//	animData->GetFinalTransforms_OLD( curClipName, timePos, boneTransforms );
 
 	// ( with a single bone and no hierarchy, we are basically doing this: )
 	// singleBoneAnim.Interpolate( timePos, boneTransforms[ 0 ] );

@@ -18,17 +18,21 @@ Scene
 
 // CONFIG
 // Animation
+constexpr bool SHOW_ORIGIN = false;
+// type
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
 static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+
+// asset
 constexpr float ANIMDEMO_SCALE = 0.0105f;
 constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
-
+ 
 // constexpr float ANIMDEMO_SCALE = 1.f;
-// constexpr const char * animDemoFileName = "assets/testSkeleton.fbx";
-// constexpr const char * animDemoFileName = "assets/human.fbx"; 
-// constexpr const char * animDemoFileName = "assets/human_idle.fbx";
+// constexpr const char * ANIMDEMO_FILENAME = "assets/human.fbx";
+// constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
+// constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 
 
 // Physics
@@ -204,14 +208,16 @@ void Scene::InitializeAnimatedBodies() {
 
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	// put it at the end so it gets rendered on top ( hopefully )
-	m_animatedBodies.push_back( Body() );
-	m_animatedBodies.back().m_position = worldPos;
-	m_animatedBodies.back().m_orientation = { 0, 0, 0, 1 };
-	m_animatedBodies.back().m_linearVelocity.Zero();
-	m_animatedBodies.back().m_invMass = 0.f;	// no grav
-	m_animatedBodies.back().m_elasticity = 1.f;
-	m_animatedBodies.back().m_friction = 0.f;
-	m_animatedBodies.back().m_shape = new ShapeAnimated( 0.45f, true );
+	if ( SHOW_ORIGIN ) {
+		m_animatedBodies.push_back( Body() );
+		m_animatedBodies.back().m_position = worldPos;
+		m_animatedBodies.back().m_orientation = { 0, 0, 0, 1 };
+		m_animatedBodies.back().m_linearVelocity.Zero();
+		m_animatedBodies.back().m_invMass = 0.f;	// no grav
+		m_animatedBodies.back().m_elasticity = 1.f;
+		m_animatedBodies.back().m_friction = 0.f;
+		m_animatedBodies.back().m_shape = new ShapeAnimated( 0.45f, true );
+	}
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
