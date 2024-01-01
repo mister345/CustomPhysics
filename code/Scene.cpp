@@ -17,14 +17,28 @@ Scene
 */
 
 // CONFIG
+// Animation
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+constexpr float ANIMDEMO_SCALE = 0.0105f;
+constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
+
+// constexpr float ANIMDEMO_SCALE = 1.f;
+// constexpr const char * animDemoFileName = "assets/testSkeleton.fbx";
+// constexpr const char * animDemoFileName = "assets/human.fbx"; 
+// constexpr const char * animDemoFileName = "assets/human_idle.fbx";
+
+
+// Physics
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static constexpr bool RUN_ANIMATION					   = true;
 static constexpr bool RUN_PHYSICS_SIM				   = false;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+
+
+
 
 /*
 ====================================================
@@ -140,17 +154,8 @@ void Scene::InitializeAnimInstanceDemo() {
 	switch ( ANIM_TYPE ) {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
-			const char * fileName =
-				// "assets/testSkeleton.fbx";
-				// "assets/human.fbx"; 
-				"assets/human_idle.fbx";
-				 float scale = 1.f;
-
-			//"assets/humanoid.fbx";
-			//const float scale = 0.0105f;
-
 			const bool loaded = FbxUtil::LoadFBXFile(
-				fileName,
+				ANIMDEMO_FILENAME,
 				[]( bool status, fbxsdk::FbxImporter * pImporter, FbxScene * scene, void * userData ) {
 					if ( !status ) {
 						puts( "Error - Failed to load FBX Scene." );
@@ -169,7 +174,7 @@ void Scene::InitializeAnimInstanceDemo() {
 
 				},
 				animInstanceDemo.animData,
-				scale 
+				ANIMDEMO_SCALE 
 			);
 			break;
 		}
