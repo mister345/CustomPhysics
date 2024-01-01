@@ -18,8 +18,8 @@ Scene
 
 // CONFIG
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
-//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
+//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
 //static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
 static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
 static constexpr bool RUN_ANIMATION					   = true;
@@ -151,8 +151,16 @@ void Scene::InitializeAnimInstanceDemo() {
 						return;
 					}
 					FbxUtil::PrintSceneAnimData( pImporter );
+					const int numToTry = 100;
+					FbxPose * poses[ numToTry ] = {};
+					for ( int i = 0; i < numToTry; i++ ) {
+						poses[ i ] = scene->GetPose( i );
+					}
+
+					// @TODO - currently getting a crash here
 					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
 					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
+
 				},
 				animInstanceDemo.animData
 			);
@@ -179,7 +187,7 @@ void Scene::InitializeAnimatedBodies() {
 		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
 		worldPos,
-		AnimationAssets::animNames[ ANIM_TYPE ]
+		AnimationAssets::animNames[ ANIM_TYPE ].c_str()
 	);
 
 	// spawn a single debug sphere to indicate the origin pos of the animated object

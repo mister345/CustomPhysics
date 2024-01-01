@@ -38,7 +38,7 @@ namespace AnimationAssets {
 		SKINNED_MESH = 3,
 		COUNT = 4,
 	};
-	extern const char * animNames[ eWhichAnim::COUNT + 1 ];
+	extern std::vector< std::string > animNames;
 
 	// util
 	BoneAnimation MakeBoneAnim0();
@@ -85,7 +85,9 @@ public:
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 	std::string BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve );
-	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & boneAnim );
+//	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & boneAnim );
+	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
+
 
 //	RUNTIME DATA PROCESSING ( Playback )
 	void GetFinalTransforms( const std::string & clipName,

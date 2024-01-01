@@ -11,7 +11,7 @@ struct AnimationInstance {
 
 	Vec3 worldPos		     = Vec3( 0, 0, 15 );
 	Body * bodiesToAnimate   = nullptr;
-	const char * curClipName = AnimationAssets::animNames[ AnimationAssets::COUNT ];
+	const char * curClipName = AnimationAssets::animNames[ AnimationAssets::COUNT ].c_str();
 	
 	float animTimePos      = 0.f;
 	float speedMultiplier  = 1.f;

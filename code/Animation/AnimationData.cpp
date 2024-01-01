@@ -14,12 +14,13 @@
 
 namespace AnimationAssets {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
-	const char * animNames[ eWhichAnim::COUNT + 1 ] = {
+
+	std::vector< std::string > animNames = {
 		"SingleBone",
 		"MultiBone",
 		"SkeletonOnly",
 		"SkinnedMesh",
-		"Unknown",
+		"Count"
 	};
 
 	void FillAnimInstanceData( SkinnedData *& skinnedData, eWhichAnim whichAnim, fbxsdk::FbxScene * sceneData ) {
@@ -314,7 +315,8 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	AnimationClip & clip = me->mAnimations[ me->curAnimName ];
 
 	// Now we pass the responsibility to FillBoneAnimKeyframes to populate the animation
-	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip.BoneAnimations[ boneIdx ] );
+//	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip.BoneAnimations[ boneIdx ] );
+	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip, boneIdx );
 
 	//fbxsdk::FbxProperty lProperty = boneNode->GetFirstProperty();
 	//while ( lProperty.IsValid() ) {
@@ -349,7 +351,10 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 
 // This function assumes that the animation curves for translation and rotation are directly associated with the node,
 // and that the curves are for the node's local translation and rotation
-void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
+//void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
+void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
+	BoneAnimation & outBoneAnim = clip.BoneAnimations [ whichBoneIdx ];
+
 	auto GetCurveValue = []( fbxsdk::FbxAnimCurve * curve, int keyIndex ) {
 		return curve ? static_cast< float >( curve->KeyGetValue( keyIndex ) ) : 0.0f;
 	};
@@ -368,9 +373,24 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 	fbxsdk::FbxAnimCurve * rCurveZ = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
 
 	// Ensure we have valid curves and determine the keyframe count
-	int keyframeCount = std::max( { CurveKeyCount( tCurveX ), CurveKeyCount( tCurveY ), CurveKeyCount( tCurveZ ),
-								  CurveKeyCount( rCurveX ), CurveKeyCount( rCurveY ), CurveKeyCount( rCurveZ ) } );
 
+	// BUG - we cant assume all props have the same num keryframes!
+	//int keyframeCount = std::max( { CurveKeyCount( tCurveX ), CurveKeyCount( tCurveY ), CurveKeyCount( tCurveZ ),
+	//							  CurveKeyCount( rCurveX ), CurveKeyCount( rCurveY ), CurveKeyCount( rCurveZ ) } );
+	int keyframeCount0 = CurveKeyCount( tCurveX );
+	int keyframeCount1 = CurveKeyCount( tCurveY );
+	int keyframeCount2 = CurveKeyCount( tCurveZ );
+	int keyframeCount3 = CurveKeyCount( rCurveX );
+	int keyframeCount4 = CurveKeyCount( rCurveY );
+	int keyframeCount5 = CurveKeyCount( rCurveZ );
+
+	int keyframeCount = std::min( keyframeCount0, 
+						std::min( keyframeCount1, 
+						std::min( keyframeCount2, 
+						std::min( keyframeCount3, 
+						std::min( keyframeCount4, keyframeCount5 ) ) ) ) );
+
+	// @TODO ....
 	for ( int k = 0; k < keyframeCount; k++ ) {
 		Keyframe keyframe;
 
@@ -426,8 +446,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	animStack				   = scene->GetCurrentAnimationStack();
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
 	const std::string animName = animStack->GetName();
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName.c_str();
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName.c_str();
+	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName;
+	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName;
 	assert( activeLayer != nullptr && !animName.empty() );
 
 	const int boneCount = CountBonesInSkeleton( scene->GetRootNode() );
