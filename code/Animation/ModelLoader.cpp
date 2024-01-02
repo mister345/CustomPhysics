@@ -108,7 +108,7 @@ namespace FbxUtil {
 					if( pNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton 
 						&& callback.onFoundBone != nullptr ) {
 
-//						PrintBone( pNode );
+						PrintBone( pNode );
 						callback.onFoundBone( dataRecipient, pNode );
 					}
 				}

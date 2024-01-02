@@ -146,6 +146,15 @@ float BoneAnimation::GetEndTime() const {
 	return keyframes.back().timePos;
 }
 
+void FbxEulerToQuat( const fbxsdk::FbxVector4 & euler, Quat & outQuat ) {
+	fbxsdk::FbxQuaternion fbxQuat;
+	fbxQuat.ComposeSphericalXYZ( euler );
+	outQuat.x = fbxQuat[ 0 ];
+	outQuat.y = fbxQuat[ 1 ];
+	outQuat.z = fbxQuat[ 2 ];
+	outQuat.w = fbxQuat[ 3 ];
+}
+
 Quat Lerp( const Quat & from, const Quat & to, float t ) {
 	Vec4 a( from.x, from.y, from.z, from.w );
 	Vec4 b(   to.x,   to.y,   to.z,   to.w );
@@ -351,6 +360,7 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	//}
 }
 
+// https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
 // This function assumes that the animation curves for translation and rotation are directly associated with the node,
 // and that the curves are for the node's local translation and rotation
 //void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
@@ -399,7 +409,7 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 		Keyframe keyframe;
 
 		// Assume the time is the same for all translation and rotation curves
-		keyframe.timePos = static_cast< float >( ( tCurveX ? tCurveX : rCurveX )->KeyGetTime( k ).GetSecondDouble() );
+		keyframe.timePos = static_cast< float >( ( tCurveY ? tCurveY : rCurveY )->KeyGetTime( k ).GetSecondDouble() );
 
 		// Translation
 		keyframe.transform.translation.x = GetCurveValue( tCurveX, k ) * scale;
@@ -407,11 +417,9 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k ) * scale;
 
 		// Rotation - converting from Euler to quaternion
-		fbxsdk::FbxVector4 euler( GetCurveValue( rCurveX, k ), GetCurveValue( rCurveY, k ), GetCurveValue( rCurveZ, k ) );	
-		fbxsdk::FbxQuaternion fbxQuat;
-		fbxQuat.ComposeSphericalXYZ( euler );
-		keyframe.transform.rotation = Quat( fbxQuat[ 0 ], fbxQuat[ 1 ], fbxQuat[ 2 ], fbxQuat[ 3 ] );
-
+		Quat q;
+		FbxEulerToQuat( { GetCurveValue( rCurveX, k ), GetCurveValue( rCurveY, k ), GetCurveValue( rCurveZ, k ) }, q );
+		keyframe.transform.rotation = q;
 		outBoneAnim.keyframes.push_back( keyframe );
 	}
 }
