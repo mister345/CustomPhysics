@@ -194,4 +194,23 @@ namespace FbxUtil {
 		return lStatus;
 	}
 
+	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
+		struct local_t {
+			static void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
+				if ( node != nullptr ) {
+					fbxsdk::FbxNodeAttribute * attribute = node->GetNodeAttribute();
+					if ( attribute && attribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::eSkeleton ) {
+						boneCount++;
+					}
+					for ( int i = 0; i < node->GetChildCount(); i++ ) {
+						countBones_r( node->GetChild( i ), boneCount );
+					}
+				}
+			}
+		};
+
+		int boneCount = 0;
+		local_t::countBones_r( rootNode, boneCount );
+		return boneCount;
+	}
 } // namepsace fbx util

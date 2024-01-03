@@ -21,19 +21,9 @@ namespace AnimationAssets {
 	enum eWhichAnim : uint8_t;
 }
 
-struct Keyframe {
-	float timePos = 0.f;
-	BoneTransform transform;
-};
-
-struct BoneAnimation {
-	float GetStartTime() const;
-	float GetEndTime() const;
-	void Interpolate( float t, BoneTransform & outTransform ) const;
-	inline bool HasData() const { return !keyframes.empty(); }
-	std::vector< Keyframe > keyframes;
-};
-
+////////////////////////////////////////////////////////////////////////////////
+// ANIMATION CLIP
+////////////////////////////////////////////////////////////////////////////////
 // an array of BoneAnimations corresponding to every bone in a skeleton
 struct AnimationClip {
 	// earliest start time of all bones in the clip
@@ -54,7 +44,10 @@ struct AnimationClip {
 	std::vector< BoneAnimation > BoneAnimations;
 };
 
-// database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE!
+////////////////////////////////////////////////////////////////////////////////
+// SKINNED DATA
+////////////////////////////////////////////////////////////////////////////////
+// database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE ( except for while loading )
 class SkinnedData {
 	friend struct AnimationInstance;
 
@@ -75,6 +68,9 @@ public:
 
 // PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+
+private:
+	static void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode );
 
 public:
 	std::map< std::string, AnimationClip > animations;

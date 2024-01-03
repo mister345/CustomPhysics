@@ -7,6 +7,9 @@
 class SkinnedData;
 class Body;
 
+////////////////////////////////////////////////////////////////////////////////
+// ANIMATION INSTANCE
+////////////////////////////////////////////////////////////////////////////////
 struct AnimationInstance {
 	SkinnedData * animData = nullptr;
 
@@ -22,4 +25,3 @@ struct AnimationInstance {
 	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay );
 	void Update( float deltaT );
 };
-

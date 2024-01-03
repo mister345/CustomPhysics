@@ -23,4 +23,5 @@ namespace FbxUtil {
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const callbackAPI_t & callback, void * caller );
 	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, float scale = 1.f );
+	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
 } // namepsace fbx util
