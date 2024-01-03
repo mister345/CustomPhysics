@@ -18,12 +18,10 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 	worldPos				   = startPos_WS;
 	std::vector< BoneTransform > initialTransforms;
 
-	if ( animData->animations.empty() ) { // if no anims, just T-pose
-//	if ( true ) {		
-		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
-//		initialTransforms.assign( animData->OffsetMatrices.begin(), animData->OffsetMatrices.end() );
-	} else {
+	if ( !animData->animations.empty() ) {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
+	} else { // if no anims, just T-pose
+		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
 	}
 	for ( int i = 0; i < numBodies; i++ ) {
 		Body * bodyToAnimate = bodiesToAnimate + i;
@@ -54,15 +52,10 @@ void AnimationInstance::Update( float deltaT ) {
 	}
 	const float timePos = animTimePos * speedMultiplier;
 
-	// ask AnimData to interpolate each bone transform across its keyframes, based on 
-	// our given time point, and concatenate them down the skeletal hiearchy...
-	// to get the final COMPONENT SPACE transforms of our bones
+	// ask AnimData to interpolate each bone transform across its keyframes @ given time point
+	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
 	animData->GetFinalTransforms( curClipName, timePos, boneTransforms );
-//	animData->GetFinalTransforms_OLD( curClipName, timePos, boneTransforms );
-
-	// ( with a single bone and no hierarchy, we are basically doing this: )
-	// singleBoneAnim.Interpolate( timePos, boneTransforms[ 0 ] );
 
 	// apply each bone transform to each body ( 1 to 1 )
 	for ( int i = 0; i < animData->BoneCount(); i++ ) {

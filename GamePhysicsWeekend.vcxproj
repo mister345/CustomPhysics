@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="code\Animation\AnimationAssets.cpp" />
     <ClCompile Include="code\Animation\AnimationData.cpp" />
     <ClCompile Include="code\Animation\AnimationState.cpp" />
     <ClCompile Include="code\Animation\Bone.cpp" />
@@ -59,6 +60,7 @@
     <ClCompile Include="code\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="code\Animation\AnimationAssets.h" />
     <ClInclude Include="code\Animation\AnimationData.h" />
     <ClInclude Include="code\Animation\AnimationState.h" />
     <ClInclude Include="code\Animation\Bone.h" />

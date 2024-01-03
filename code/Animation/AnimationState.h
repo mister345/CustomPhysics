@@ -2,6 +2,7 @@
 
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
+#include "AnimationAssets.h"
 
 class SkinnedData;
 class Body;

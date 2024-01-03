@@ -17,6 +17,10 @@ class FbxAnimCurve;
 class FbxScene;
 }
 
+namespace AnimationAssets {
+	enum eWhichAnim : uint8_t;
+}
+
 struct Keyframe {
 	float timePos = 0.f;
 	BoneTransform transform;
@@ -29,25 +33,6 @@ struct BoneAnimation {
 	inline bool HasData() const { return !keyframes.empty(); }
 	std::vector< Keyframe > keyframes;
 };
-
-class SkinnedData;
-namespace AnimationAssets {
-	enum eWhichAnim : uint8_t {
-		SINGLE_BONE = 0,
-		MULTI_BONE = 1,
-		SKELETON_ONLY = 2,
-		SKINNED_MESH = 3,
-		COUNT = 4,
-	};
-	extern std::vector< std::string > animNames;
-
-	// util
-	BoneAnimation MakeBoneAnim0();
-	BoneAnimation MakeBoneAnim1();
-
-	// user interface
-	void FillAnimInstanceData( SkinnedData *& skinnedData, const eWhichAnim which, fbxsdk::FbxScene * sceneData = nullptr );
-} // namespace AnimationAssets
 
 // an array of BoneAnimations corresponding to every bone in a skeleton
 struct AnimationClip {

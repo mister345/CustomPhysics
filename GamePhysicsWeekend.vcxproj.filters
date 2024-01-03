@@ -147,6 +147,9 @@
     <ClCompile Include="code\Animation\ModelLoader.cpp">
       <Filter>code\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="code\Animation\AnimationAssets.cpp">
+      <Filter>code\Animation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">
@@ -277,6 +280,9 @@
     </ClInclude>
     <ClInclude Include="code\Physics\Shapes\ShapeAnimated.h">
       <Filter>code\Physics\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="code\Animation\AnimationAssets.h">
+      <Filter>code\Animation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
