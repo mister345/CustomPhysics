@@ -169,19 +169,13 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	fbxScene				   = scene;
 	animStack				   = fbxScene->GetCurrentAnimationStack();
 
+
 	// debug hack to play different anim - @TODO - expand to allow choosing which anim to play
-	if( false ) {
-		int numAnims = scene->GetSrcObjectCount< FbxAnimStack >();
-		animStack = scene->GetSrcObject< FbxAnimStack >( 0 );
-		std::string nm = animStack->GetName();
-
-		animStack = scene->GetSrcObject< FbxAnimStack >( 1 );
-		nm = animStack->GetName();
-
-		//animStack = scene->GetSrcObject< FbxAnimStack >( 2 );
-		//nm = animStack->GetName();
-
-		fbxScene->SetCurrentAnimationStack( animStack );
+	if( true ) {
+		fbxScene->SetCurrentAnimationStack( scene->GetSrcObject< FbxAnimStack >( 0 ) );
+	}
+	for ( int i = 0; i < scene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
+		// @TODO - add all animations
 	}
 
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
