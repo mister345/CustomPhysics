@@ -13,15 +13,6 @@
 
 // Utility functions
 namespace {
-	void FbxEulerToQuat( const fbxsdk::FbxVector4 & euler, Quat & outQuat ) {
-		fbxsdk::FbxQuaternion fbxQuat;
-		fbxQuat.ComposeSphericalXYZ( euler );
-		outQuat.x = fbxQuat[ 0 ];
-		outQuat.y = fbxQuat[ 1 ];
-		outQuat.z = fbxQuat[ 2 ];
-		outQuat.w = fbxQuat[ 3 ];
-	}
-
 	Quat Lerp( const Quat & from, const Quat & to, float t ) {
 		Vec4 a( from.x, from.y, from.z, from.w );
 		Vec4 b( to.x, to.y, to.z, to.w );
@@ -292,7 +283,7 @@ void SkinnedData::Set(
 
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
 	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
-	mAnimations.insert( animations.begin(), animations.end() );
+	animations.insert( animations.begin(), animations.end() );
 }
 
 BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t ) {
@@ -342,21 +333,23 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	fbxsdk::FbxAnimLayer * curAnimLayer = curAnimStack->GetMember< fbxsdk::FbxAnimLayer >(); // Assume only one layer for now
 
 	// @TODO - curAnimName shouldnt be a thing bc this is not STATEFUL
-	AnimationClip & clip = me->mAnimations[ me->curAnimName ];
+	AnimationClip & clip = me->animations[ me->curAnimName ];
 
 	// Now we pass the responsibility to FillBoneAnimKeyframes to populate the animation
 //	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip.BoneAnimations[ boneIdx ] );
-	me->FillBoneAnimKeyframesResample( boneNode, curAnimLayer, clip, boneIdx );
+	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip, boneIdx );
 }
 
 /* NOTE - 2 ways to get frames from fbx file
 	1. Store key frames only ( raw animation data from within the fbx file )
 	2. Sample frames from the fbx file at a fixed rate - loses raw animation data, 
-		bc its resampling the original keyframes according to some arbitrary logic. */
+		bc its resampling the original keyframes according to some arbitrary logic. 
+	-> we use way #2 because much more straightforward ( not easy to match curves to bones )		
+*/
 
 // https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
 // alternate ( more common way of doing it - sample the bone transform at current time
-void SkinnedData::FillBoneAnimKeyframesResample( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
+void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
 	using namespace fbxsdk;
 	fbxsdk::FbxAnimStack * anim = fbxScene->GetCurrentAnimationStack();
 	FbxTime start				= anim->GetLocalTimeSpan().GetStart();
@@ -376,86 +369,6 @@ void SkinnedData::FillBoneAnimKeyframesResample( fbxsdk::FbxNode * boneNode, fbx
 		keyframeToFill.transform = SkinnedData::FbxToBoneTransform( &rotation, &translation );
 		keyframeToFill.timePos   = curTime.GetSecondCount();
 	}
-}
-
-// This function assumes that the animation curves for translation and rotation are directly associated with the node,
-// and that the curves are for the node's local translation and rotation
-// @TODO - do we need to undo the pre- and pos- rotation quats?
-// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
-void SkinnedData::FillBoneAnimKeyframesDirect( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
-	const float scale = FbxUtil::g_scale;
-
-	BoneAnimation & outBoneAnim = clip.BoneAnimations [ whichBoneIdx ];
-
-	auto GetCurveValue = []( fbxsdk::FbxAnimCurve * curve, int keyIndex ) {
-		return curve ? static_cast< float >( curve->KeyGetValue( keyIndex ) ) : 0.0f;
-	};
-	auto CurveKeyCount = []( fbxsdk::FbxAnimCurve * curve ) {
-		return curve ? curve->KeyGetCount() : 0;
-	};
-
-	// Extract the animation curves for translation
-	fbxsdk::FbxAnimCurve * tCurveX = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
-	fbxsdk::FbxAnimCurve * tCurveY = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
-	fbxsdk::FbxAnimCurve * tCurveZ = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
-
-	// Extract the animation curves for rotation
-	fbxsdk::FbxAnimCurve * rCurveX = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
-	fbxsdk::FbxAnimCurve * rCurveY = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
-	fbxsdk::FbxAnimCurve * rCurveZ = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
-
-	// Ensure we have valid curves and determine the keyframe count
-
-	// BUG - we cant assume all props have the same num keryframes!
-	//int keyframeCount = std::max( { CurveKeyCount( tCurveX ), CurveKeyCount( tCurveY ), CurveKeyCount( tCurveZ ),
-	//							  CurveKeyCount( rCurveX ), CurveKeyCount( rCurveY ), CurveKeyCount( rCurveZ ) } );
-	int keyframeCount0 = CurveKeyCount( tCurveX );
-	int keyframeCount1 = CurveKeyCount( tCurveY );
-	int keyframeCount2 = CurveKeyCount( tCurveZ );
-	int keyframeCount3 = CurveKeyCount( rCurveX );
-	int keyframeCount4 = CurveKeyCount( rCurveY );
-	int keyframeCount5 = CurveKeyCount( rCurveZ );
-
-	int keyframeCount = std::min( keyframeCount0, 
-						std::min( keyframeCount1, 
-						std::min( keyframeCount2, 
-						std::min( keyframeCount3, 
-						std::min( keyframeCount4, keyframeCount5 ) ) ) ) );
-
-	// @TODO ....
-	for ( int k = 0; k < keyframeCount; k++ ) {
-		Keyframe keyframe;
-
-		// Assume the time is the same for all translation and rotation curves
-		keyframe.timePos = static_cast< float >( ( tCurveY ? tCurveY : rCurveY )->KeyGetTime( k ).GetSecondDouble() );
-
-		// Translation
-		keyframe.transform.translation.x = GetCurveValue( tCurveX, k ) * scale;
-		keyframe.transform.translation.y = GetCurveValue( tCurveY, k ) * scale;
-		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k ) * scale;
-
-		// Rotation - converting from Euler to quaternion
-		const float x = GetCurveValue( rCurveX, k );
-		const float y = GetCurveValue( rCurveY, k );
-		const float z = GetCurveValue( rCurveZ, k );
-
-		Quat q;
-
-		FbxEulerToQuat( { x, y, z }, q );
-		keyframe.transform.rotation = q;
-		outBoneAnim.keyframes.push_back( keyframe );
-	}
-}
-
-//	https://download.autodesk.com/us/fbx/20112/fbx_sdk_help/index.html?url=WS73099cc142f48755-13b8418f12724676a534302.htm,topicNumber=d0e6765
-//	An animation curve ...  can be connected to many curve nodes; one animation curve can animate many properties of many FBX objects.
-//	An animation curve NODE can be connected to ONLY ONE property of one FBX object. 
-std::string SkinnedData::BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve ) {
-	fbxsdk::FbxProperty prop = curve->GetDstProperty();
-	if ( !prop.IsValid() ) { 
-		return "";
-	}
-	return prop.GetDstObject()->GetName();
 }
 
 void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
@@ -486,7 +399,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 	const int boneCount = CountBonesInSkeleton( fbxScene->GetRootNode() );
 
 	curAnimName = animName.c_str();
-	mAnimations.insert( { curAnimName, AnimationClip( boneCount ) } );
+	animations.insert( { curAnimName, AnimationClip( boneCount ) } );
 	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
 	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
 
@@ -502,7 +415,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount = BoneCount();
-	AnimationClip clip  = mAnimations.at( cName );
+	AnimationClip clip  = animations.at( cName );
 
 	// get interpolated transform for every bone at THIS TIME
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( boneCount );

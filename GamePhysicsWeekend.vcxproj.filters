@@ -25,6 +25,12 @@
     <Filter Include="code\Animation\assets">
       <UniqueIdentifier>{8c2049ab-fe85-4dfa-8f65-be4446604dae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="code\Animation\assets\debug">
+      <UniqueIdentifier>{ba4aef29-2f5b-4bc2-bea3-fb1d2c3bd9dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="code\Animation\assets\release">
+      <UniqueIdentifier>{e6fc49b6-79d7-449b-adbd-84e6b40d4c6f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\main.cpp">
@@ -275,7 +281,10 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">
-      <Filter>code\Animation\assets</Filter>
+      <Filter>code\Animation\assets\debug</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\release\libfbxsdk.dll">
+      <Filter>code\Animation\assets\release</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>

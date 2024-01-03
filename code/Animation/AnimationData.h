@@ -74,45 +74,36 @@ class SkinnedData {
 	friend struct AnimationInstance;
 
 public:
-// INITIALIZATION / LOADING DATA
 	inline uint32_t BoneCount() const { 
 		assert( OffsetMatrices.size() == BoneHierarchy.size() );
 		return BoneHierarchy.size();
 	};
+	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
+	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
+
+// INITIALIZATION / LOADING
 	void Set( const std::vector< BoneInfo_t > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
+	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
+
+// PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
-	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
-
-	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
-	std::string BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve );
-	void FillBoneAnimKeyframesResample( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
-	void FillBoneAnimKeyframesDirect( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
-
-
-//	RUNTIME DATA PROCESSING ( Playback )
-	void GetFinalTransforms_OLD( const std::string & clipName,
-							 float timePos,
-							 std::vector< BoneTransform > & outFinalTransforms ) const;
 
 public:
-	std::map< std::string, AnimationClip > mAnimations;
-
-	// flattened tree of child ( idx ) -> parent ( value of element @ idx ) relationships, in parent-child order
-	std::vector< BoneInfo_t > BoneHierarchy;
-
-	fbxsdk::FbxScene * fbxScene = nullptr;
-	// @TODO - will have to expand this to contain ALL layers
-	fbxsdk::FbxAnimStack * animStack   = nullptr;
-	fbxsdk::FbxAnimLayer * activeLayer = nullptr;
-	const char * curAnimName = nullptr;
-
+	std::map< std::string, AnimationClip > animations;
+ 	std::unordered_map< std::string, int > BoneIdxMap;
+	std::vector< BoneInfo_t > BoneHierarchy; // flattened tree, parent-child order, idx=bone, element@idx=that bone's parent
 // INVERSE bind pose matrices of each bone, in MODEL SPACE - they undo the Bind Pose transformations of these bones, 
 // so that they can be REPLACED with the ANIMATED Pose ( interpolated bone transforms @ curr time ) 
 // https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1
 	std::vector< BoneTransform > OffsetMatrices;
 	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
-	std::unordered_map< std::string, int > BoneIdxMap;
+
+// FBX RELATED
+	const char * curAnimName		   = nullptr;
+	fbxsdk::FbxScene * fbxScene		   = nullptr;
+	fbxsdk::FbxAnimStack * animStack   = nullptr;	
+	fbxsdk::FbxAnimLayer * activeLayer = nullptr; // @TODO - expand to contain ALL layers
 };
