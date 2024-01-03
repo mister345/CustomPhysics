@@ -11,6 +11,76 @@
 #include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimevaluator.h"
 #include <cassert>
 
+// Utility functions
+namespace {
+	void FbxEulerToQuat( const fbxsdk::FbxVector4 & euler, Quat & outQuat ) {
+		fbxsdk::FbxQuaternion fbxQuat;
+		fbxQuat.ComposeSphericalXYZ( euler );
+		outQuat.x = fbxQuat[ 0 ];
+		outQuat.y = fbxQuat[ 1 ];
+		outQuat.z = fbxQuat[ 2 ];
+		outQuat.w = fbxQuat[ 3 ];
+	}
+
+	Quat Lerp( const Quat & from, const Quat & to, float t ) {
+		Vec4 a( from.x, from.y, from.z, from.w );
+		Vec4 b( to.x, to.y, to.z, to.w );
+
+		const bool isLongWayAround = a.Dot( b ) < 0;
+		if ( isLongWayAround ) {
+			a *= -1;
+		}
+		Vec4 lerped = a * ( 1 - t ) + b * t;
+
+		Quat out( lerped.x, lerped.y, lerped.z, lerped.w );
+		out.Normalize();
+		return out;
+	}
+
+	Quat Slerp( const Quat & from, const Quat & to, float t ) {
+		Vec4 qA( from.x, from.y, from.z, from.w );
+		Vec4 qB( to.x, to.y, to.z, to.w );
+
+		const float cosTheta = qA.Dot( qB );
+		if ( cosTheta > ( 1.f - 0.001 ) ) {
+			return Lerp( from, to, t ); // small enough ang to just lerp
+		}
+
+		const float theta = acos( cosTheta );
+		const float sinTheta = sin( theta );
+		const float denomInverse = 1.f / sinTheta;
+		const float weightA = sin( ( 1.f - t ) * theta ) * denomInverse;
+		const float weightB = sin( t * theta ) * denomInverse;
+
+		const Vec4 result = qA * weightA + qB * weightB;
+
+		//	note - old way has more rounding errors bc not memoizing produces more operations, more opportunities for precision degradation
+		//	const Vec4 resultOld = 
+		//		qA * ( sin( theta * ( 1.f - t ) ) / sinTheta ) + 
+		//		qB * ( sin( theta * t ) / sinTheta );
+
+		const Quat resultQ = { result.x, result.y, result.z, result.w }; // quat ctor normalizes automatically
+		return resultQ;
+	}
+
+	void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
+		if ( node != nullptr ) {
+			fbxsdk::FbxNodeAttribute * attribute = node->GetNodeAttribute();
+			if ( attribute && attribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::eSkeleton ) {
+				boneCount++;
+			}
+			for ( int i = 0; i < node->GetChildCount(); i++ ) {
+				countBones_r( node->GetChild( i ), boneCount );
+			}
+		}
+	}
+
+	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
+		int boneCount = 0;
+		countBones_r( rootNode, boneCount );
+		return boneCount;
+	}
+} // anonymous namespace
 
 namespace AnimationAssets {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
@@ -144,56 +214,6 @@ float BoneAnimation::GetStartTime() const {
 
 float BoneAnimation::GetEndTime() const {
 	return keyframes.back().timePos;
-}
-
-void FbxEulerToQuat( const fbxsdk::FbxVector4 & euler, Quat & outQuat ) {
-	fbxsdk::FbxQuaternion fbxQuat;
-	fbxQuat.ComposeSphericalXYZ( euler );
-	outQuat.x = fbxQuat[ 0 ];
-	outQuat.y = fbxQuat[ 1 ];
-	outQuat.z = fbxQuat[ 2 ];
-	outQuat.w = fbxQuat[ 3 ];
-}
-
-Quat Lerp( const Quat & from, const Quat & to, float t ) {
-	Vec4 a( from.x, from.y, from.z, from.w );
-	Vec4 b(   to.x,   to.y,   to.z,   to.w );
-
-	const bool isLongWayAround = a.Dot( b ) < 0;
-	if ( isLongWayAround ) {
-		a *= -1;
-	}
-	Vec4 lerped = a * ( 1 - t ) + b * t;
-
-	Quat out( lerped.x, lerped.y, lerped.z, lerped.w );
-	out.Normalize();
-	return out;
-}
-
-Quat Slerp( const Quat & from, const Quat & to, float t ) {
-	Vec4 qA( from.x, from.y, from.z, from.w );
-	Vec4 qB( to.x, to.y, to.z, to.w );
-
-	const float cosTheta = qA.Dot( qB );
-	if ( cosTheta > ( 1.f - 0.001 ) ) {		
-		return Lerp( from, to, t ); // small enough ang to just lerp
-	}
-
-	const float theta		 = acos( cosTheta );
-	const float sinTheta	 = sin( theta );
-	const float denomInverse = 1.f / sinTheta;
-	const float weightA		 = sin( ( 1.f - t ) * theta ) * denomInverse;
-	const float weightB		 = sin(         t   * theta ) * denomInverse;
-
-	const Vec4 result	 = qA * weightA + qB * weightB;
-
-//	note - old way has more rounding errors bc not memoizing produces more operations, more opportunities for precision degradation
-//	const Vec4 resultOld = 
-//		qA * ( sin( theta * ( 1.f - t ) ) / sinTheta ) + 
-//		qB * ( sin( theta * t ) / sinTheta );
-
-	const Quat resultQ   = { result.x, result.y, result.z, result.w }; // quat ctor normalizes automatically
-	return resultQ;
 }
 
 void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
@@ -438,23 +458,6 @@ std::string SkinnedData::BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve ) {
 	return prop.GetDstObject()->GetName();
 }
 
-void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
-	if ( node != nullptr ) {
-		fbxsdk::FbxNodeAttribute * attribute = node->GetNodeAttribute();
-		if ( attribute && attribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::eSkeleton ) {
-			boneCount++;
-		}
-		for ( int i = 0; i < node->GetChildCount(); i++ ) {
-			countBones_r( node->GetChild( i ), boneCount );
-		}
-	}
-}
-int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
-	int boneCount = 0;
-	countBones_r( rootNode, boneCount );
-	return boneCount;
-}
-
 void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
 	const int parentIdx = BoneHierarchy[ boneIdx ].GetParent();
 	if ( parentIdx < 0 ) {
@@ -499,7 +502,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount = BoneCount();
-	AnimationClip clip = mAnimations.at( cName );
+	AnimationClip clip  = mAnimations.at( cName );
 
 	// get interpolated transform for every bone at THIS TIME
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( boneCount );
@@ -510,96 +513,10 @@ void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std
 		BoneSpaceToModelSpace( i, interpolatedBoneSpaceTransforms );
 	}
 
-	// premultiply these animated poses, by the inverse bind pose matrices
-	// need for vertices, bc the vert deformations must be relative to bind space, not model space ( as they are defined in the fbx )
-// expected - exploded bone values
-	//outFinalTransforms.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
-	//for ( int i = 0; i < boneCount; i++ ) {
-	//	outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
-	//}
-
-// experiment 1 ( reverse ) - exploaded bone positions
-	//outFinalTransforms = interpolatedBoneSpaceTransforms;
-	//for ( int i = 0; i < boneCount; i++ ) {
-	//	outFinalTransforms[ i ] *= OffsetMatrices[ i ];
-	//}
-
-// experiment 2 - works ( the wrong data was coming from the keyframe loading, NOT this logic! )
-	// note - multiplying by inverse bindpose matrices is needed at a LATER step - for deforming verts
-	// ( bc they are in bind pose space! ). Since these debug spheres are simply in model space, just apply
-	// bone transforms directly
+	// @TODO - multiply these by inverse bind pose matrix ONLY if vertex shader bound
+	// for debug purposes, we just use the loaded anim poses directly as they are already in model space
 	outFinalTransforms = std::vector< BoneTransform >( boneCount, BoneTransform::Identity() );
 	for ( int i = 0; i < boneCount; i++ ) {
-		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
-	}
-}
-
-/*
-// Frank Luna uses EXTREMELY unclear language, so I reframe it here more explicitly:
-
-do only once at initialization time:
-0. accumulate transforms of bones 0 ~ n in BIND POSE, and store that info
-
-	every frame:
-1. interpolate the authored bone transforms ( as defined by the animator ) of bones 0~n as a flat array, 
-	each in bone space, based on keyframes ( do NOT concatenate them yet )
-2. accumulate transforms of bones 0 ~ n in the ANIMATED POSE that you just interpolated, and store that info
-3. multiply each of these bone transforms that you have stored, as a flat array ( dont accumulate ), 
-	with the INVERSE of their corresponding bindpose bone transforms stored in step 0, 
-	to define these accumulated bone transforms, RELATIVE to the accumulated bone transforms of the bind pose. 
-	now they are in model space, and RELATIVE to the bind pose.
-4. upload these model space, relative-to-bind-pose bone transforms, to the GPU.
-5. in the GPU ( pretend each vert is only influenced by one bone, ignore blending for now ), multiply each vertex by its corresponding bone transform from step 4.
-a
-	TODO - 
-	1) read							https://www.gamedevs.org/uploads/skinned-mesh-and-character-animation-with-directx9.pdf
-	2) tutorial						https://www.youtube.com/watch?v=f3Cr8Yx3GGA&list=PLRIWtICgwaX2tKWCxdeB7Wv_rTET9JtWW&index=1
-	3) look at how they do skinning https://github.com/vovan4ik123/assimp-Cpp-OpenGL-skeletal-animation
-	4) other refs					https://vladh.net/game-engine-skeletal-animation
-	5)								https://animcoding.com/post/animation-tech-intro-part-1-skinning/
-*/
-
-void SkinnedData::GetFinalTransforms_OLD( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
-	// interpolate flat array of bone transforms in parent space, in the TIME DOMAIN, based on keyframes at this moment
-	AnimationClip clip = mAnimations.at( cName );
-	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( BoneCount() );
-	clip.Interpolate( time, interpolatedBoneSpaceTransforms );
-	const int boneCount = BoneCount();
-	assert( boneCount > 0 );
-
-	/********** Bring the flat array of interpolated bones, into MODEL SPACE **********
-		accumulating local space bone transforms from ROOT -> LEAF 
-			== 
-		converting that LEAF bone from local space -> COMPONENT space ( root space ) 
-	***********************************************************************************/
-	//for ( int i = 1; i < BoneCount(); i++ ) {
-	//	const int parentIdx = BoneHierarchy[ i ].GetParent();
-	//	const BoneTransform parentSpaceTransform = interpolatedBoneSpaceTransforms[ parentIdx ];
-	//	interpolatedBoneSpaceTransforms[ i ] = parentSpaceTransform * interpolatedBoneSpaceTransforms[ i ];
-	//}
-	for ( int i = 1; i < boneCount; i++ ) {
-		BoneSpaceToModelSpace( i, interpolatedBoneSpaceTransforms );
-	}
-
-	// NOTE - we are pre-concatenating the sequence: inv Bind Pose * Animated Pose
-	// normally, the vertex shader will directly multiply each vert by the inv Bind Pose, then the Animated Pose.
-	// the way we do it multiplies PER bone instead of per vert, so it's effectively representing each bone animation as a DELTA from its bind pose.
-	// ( mathematically same fucking thing ) we do this for debugging, we want to have access to that value to set body transforms directly.
-	// 
-	// 
-	/*	( READING LEFT TO RIGHT... )
-		FINAL VERT TRANSFORM ( WS ) = 
-			VERT TRANSFORM ( MS ) * [ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) * 
-			MODEL TRANSFORM ( WS ) * VIEW TRANSFORM ( INV CAM MATRIX WS ) * PROJECTION MATRIX ( -> NDC )
-
-			( note model -> world transform happens after the skinning stuff bc that stuff all happens in local space model space )
-	
-		>> Matrix multiplication is Associative ( can regroup ), so we do these two steps in advance, before sending the bones to the GPU:
-			[ INV ] BONE BIND_POSE TRANSFORM ( MS ) * BONE ANIMATED_POSE TRANSFORM ( MS ) *
-	*/
-
-	outFinalTransforms.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
-	for ( int i = 0; i < BoneCount(); i++ ) {
 		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
 	}
 }

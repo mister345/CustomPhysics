@@ -14,7 +14,7 @@ struct AnimationInstance {
 	const char * curClipName = AnimationAssets::animNames[ AnimationAssets::COUNT ].c_str();
 	
 	float animTimePos      = 0.f;
-	float speedMultiplier  = 5.f;
+	float speedMultiplier  = 1.f;
 
 	AnimationInstance();
 	~AnimationInstance();
