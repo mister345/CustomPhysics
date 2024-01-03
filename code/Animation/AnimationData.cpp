@@ -138,11 +138,13 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * boneNode, fbxsdk::Fbx
 
 		FbxTime curTime;
 		curTime.SetFrame( i, FbxTime::eFrames24 );
-		FbxAMatrix curTransform  = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
-		FbxVector4 translation   = curTransform.GetT();
-		FbxQuaternion rotation   = curTransform.GetQ();
+		FbxAMatrix curTransform	 = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
+		FbxVector4 translation	 = curTransform.GetT();
+		FbxQuaternion rotation	 = curTransform.GetQ();
 		keyframeToFill.transform = SkinnedData::FbxToBoneTransform( &rotation, &translation );
-		keyframeToFill.timePos   = curTime.GetSecondCount();
+
+		constexpr float interval = 1.0 / 24; // duration of a single frame in seconds
+		keyframeToFill.timePos   = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * interval;
 	}
 }
 
