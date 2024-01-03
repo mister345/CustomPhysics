@@ -291,8 +291,6 @@ BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const 
 	};
 }
 
-// @TODO - do we need to undo the pre- and pos- rotation quats?
-// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
 void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	assert( boneNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
 
@@ -302,6 +300,7 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	/////////////////////////////////////////////////////////////////
 	// Populate OffsetMatrices array Bone Map, and Bone Hierarchy
 	/////////////////////////////////////////////////////////////////
+	// @BUG - this is NOT getting the bind pose; it's getting the pose @ time 0 of top anim in stack!
 	fbxsdk::FbxAMatrix localTransform = boneNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
 	fbxsdk::FbxVector4 translation    = localTransform.GetT();
 	fbxsdk::FbxQuaternion rotation    = localTransform.GetQ();
@@ -327,44 +326,43 @@ void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 
 	// Now we pass the responsibility to FillBoneAnimKeyframes to populate the animation
 //	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip.BoneAnimations[ boneIdx ] );
-	me->FillBoneAnimKeyframes( boneNode, curAnimLayer, clip, boneIdx );
-
-	//fbxsdk::FbxProperty lProperty = boneNode->GetFirstProperty();
-	//while ( lProperty.IsValid() ) {
-	//	if ( lProperty.GetPropertyDataType().GetType() == eFbxDouble3 ||
-	//		 lProperty.GetPropertyDataType().GetType() == eFbxDouble4 ||
-	//		 lProperty.GetPropertyDataType().GetType() == eFbxFloat ) {
-	//		// This property is a possible candidate for keyframe animation data
-
-	//		fbxsdk::FbxAnimCurveNode * lCurveNode = lProperty.GetCurveNode( me->activeLayer );
-	//		if ( !lCurveNode ) {
-	//			// No curve node, so no animation data for this property
-	//			lProperty = boneNode->GetNextProperty( lProperty );
-	//			continue;
-	//		}
-
-	//		// @TODO reconcile this w line 334 ( its already iterating all the channels down there!!! )
-	//		// If there is a curve node, process each channel (X, Y, Z)
-	//		for ( int n = 0; n < lCurveNode->GetChannelsCount(); ++n ) {
-	//			fbxsdk::FbxAnimCurve * lCurve = lCurveNode->GetCurve( n );
-	//			if ( lCurve ) {
-	//				const int boneIdx		   = me->BoneIdxMap[ boneName ];
-	//				AnimationClip & clip	   = me->mAnimations[ me->activeAnimName ];
-	//				BoneAnimation & boneAnim   = clip.BoneAnimations[ boneIdx ];
-	//				me->FillBoneAnimKeyframes( boneNode, me->activeLayer, boneAnim );
-	//			}
-	//		}
-	//	}
-	//	// Move to the next property
-	//	lProperty = boneNode->GetNextProperty( lProperty );
-	//}
+	me->FillBoneAnimKeyframesResample( boneNode, curAnimLayer, clip, boneIdx );
 }
 
+/* NOTE - 2 ways to get frames from fbx file
+	1. Store key frames only ( raw animation data from within the fbx file )
+	2. Sample frames from the fbx file at a fixed rate - loses raw animation data, 
+		bc its resampling the original keyframes according to some arbitrary logic. */
+
 // https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
+// alternate ( more common way of doing it - sample the bone transform at current time
+void SkinnedData::FillBoneAnimKeyframesResample( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
+	using namespace fbxsdk;
+	fbxsdk::FbxAnimStack * anim = fbxScene->GetCurrentAnimationStack();
+	FbxTime start				= anim->GetLocalTimeSpan().GetStart();
+	FbxTime stop				= anim->GetLocalTimeSpan().GetStop();
+	FbxLongLong animLen			= stop.GetFrameCount( FbxTime::eFrames24 ) - start.GetFrameCount( FbxTime::eFrames24 ) + 1;
+	BoneAnimation & outBoneAnim = clip.BoneAnimations[ whichBoneIdx ];
+
+	for ( FbxLongLong i = start.GetFrameCount( FbxTime::eFrames24 ); i <= stop.GetFrameCount( FbxTime::eFrames24 ); ++i ) {
+		outBoneAnim.keyframes.push_back( {} );
+		Keyframe & keyframeToFill = outBoneAnim.keyframes.back();
+
+		FbxTime curTime;
+		curTime.SetFrame( i, FbxTime::eFrames24 );
+		FbxAMatrix curTransform  = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
+		FbxVector4 translation   = curTransform.GetT();
+		FbxQuaternion rotation   = curTransform.GetQ();
+		keyframeToFill.transform = SkinnedData::FbxToBoneTransform( &rotation, &translation );
+		keyframeToFill.timePos   = curTime.GetSecondCount();
+	}
+}
+
 // This function assumes that the animation curves for translation and rotation are directly associated with the node,
 // and that the curves are for the node's local translation and rotation
-//void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, BoneAnimation & outBoneAnim ) {
-void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
+// @TODO - do we need to undo the pre- and pos- rotation quats?
+// https://www.gamedev.net/forums/topic/515878-fbx-sdk-how-to-get-bind-pose/4354881/
+void SkinnedData::FillBoneAnimKeyframesDirect( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
 	const float scale = FbxUtil::g_scale;
 
 	BoneAnimation & outBoneAnim = clip.BoneAnimations [ whichBoneIdx ];
@@ -377,14 +375,14 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 	};
 
 	// Extract the animation curves for translation
-	fbxsdk::FbxAnimCurve * tCurveX = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
-	fbxsdk::FbxAnimCurve * tCurveY = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
-	fbxsdk::FbxAnimCurve * tCurveZ = node->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
+	fbxsdk::FbxAnimCurve * tCurveX = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
+	fbxsdk::FbxAnimCurve * tCurveY = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
+	fbxsdk::FbxAnimCurve * tCurveZ = boneNode->LclTranslation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
 
 	// Extract the animation curves for rotation
-	fbxsdk::FbxAnimCurve * rCurveX = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
-	fbxsdk::FbxAnimCurve * rCurveY = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
-	fbxsdk::FbxAnimCurve * rCurveZ = node->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
+	fbxsdk::FbxAnimCurve * rCurveX = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_X );
+	fbxsdk::FbxAnimCurve * rCurveY = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Y );
+	fbxsdk::FbxAnimCurve * rCurveZ = boneNode->LclRotation.GetCurve( layer, FBXSDK_CURVENODE_COMPONENT_Z );
 
 	// Ensure we have valid curves and determine the keyframe count
 
@@ -417,8 +415,13 @@ void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnim
 		keyframe.transform.translation.z = GetCurveValue( tCurveZ, k ) * scale;
 
 		// Rotation - converting from Euler to quaternion
+		const float x = GetCurveValue( rCurveX, k );
+		const float y = GetCurveValue( rCurveY, k );
+		const float z = GetCurveValue( rCurveZ, k );
+
 		Quat q;
-		FbxEulerToQuat( { GetCurveValue( rCurveX, k ), GetCurveValue( rCurveY, k ), GetCurveValue( rCurveZ, k ) }, q );
+
+		FbxEulerToQuat( { x, y, z }, q );
 		keyframe.transform.rotation = q;
 		outBoneAnim.keyframes.push_back( keyframe );
 	}
@@ -465,18 +468,24 @@ void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform
 // https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	// set active layer first so that the per-node callbacks can access it later
-	animStack				   = scene->GetCurrentAnimationStack();
+	if ( scene == nullptr ) {
+		assert( !"ERROR - trying to load data from an empty FbxScene!" );
+		return;
+	}
+
+	fbxScene				   = scene;
+	animStack				   = fbxScene->GetCurrentAnimationStack();
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
 	const std::string animName = animStack->GetName();
 	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName;
 	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName;
 	assert( activeLayer != nullptr && !animName.empty() );
-	const int boneCount = CountBonesInSkeleton( scene->GetRootNode() );
+	const int boneCount = CountBonesInSkeleton( fbxScene->GetRootNode() );
 
 	curAnimName = animName.c_str();
 	mAnimations.insert( { curAnimName, AnimationClip( boneCount ) } );
 	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
-	FbxUtil::HarvestSceneData( scene, false, cb, this );
+	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
 
 	// accumulate local bone transforms to bring into component space
 	for ( int i = 1; i < boneCount; i++ ) {
@@ -515,7 +524,10 @@ void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std
 	//	outFinalTransforms[ i ] *= OffsetMatrices[ i ];
 	//}
 
-// experiment 2 - skewed bone values
+// experiment 2 - works ( the wrong data was coming from the keyframe loading, NOT this logic! )
+	// note - multiplying by inverse bindpose matrices is needed at a LATER step - for deforming verts
+	// ( bc they are in bind pose space! ). Since these debug spheres are simply in model space, just apply
+	// bone transforms directly
 	outFinalTransforms = std::vector< BoneTransform >( boneCount, BoneTransform::Identity() );
 	for ( int i = 0; i < boneCount; i++ ) {
 		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];

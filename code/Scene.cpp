@@ -41,9 +41,6 @@ static constexpr bool RUN_ANIMATION					   = true;
 static constexpr bool RUN_PHYSICS_SIM				   = false;
 static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
-
-
-
 /*
 ====================================================
 Scene::~Scene

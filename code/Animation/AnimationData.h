@@ -14,6 +14,7 @@ class FbxNode;
 class FbxAnimStack;
 class FbxAnimLayer;
 class FbxAnimCurve;
+class FbxScene;
 }
 
 struct Keyframe {
@@ -87,7 +88,8 @@ public:
 
 	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 	std::string BoneNameFromCurve( fbxsdk::FbxAnimCurve * curve );
-	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
+	void FillBoneAnimKeyframesResample( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
+	void FillBoneAnimKeyframesDirect( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
 
 
 //	RUNTIME DATA PROCESSING ( Playback )
@@ -101,6 +103,7 @@ public:
 	// flattened tree of child ( idx ) -> parent ( value of element @ idx ) relationships, in parent-child order
 	std::vector< BoneInfo_t > BoneHierarchy;
 
+	fbxsdk::FbxScene * fbxScene = nullptr;
 	// @TODO - will have to expand this to contain ALL layers
 	fbxsdk::FbxAnimStack * animStack   = nullptr;
 	fbxsdk::FbxAnimLayer * activeLayer = nullptr;
