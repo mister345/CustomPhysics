@@ -1,4 +1,5 @@
 #include "Bone.h"
+#include <inttypes.h>
 
 // Utility functions
 namespace {
@@ -98,7 +99,7 @@ float BoneAnimation::GetEndTime() const {
 	return keyframes.back().timePos;
 }
 
-void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
+void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myIdx ) const {
 	if ( keyframes.empty() ) {
 		puts( "Bone Animation had no keyframe! Returning..." );
 		return;
@@ -127,7 +128,10 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform ) const {
 
 				// slerp quat
 				outTransform.rotation = Slerp( start.transform.rotation, end.transform.rotation, progress );
-				printf( "cur time: %10.2f\ncur prog: %2.2f\ncur keyframes: %zu:%zu", t, progress, i, i + 1 );
+
+				if ( myIdx != -1 ) {
+					printf( "\tinput time:%1.3f\tprog btwn frames %i~%i\t:\t%2.2f\t\n", t, i, i + 1, progress );
+				}
 				break;
 			}
 		}

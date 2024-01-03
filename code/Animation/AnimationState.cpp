@@ -1,3 +1,4 @@
+#include "inttypes.h"
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "../Physics/Shapes/ShapeAnimated.h"
@@ -49,16 +50,15 @@ void AnimationInstance::Update( float deltaT ) {
 	const float loopBoundary	= curClip.GetClipEndTime();
 
 	// increment time and wrap around
-	animTimePos += deltaT;
-	if ( animTimePos * speedMultiplier >= loopBoundary ) {
+	animTimePos += deltaT * speedMultiplier;
+	if ( animTimePos >= loopBoundary ) {
 		animTimePos = 0.f;
 	}
-	const float timePos = animTimePos * speedMultiplier;
 
 	// ask AnimData to interpolate each bone transform across its keyframes @ given time point
 	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
-	animData->GetFinalTransforms( curClipName, timePos, boneTransforms );
+	animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
 
 	// apply each bone transform to each body ( 1 to 1 )
 	for ( int i = 0; i < animData->BoneCount(); i++ ) {

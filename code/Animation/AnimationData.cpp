@@ -36,8 +36,13 @@ float AnimationClip::GetClipEndTime() const {
 
 // interpolate bone animations & populate a list of all bone transforms ( aka, the pose ) at this given time
 void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTransforms ) const {
+
+	bool shouldPrint = true;
+
 	for ( int i = 0; i < BoneAnimations.size(); i++ ) {
-		BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ] );
+
+		BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		shouldPrint = false;
 	}
 }
 
@@ -161,6 +166,22 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 
 	fbxScene				   = scene;
 	animStack				   = fbxScene->GetCurrentAnimationStack();
+
+	// debug hack to play different anim - @TODO - expand to allow choosing which anim to play
+	if( false ) {
+		int numAnims = scene->GetSrcObjectCount< FbxAnimStack >();
+		animStack = scene->GetSrcObject< FbxAnimStack >( 0 );
+		std::string nm = animStack->GetName();
+
+		animStack = scene->GetSrcObject< FbxAnimStack >( 1 );
+		nm = animStack->GetName();
+
+		//animStack = scene->GetSrcObject< FbxAnimStack >( 2 );
+		//nm = animStack->GetName();
+
+		fbxScene->SetCurrentAnimationStack( animStack );
+	}
+
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
 	const std::string animName = animStack->GetName();
 	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName;

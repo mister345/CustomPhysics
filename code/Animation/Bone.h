@@ -44,7 +44,7 @@ struct Keyframe {
 struct BoneAnimation {
 	float GetStartTime() const;
 	float GetEndTime() const;
-	void Interpolate( float t, BoneTransform & outTransform ) const;
+	void Interpolate( float t, BoneTransform & outTransform, int myIdx ) const;
 	inline bool HasData() const { return !keyframes.empty(); }
 	std::vector< Keyframe > keyframes;
 };
