@@ -22,8 +22,8 @@ constexpr bool SHOW_ORIGIN = false;
 // type
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
-//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
 static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKELETON_ONLY;
+//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
 
 // asset
 constexpr float ANIMDEMO_SCALE = 0.0105f;
@@ -148,7 +148,6 @@ void Scene::Initialize() {
 	if ( RUN_ANIMATION ) {
 		animInstanceDemo = new AnimationInstance();
 		InitializeAnimInstanceDemo();
-		InitializeAnimatedBodies();
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////
@@ -175,9 +174,7 @@ void Scene::InitializeAnimInstanceDemo() {
 	}
 	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 	bAnimDataInitialized = true;
-}
 
-void Scene::InitializeAnimatedBodies() {
 	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
 	const Vec3 worldPos = Vec3( 0, 0, 10 );
 	const int numBones = animInstanceDemo->animData->BoneCount();

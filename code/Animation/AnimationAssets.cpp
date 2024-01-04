@@ -123,17 +123,11 @@ namespace AnimationAssets {
 					fileName,
 					[]( bool status, fbxsdk::FbxImporter * pImporter, FbxScene * scene, void * userData ) {
 						if ( !status ) {
-							puts( "Error - Failed to load FBX Scene." );
+							printf( "Error - Failed to load FBX Scene.\n" );
 							return;
 						}
-						FbxUtil::PrintSceneAnimData( pImporter );
-						const int numToTry = 100;
-						FbxPose * poses[ numToTry ] = {};
-						for ( int i = 0; i < numToTry; i++ ) {
-							poses[ i ] = scene->GetPose( i );
-						}
-						SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
-						animData->Set( scene );
+						//FbxUtil::PrintSceneAnimData( pImporter );
+						reinterpret_cast< SkinnedData * >( userData )->Set( scene );
 					},
 					animInstance->animData,
 					scale

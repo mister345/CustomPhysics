@@ -26,7 +26,6 @@ public:
 	void Reset();
 	void Initialize();
 	void InitializeAnimInstanceDemo();
-	void InitializeAnimatedBodies();
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
