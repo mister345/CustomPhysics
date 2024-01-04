@@ -166,9 +166,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAn
 		return;
 	}
 
-	fbxScene				   = scene;
-	animStack				   = fbxScene->GetCurrentAnimationStack();
-
+	fbxScene  = scene;
+	animStack = fbxScene->GetCurrentAnimationStack();
 
 	// debug hack to play different anim - @TODO - expand to allow choosing which anim to play
 	if( true ) {
