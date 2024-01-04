@@ -1,8 +1,7 @@
 #include <inttypes.h>
 #include "Bone.h"
 #include "ModelLoader.h"
-#include <fbxsdk.h>
-#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimstack.h"
+#include "fbxInclude.h"
 
 // Utility functions
 namespace {
@@ -30,11 +29,11 @@ namespace {
 			return Lerp( from, to, t ); // small enough ang to just lerp
 		}
 
-		const float theta = acos( cosTheta );
-		const float sinTheta = sin( theta );
+		const float theta = acosf( cosTheta );
+		const float sinTheta = sinf( theta );
 		const float denomInverse = 1.f / sinTheta;
-		const float weightA = sin( ( 1.f - t ) * theta ) * denomInverse;
-		const float weightB = sin( t * theta ) * denomInverse;
+		const float weightA = sinf( ( 1.f - t ) * theta ) * denomInverse;
+		const float weightB = sinf( t * theta ) * denomInverse;
 
 		const Vec4 result = qA * weightA + qB * weightB;
 
@@ -126,7 +125,7 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 		FbxQuaternion rotation = curTransform.GetQ();
 		keyframeToFill.transform = BoneTransform( &rotation, &translation );
 
-		constexpr float interval = 1.0 / 24; // duration of a single frame in seconds
+		constexpr float interval = 1.0f / 24; // duration of a single frame in seconds
 		keyframeToFill.timePos = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * interval;
 	}
 }
@@ -167,7 +166,7 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 				outTransform.rotation = Slerp( start.transform.rotation, end.transform.rotation, progress );
 
 				if ( myIdx != -1 ) {
-					printf( "\tbone %i:\tinput time:%1.3f\tprog btwn frames %i~%i\t:\t%2.2f\t\n", myIdx, t, i, i + 1, progress );
+					printf( "\tbone %i:\tinput time:%1.3f\tprog btwn frames %zi~%zi\t:\t%2.2f\t\n", myIdx, t, i, i + 1, progress );
 				}
 				break;
 			}

@@ -23,6 +23,7 @@
     <ClCompile Include="code\Animation\AnimationData.cpp" />
     <ClCompile Include="code\Animation\AnimationState.cpp" />
     <ClCompile Include="code\Animation\Bone.cpp" />
+    <ClCompile Include="code\Animation\FbxNodeParsers.cpp" />
     <ClCompile Include="code\Animation\ModelLoader.cpp" />
     <ClCompile Include="code\application.cpp" />
     <ClCompile Include="code\Fileio.cpp" />
@@ -64,6 +65,8 @@
     <ClInclude Include="code\Animation\AnimationData.h" />
     <ClInclude Include="code\Animation\AnimationState.h" />
     <ClInclude Include="code\Animation\Bone.h" />
+    <ClInclude Include="code\Animation\fbxInclude.h" />
+    <ClInclude Include="code\Animation\FbxNodeParsers.h" />
     <ClInclude Include="code\Animation\ModelLoader.h" />
     <ClInclude Include="code\application.h" />
     <ClInclude Include="code\Fileio.h" />

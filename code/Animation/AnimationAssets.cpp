@@ -2,6 +2,7 @@
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "ModelLoader.h"
+#include "fbxInclude.h"
 
 namespace {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;

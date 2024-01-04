@@ -1,22 +1,25 @@
 #pragma once
 
-/*
-https://help.autodesk.com/view/FBX/2018/ENU/?guid=FBX_Developer_Help_getting_started_installing_and_configuring_configuring_the_fbx_sdk_for_wind_html
-*/
-#define FBXSDK_SHARED
-
-#include <fbxsdk.h>
+namespace fbxsdk {
+	class FbxImporter;
+	class FbxScene;
+	class FbxNode;
+	class FbxQuaternion;
+	class FbxVector4;
+	class FbxAnimStack;
+	class FbxAnimLayer;
+	class FbxAnimCurve;
+}
 
 namespace FbxUtil {
 	extern float g_scale;
 
-	typedef void ( *onFoundBoneNode_fn ) ( void * userData, fbxsdk::FbxNode * boneNode );
-	typedef void ( *onFoundAnimNode_fn ) ( void * userData, fbxsdk::FbxNode * animNode );
+	typedef void ( *onFoundNode_fn ) ( void * userData, fbxsdk::FbxNode * boneNode );
 	typedef void ( *onLoadedCallback_fn )( bool status, fbxsdk::FbxImporter * pImporter, fbxsdk::FbxScene * scene, void * userData );
 
 	struct callbackAPI_t {
-		onFoundBoneNode_fn onFoundBone;
-		onFoundAnimNode_fn onFoundAnimCurve;
+		onFoundNode_fn onFoundBone;
+		onFoundNode_fn onFoundMesh;
 	};
 
 	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );

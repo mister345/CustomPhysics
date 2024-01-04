@@ -8,9 +8,9 @@
 
 namespace fbxsdk {
 class FbxScene;
+class FbxNode;
 class FbxQuaternion;
 class FbxVector4;
-class FbxNode;
 class FbxAnimStack;
 class FbxAnimLayer;
 class FbxAnimCurve;
@@ -62,14 +62,19 @@ public:
 	void Set( const std::vector< BoneInfo_t > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
+
+	/*	https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
+	https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
+NOTE - 2 ways to get frames from fbx file
+	1. Store key frames only ( raw animation data from within the fbx file )
+	2. Sample frames from the fbx file at a fixed rate - loses raw animation data,
+		bc its resampling the original keyframes according to some arbitrary logic.
+	-> we use way #2 because much more straightforward ( not easy to match curves to bones )
+	*/
 	void Set( fbxsdk::FbxScene * scene );
-//	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
 
 // PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
-
-private:
-	static void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode );
 
 public:
 	std::map< std::string, AnimationClip > animations;

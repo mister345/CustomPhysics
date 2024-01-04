@@ -3,13 +3,11 @@
 #include <vector>
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
+#include "fbxInclude.h"
 #include "ModelLoader.h"
 #include "AnimationData.h"
 #include "AnimationState.h"
-
-#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimstack.h"
-#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimcurve.h"
-#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimevaluator.h"
+#include "FbxNodeParsers.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION CLIP
@@ -47,6 +45,15 @@ void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTrans
 ////////////////////////////////////////////////////////////////////////////////
 // SKINNED DATA
 ////////////////////////////////////////////////////////////////////////////////
+void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
+	const int parentIdx = BoneHierarchy[ boneIdx ].GetParent();
+	if ( parentIdx < 0 ) {
+		return;
+	}
+	BoneTransform & outBoneTransform = inOutBoneTransforms[ boneIdx ];
+	outBoneTransform = inOutBoneTransforms[ parentIdx ] * outBoneTransform;
+}
+
 void SkinnedData::Set( 
 	const std::vector<BoneInfo_t> & boneHierarchy,
 	std::vector<BoneTransform> & boneOffsets, 
@@ -61,60 +68,6 @@ void SkinnedData::Set(
 	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
 	animations.insert( _animations.begin(), _animations.end() );
 }
-
-void SkinnedData::OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
-	assert( boneNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
-
-	SkinnedData * me	  = reinterpret_cast< SkinnedData * >( user );
-	const char * boneName = boneNode->GetName();
-
-	/////////////////////////////////////////////////////////////////
-	// Populate OffsetMatrices array Bone Map, and Bone Hierarchy
-	/////////////////////////////////////////////////////////////////
-	// @BUG - this is NOT getting the bind pose; it's getting the pose @ time 0 of top anim in stack!
-	fbxsdk::FbxAMatrix localTransform = boneNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
-	fbxsdk::FbxVector4 translation    = localTransform.GetT();
-	fbxsdk::FbxQuaternion rotation    = localTransform.GetQ();
-	me->OffsetMatrices.emplace_back( &rotation, &translation );
-
-	const int boneIdx = me->OffsetMatrices.size() - 1;
-	if ( !me->BoneIdxMap.insert( { boneName, boneIdx } ).second ) {
-		return;
-	}
-
-	const char * parentName = boneNode->GetParent()->GetName();
-	const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
-	me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
-
-	//////////////////////////////////////
-	// Get all animations for this bone
-	//////////////////////////////////////
-	for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
-		fbxsdk::FbxAnimStack * stack = me->fbxScene->GetSrcObject< FbxAnimStack >( i );
-		me->fbxScene->SetCurrentAnimationStack( stack );
-		AnimationClip & clip = me->animations[ stack->GetName() ];
-		clip.BoneAnimations.emplace_back( me->fbxScene, boneNode );
-	}
-}
-
-void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
-	const int parentIdx = BoneHierarchy[ boneIdx ].GetParent();
-	if ( parentIdx < 0 ) {
-		return;
-	}
-
-	BoneTransform & outBoneTransform = inOutBoneTransforms[ boneIdx ];
-	outBoneTransform = inOutBoneTransforms[ parentIdx ] * outBoneTransform;
-}
-
-/*	https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
-	https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
-NOTE - 2 ways to get frames from fbx file
-	1. Store key frames only ( raw animation data from within the fbx file )
-	2. Sample frames from the fbx file at a fixed rate - loses raw animation data, 
-		bc its resampling the original keyframes according to some arbitrary logic. 
-	-> we use way #2 because much more straightforward ( not easy to match curves to bones )		
-*/
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	// set active layer first so that the per-node callbacks can access it later
@@ -137,7 +90,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
-	FbxUtil::callbackAPI_t cb{ &OnFoundBoneCB, nullptr };
+	FbxUtil::callbackAPI_t cb{ &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB };
 	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
 
 	// accumulate local bone transforms to bring into component space

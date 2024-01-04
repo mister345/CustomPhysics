@@ -12,7 +12,6 @@
 #include "Animation/AnimationState.h"
 #include "Animation/ModelLoader.h"
 
-
 /*
 ====================================================
 Scene
@@ -39,8 +38,6 @@ private:
 	std::vector< Body > m_bodies;
 	std::vector< Body > m_animatedBodies;
 	AnimationInstance * animInstanceDemo = nullptr;
-	FbxManager * fbxManager = nullptr;
-	FbxImporter * fbxImporter = nullptr;
 	bool bAnimDataInitialized = false;
 };
 

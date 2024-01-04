@@ -154,17 +154,13 @@ void Scene::Initialize() {
 	// list of pointers to both ( todo - use placement new to allocate in same block )
 	///////////////////////////////////////////////////////////////////////////////////
 	m_renderedBodies.resize( m_bodies.size() + m_animatedBodies.size() );
-	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(),
-					[]( Body & b ) { return &b; }
-	);
-	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(),
-					[]( Body & b ) { return &b; }
-	);
+	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), []( Body & b ) { return &b; } );
+	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(), []( Body & b ) { return &b; } );
 }
 
 void Scene::TryCycleAnim() {
 	if ( animInstanceDemo != nullptr ) {
-		printf( "/nACTIVE ANIMATION WAS CHANGED TO: %s/n", animInstanceDemo->CycleCurClip() );
+		printf( "\nACTIVE ANIMATION WAS CHANGED TO: %s\n", animInstanceDemo->CycleCurClip() );
 	}
 }
 

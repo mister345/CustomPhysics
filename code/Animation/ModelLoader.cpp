@@ -1,6 +1,7 @@
-#include "ModelLoader.h"
 #include <iostream>
 #include <cassert>
+#include "fbxInclude.h"
+#include "ModelLoader.h"
 
 namespace FbxUtil {
 	float g_scale = 1.f;
@@ -99,17 +100,18 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
-//			PrintNode( pNode );
+			// PrintNode( pNode );
 			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
 				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 				if ( pAttribute != nullptr ) {
-					PrintAttribute( pAttribute );
-
-					if( pNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton 
-						&& callback.onFoundBone != nullptr ) {
-
-						PrintBone( pNode );
+					// PrintAttribute( pAttribute );
+					const fbxsdk::FbxNodeAttribute::EType attrType = pAttribute->GetAttributeType();
+					if ( attrType == fbxsdk::FbxNodeAttribute::EType::eSkeleton && callback.onFoundBone != nullptr ) {
 						callback.onFoundBone( dataRecipient, pNode );
+						// break;	// @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
+					} else if ( attrType == fbxsdk::FbxNodeAttribute::EType::eMesh && callback.onFoundMesh != nullptr ) {
+						callback.onFoundMesh( dataRecipient, pNode );
+						// break; // @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
 					}
 				}
 			}
@@ -128,12 +130,12 @@ namespace FbxUtil {
 		newAxisSystem.DeepConvertScene( pScene );
 	}
 
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const callbackAPI_t & callback, void * caller ) {
-		PrintScene( pScene );
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const FbxUtil::callbackAPI_t & callback, void * caller ) {
+//		FbxUtil::PrintScene( pScene );
 		if ( bConvert ) {
 			ConvertScene( pScene );
 			printf( "/nAFTER CONVERSION:/n" );
-			PrintScene( pScene );
+			FbxUtil::PrintScene( pScene );
 		}
 
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
@@ -164,7 +166,7 @@ namespace FbxUtil {
 	}
 
 	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, float scale /* = 1.f */ ) {
-		g_scale = scale;
+		FbxUtil::g_scale = scale;
 
 		fbxsdk::FbxManager * pManager = nullptr;
 		fbxsdk::FbxImporter * pImporter = nullptr;
