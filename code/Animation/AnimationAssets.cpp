@@ -1,5 +1,7 @@
 #include "AnimationAssets.h"
 #include "AnimationData.h"
+#include "AnimationState.h"
+#include "ModelLoader.h"
 
 namespace {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
@@ -63,7 +65,7 @@ namespace {
 namespace AnimationAssets {
 	#define stringify( s ) #s
 
-	void FillAnimInstanceData( SkinnedData * skinnedData, eSkeleton whichSkeleton, fbxsdk::FbxScene * sceneData ) {
+	void FillAnimInstanceData( AnimationInstance * animInstance, eSkeleton whichSkeleton, const char * fileName, float scale ) {
 		switch ( whichSkeleton ) {
 			case SINGLE_BONE: {
 				int boneCount;
@@ -76,7 +78,7 @@ namespace AnimationAssets {
 				clip.BoneAnimations.assign( { MakeBoneAnim1(), } );
 
 				std::map< std::string, AnimationClip > animMap = { { stringify( SINGLE_BONE ), clip } };
-				skinnedData->Set( hierarchy, boneOffsets, animMap );
+				animInstance->animData->Set( hierarchy, boneOffsets, animMap );
 				break;
 			}
 			case MULTI_BONE: {
@@ -111,13 +113,31 @@ namespace AnimationAssets {
 				assert( clip.BoneAnimations.size() == boneCount );
 
 				std::map< std::string, AnimationClip > animMap = { { stringify( MULTI_BONE ), clip } };
-				skinnedData->Set( hierarchy, boneOffsets, animMap );
+				animInstance->animData->Set( hierarchy, boneOffsets, animMap );
 				break;
 			}
 			case SKELETON_ONLY:
 			case SKINNED_MESH:
 			default: {
-				skinnedData->Set( sceneData );
+				const bool loaded = FbxUtil::LoadFBXFile(
+					fileName,
+					[]( bool status, fbxsdk::FbxImporter * pImporter, FbxScene * scene, void * userData ) {
+						if ( !status ) {
+							puts( "Error - Failed to load FBX Scene." );
+							return;
+						}
+						FbxUtil::PrintSceneAnimData( pImporter );
+						const int numToTry = 100;
+						FbxPose * poses[ numToTry ] = {};
+						for ( int i = 0; i < numToTry; i++ ) {
+							poses[ i ] = scene->GetPose( i );
+						}
+						SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
+						animData->Set( scene );
+					},
+					animInstance->animData,
+					scale
+				);
 				break;
 			}
 		}

@@ -3,10 +3,8 @@
 #include <vector>
 #include <string>
 
-namespace fbxsdk {
-	class FbxScene;
-}
 class SkinnedData;
+class AnimationInstance;
 
 namespace AnimationAssets {
 	enum eSkeleton : uint8_t {
@@ -16,5 +14,5 @@ namespace AnimationAssets {
 		SKINNED_MESH = 3,
 		COUNT = 4,
 	};
-	void FillAnimInstanceData( SkinnedData * skinnedData, const eSkeleton which, fbxsdk::FbxScene * sceneData = nullptr );
+	void FillAnimInstanceData( AnimationInstance * animInstance, eSkeleton whichSkeleton, const char * fileName, float scale );
 } // namespace AnimationAssets

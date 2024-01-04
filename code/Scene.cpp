@@ -36,10 +36,10 @@ constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 
 
 // Physics
-static constexpr float GRAVITY_MAGNITUDE			   = 10.f;
-static constexpr bool RUN_ANIMATION					   = true;
-static constexpr bool RUN_PHYSICS_SIM				   = false;
-static const Vec3 GRAV_ACCEL						   = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+static constexpr float GRAVITY_MAGNITUDE = 10.f;
+static constexpr bool RUN_ANIMATION		 = true;
+static constexpr bool RUN_PHYSICS_SIM	 = false;
+static const Vec3 GRAV_ACCEL			 = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
 ====================================================
@@ -173,40 +173,7 @@ void Scene::InitializeAnimInstanceDemo() {
 	if ( bAnimDataInitialized ) {
 		return;
 	}
-	switch ( WHICH_SKELETON ) {
-		case AnimationAssets::SKELETON_ONLY:
-		case AnimationAssets::SKINNED_MESH: {
-			const bool loaded = FbxUtil::LoadFBXFile(
-				ANIMDEMO_FILENAME,
-				[]( bool status, fbxsdk::FbxImporter * pImporter, FbxScene * scene, void * userData ) {
-					if ( !status ) {
-						puts( "Error - Failed to load FBX Scene." );
-						return;
-					}
-					FbxUtil::PrintSceneAnimData( pImporter );
-					const int numToTry = 100;
-					FbxPose * poses[ numToTry ] = {};
-					for ( int i = 0; i < numToTry; i++ ) {
-						poses[ i ] = scene->GetPose( i );
-					}
-
-					// @TODO - currently getting a crash here
-					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
-					AnimationAssets::FillAnimInstanceData( animData, WHICH_SKELETON, scene );
-
-				},
-				animInstanceDemo->animData,
-				ANIMDEMO_SCALE 
-			);
-			break;
-		}
-		case AnimationAssets::MULTI_BONE:
-		case AnimationAssets::SINGLE_BONE:
-		default: {
-			AnimationAssets::FillAnimInstanceData( animInstanceDemo->animData, WHICH_SKELETON );
-			break;
-		}
-	}
+	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 	bAnimDataInitialized = true;
 }
 
@@ -220,7 +187,8 @@ void Scene::InitializeAnimatedBodies() {
 	animInstanceDemo->Initialize(
 		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
-		worldPos);
+		worldPos 
+	);
 
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	// put it at the end so it gets rendered on top ( hopefully )
