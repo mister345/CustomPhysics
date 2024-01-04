@@ -47,6 +47,13 @@ Scene::~Scene
 ====================================================
 */
 Scene::~Scene() {
+	bAnimDataInitialized = false;
+
+	if ( RUN_ANIMATION ) {
+		delete( animInstanceDemo );
+		animInstanceDemo = nullptr;
+	}
+
 	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
 		delete m_animatedBodies[ i ].m_shape;
 	}
@@ -67,6 +74,13 @@ Scene::Reset
 ====================================================
 */
 void Scene::Reset() {
+	bAnimDataInitialized = false;
+
+	if ( RUN_ANIMATION ) {
+		delete( animInstanceDemo );
+		animInstanceDemo = nullptr;
+	}
+
 	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
 		delete m_animatedBodies[ i ].m_shape;
 	}
@@ -132,6 +146,7 @@ void Scene::Initialize() {
 	}
 
 	if ( RUN_ANIMATION ) {
+		animInstanceDemo = new AnimationInstance();
 		InitializeAnimInstanceDemo();
 		InitializeAnimatedBodies();
 	}
@@ -146,6 +161,12 @@ void Scene::Initialize() {
 	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(),
 					[]( Body & b ) { return &b; }
 	);
+}
+
+void Scene::TryCycleAnim() {
+	if ( animInstanceDemo != nullptr ) {
+		printf( "/nACTIVE ANIMATION WAS CHANGED TO: %s/n", animInstanceDemo->CycleCurClip() );
+	}
 }
 
 void Scene::InitializeAnimInstanceDemo() {
@@ -174,7 +195,7 @@ void Scene::InitializeAnimInstanceDemo() {
 					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
 
 				},
-				animInstanceDemo.animData,
+				animInstanceDemo->animData,
 				ANIMDEMO_SCALE 
 			);
 			break;
@@ -182,7 +203,7 @@ void Scene::InitializeAnimInstanceDemo() {
 		case AnimationAssets::MULTI_BONE:
 		case AnimationAssets::SINGLE_BONE:
 		default: {
-			AnimationAssets::FillAnimInstanceData( animInstanceDemo.animData, ANIM_TYPE );
+			AnimationAssets::FillAnimInstanceData( animInstanceDemo->animData, ANIM_TYPE );
 			break;
 		}
 	}
@@ -192,11 +213,11 @@ void Scene::InitializeAnimInstanceDemo() {
 void Scene::InitializeAnimatedBodies() {
 	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
 	const Vec3 worldPos = Vec3( 0, 0, 10 );
-	const int numBones = animInstanceDemo.animData->BoneCount();
+	const int numBones = animInstanceDemo->animData->BoneCount();
 	for ( int i = 0; i < numBones; i++ ) {
 		m_animatedBodies.push_back( Body() );
 	}
-	animInstanceDemo.Initialize(
+	animInstanceDemo->Initialize(
 		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
 		worldPos,
@@ -237,7 +258,7 @@ Scene::Update
 */
 void Scene::Update( const float dt_sec ) {
 	// anim demo
-	animInstanceDemo.Update( dt_sec );
+	animInstanceDemo->Update( dt_sec );
 
 	// apply gravitational acceleration to velocity
 	for ( int i = 0; i < m_bodies.size(); i++ ) {

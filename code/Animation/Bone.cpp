@@ -1,5 +1,8 @@
-#include "Bone.h"
 #include <inttypes.h>
+#include "Bone.h"
+#include "ModelLoader.h"
+#include <fbxsdk.h>
+#include "../../libs/FBX/2020.3.4/include/fbxsdk/scene/animation/fbxanimstack.h"
 
 // Utility functions
 namespace {
@@ -48,6 +51,19 @@ namespace {
 ////////////////////////////////////////////////////////////////////////////////
 // BONE TRANSFORM
 ////////////////////////////////////////////////////////////////////////////////
+BoneTransform::BoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t ) :
+	rotation( { 
+		static_cast< float >( q->mData[ 0 ] ),
+		static_cast< float >( q->mData[ 1 ] ),
+		static_cast< float >( q->mData[ 2 ] ),
+		static_cast< float >( q->mData[ 3 ] ) } ),
+	translation( { 
+		static_cast< float >( t->mData[ 0 ] * FbxUtil::g_scale ),
+		static_cast< float >( t->mData[ 1 ] * FbxUtil::g_scale ),
+		static_cast< float >( t->mData[ 2 ] * FbxUtil::g_scale ) } ),
+	isIdentity( false ) 
+{}
+
 BoneTransform BoneTransform::Identity() {
 	return {
 		{ 0, 0, 0, 1 },
@@ -91,6 +107,30 @@ BoneTransform BoneTransform::operator*( const BoneTransform & b ) const {
 ////////////////////////////////////////////////////////////////////////////////
 // BONE ANIMATION
 ////////////////////////////////////////////////////////////////////////////////
+BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode ) {
+	using namespace fbxsdk;
+
+	fbxsdk::FbxAnimStack * anim = fbxScene->GetCurrentAnimationStack();
+	FbxTime start = anim->GetLocalTimeSpan().GetStart();
+	FbxTime stop = anim->GetLocalTimeSpan().GetStop();
+	FbxLongLong animLen = stop.GetFrameCount( FbxTime::eFrames24 ) - start.GetFrameCount( FbxTime::eFrames24 ) + 1;
+
+	for ( FbxLongLong i = start.GetFrameCount( FbxTime::eFrames24 ); i <= stop.GetFrameCount( FbxTime::eFrames24 ); ++i ) {
+		keyframes.push_back( {} );
+		Keyframe & keyframeToFill = keyframes.back();
+
+		FbxTime curTime;
+		curTime.SetFrame( i, FbxTime::eFrames24 );
+		FbxAMatrix curTransform = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
+		FbxVector4 translation = curTransform.GetT();
+		FbxQuaternion rotation = curTransform.GetQ();
+		keyframeToFill.transform = BoneTransform( &rotation, &translation );
+
+		constexpr float interval = 1.0 / 24; // duration of a single frame in seconds
+		keyframeToFill.timePos = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * interval;
+	}
+}
+
 float BoneAnimation::GetStartTime() const {
 	return keyframes.front().timePos;
 }

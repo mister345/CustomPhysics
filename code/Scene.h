@@ -30,6 +30,8 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
+	void TryCycleAnim();
+
 	std::vector< Constraint * >	m_constraints;
 	ManifoldCollector m_manifolds;
 	std::vector< Body * > m_renderedBodies;
@@ -37,7 +39,7 @@ public:
 private:
 	std::vector< Body > m_bodies;
 	std::vector< Body > m_animatedBodies;
-	AnimationInstance animInstanceDemo;
+	AnimationInstance * animInstanceDemo = nullptr;
 	FbxManager * fbxManager = nullptr;
 	FbxImporter * fbxImporter = nullptr;
 	bool bAnimDataInitialized = false;

@@ -37,6 +37,8 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 		bodyToAnimate->m_friction = 0.f;
 		bodyToAnimate->m_shape = new ShapeAnimated( 0.075f, false );
 	}
+
+	pCurAnim = animData->animations.begin();
 }
 
 void AnimationInstance::Update( float deltaT ) {

@@ -104,7 +104,7 @@ namespace AnimationAssets {
 				assert( hierarchy.size() == boneCount && boneOffsets.size() == boneCount );
 
 				BoneAnimation boneAnim = MakeBoneAnim1();
-				clip.BoneAnimations.assign( { { { } },
+				clip.BoneAnimations.assign( { {},
 											  boneAnim,
 											  boneAnim,
 											  boneAnim,

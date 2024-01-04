@@ -4,6 +4,14 @@
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
 
+namespace fbxsdk {
+	class FbxScene;
+	class FbxNode;
+	class FbxAnimLayer;
+	class FbxQuaternion;
+	class FbxVector4;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // BONE TRANSFORM
 ////////////////////////////////////////////////////////////////////////////////
@@ -12,13 +20,12 @@ struct BoneTransform {
 	Vec3 translation;
 	bool isIdentity;
 
-	BoneTransform() : 
-		rotation( { 0, 0, 0, 1 } ), 
-		translation( { 0, 0, 0 } ),
-		isIdentity( true ) {}
-	BoneTransform( const Quat & rot, const Vec3 & trans, bool isI )
-		: rotation( rot ), translation( trans ), isIdentity( isI ) {}
+	BoneTransform() : rotation( { 0, 0, 0, 1 } ), translation( { 0, 0, 0 } ), isIdentity( true ) 
+	{}
+	BoneTransform( const Quat & rot, const Vec3 & trans, bool isI ) : rotation( rot ), translation( trans ), isIdentity( isI ) 
+	{}
 	BoneTransform( const BoneTransform & other ) { *this = other; }
+	BoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
 	void operator *= ( const BoneTransform & other );
 	BoneTransform operator * ( const BoneTransform & b ) const;
@@ -40,8 +47,12 @@ struct Keyframe {
 
 ////////////////////////////////////////////////////////////////////////////////
 // BONE ANIMATION
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////s////////////////////
 struct BoneAnimation {
+	BoneAnimation() = default;
+	BoneAnimation( const BoneAnimation & oth ) { *this = oth; }
+	BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode );
+
 	float GetStartTime() const;
 	float GetEndTime() const;
 	void Interpolate( float t, BoneTransform & outTransform, int myIdx ) const;

@@ -14,7 +14,6 @@ class FbxNode;
 class FbxAnimStack;
 class FbxAnimLayer;
 class FbxAnimCurve;
-class FbxScene;
 }
 
 namespace AnimationAssets {
@@ -57,14 +56,14 @@ public:
 		return BoneHierarchy.size();
 	};
 	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
-	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
+//	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
 // INITIALIZATION / LOADING
 	void Set( const std::vector< BoneInfo_t > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
 	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
-	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
+//	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
 
 // PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;

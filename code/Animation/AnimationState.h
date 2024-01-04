@@ -15,13 +15,24 @@ struct AnimationInstance {
 
 	Vec3 worldPos		     = Vec3( 0, 0, 15 );
 	Body * bodiesToAnimate   = nullptr;
-	const char * curClipName = AnimationAssets::animNames[ AnimationAssets::COUNT ].c_str();
-	
+//	const char * curClipName = AnimationAssets::animNames[ AnimationAssets::COUNT ].c_str();
+	const char * curClipName = "NONE";
+
 	float animTimePos      = 0.f;
 	float speedMultiplier  = 2.f;
+	// @TODO - this crash, do it inside init func instead
+	std::map< std::string, AnimationClip >::iterator pCurAnim;
 
 	AnimationInstance();
 	~AnimationInstance();
 	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay );
 	void Update( float deltaT );
+	const char * CycleCurClip() {
+		if ( ++pCurAnim == animData->animations.end() ) {
+			pCurAnim = animData->animations.begin();
+		}
+		curClipName = pCurAnim->first.c_str();
+		return curClipName;
+	}
+
 };
