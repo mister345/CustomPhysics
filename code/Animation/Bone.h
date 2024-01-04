@@ -70,10 +70,4 @@ public:
 
 private:
 	int parentIdx;
-
-	// @TODO - add additional mapping data later; 
-	// for now, we'll just do a one-to-one replacement for the sake of 
-	// stable porting old array of indices to this new struct array
-
-//	BoneTransform transform;
 };

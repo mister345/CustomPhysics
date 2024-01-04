@@ -36,11 +36,9 @@ float AnimationClip::GetClipEndTime() const {
 
 // interpolate bone animations & populate a list of all bone transforms ( aka, the pose ) at this given time
 void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTransforms ) const {
-
-	bool shouldPrint = true;
-
+//	bool shouldPrint = true;
+	bool shouldPrint = false;
 	for ( int i = 0; i < BoneAnimations.size(); i++ ) {
-
 		BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
 		shouldPrint = false;
 	}
@@ -63,22 +61,6 @@ void SkinnedData::Set(
 	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
 	animations.insert( animations.begin(), animations.end() );
 }
-//
-//BoneTransform SkinnedData::FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t ) {
-//	const float scale = FbxUtil::g_scale;
-//
-//	return { { 
-//			static_cast< float >( q->mData[ 0 ] ), 
-//			static_cast< float >( q->mData[ 1 ] ), 
-//			static_cast< float >( q->mData[ 2 ] ), 
-//			static_cast< float >( q->mData[ 3 ]  ) 
-//		}, { 
-//			static_cast< float >( t->mData[ 0 ] * scale ),
-//			static_cast< float >( t->mData[ 1 ] * scale ),
-//			static_cast< float >( t->mData[ 2 ] * scale )
-//		}, false 
-//	};
-//}
 
 void SkinnedData::OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	assert( boneNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
@@ -115,37 +97,6 @@ void SkinnedData::OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
 	}
 }
 
-/*	https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
-NOTE - 2 ways to get frames from fbx file
-	1. Store key frames only ( raw animation data from within the fbx file )
-	2. Sample frames from the fbx file at a fixed rate - loses raw animation data, 
-		bc its resampling the original keyframes according to some arbitrary logic. 
-	-> we use way #2 because much more straightforward ( not easy to match curves to bones )		
-*/
-//void SkinnedData::FillBoneAnimKeyframes( fbxsdk::FbxNode * boneNode, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx ) {
-//	using namespace fbxsdk;
-//	fbxsdk::FbxAnimStack * anim = fbxScene->GetCurrentAnimationStack();
-//	FbxTime start				= anim->GetLocalTimeSpan().GetStart();
-//	FbxTime stop				= anim->GetLocalTimeSpan().GetStop();
-//	FbxLongLong animLen			= stop.GetFrameCount( FbxTime::eFrames24 ) - start.GetFrameCount( FbxTime::eFrames24 ) + 1;
-//	BoneAnimation & outBoneAnim = clip.BoneAnimations[ whichBoneIdx ];
-//
-//	for ( FbxLongLong i = start.GetFrameCount( FbxTime::eFrames24 ); i <= stop.GetFrameCount( FbxTime::eFrames24 ); ++i ) {
-//		outBoneAnim.keyframes.push_back( {} );
-//		Keyframe & keyframeToFill = outBoneAnim.keyframes.back();
-//
-//		FbxTime curTime;
-//		curTime.SetFrame( i, FbxTime::eFrames24 );
-//		FbxAMatrix curTransform	 = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
-//		FbxVector4 translation	 = curTransform.GetT();
-//		FbxQuaternion rotation	 = curTransform.GetQ();
-//		keyframeToFill.transform = SkinnedData::FbxToBoneTransform( &rotation, &translation );
-//
-//		constexpr float interval = 1.0 / 24; // duration of a single frame in seconds
-//		keyframeToFill.timePos   = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * interval;
-//	}
-//}
-
 void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const {
 	const int parentIdx = BoneHierarchy[ boneIdx ].GetParent();
 	if ( parentIdx < 0 ) {
@@ -156,7 +107,14 @@ void SkinnedData::BoneSpaceToModelSpace( int boneIdx, std::vector< BoneTransform
 	outBoneTransform = inOutBoneTransforms[ parentIdx ] * outBoneTransform;
 }
 
-// https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
+/*	https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
+	https://stackoverflow.com/questions/45690006/fbx-sdk-skeletal-animations
+NOTE - 2 ways to get frames from fbx file
+	1. Store key frames only ( raw animation data from within the fbx file )
+	2. Sample frames from the fbx file at a fixed rate - loses raw animation data, 
+		bc its resampling the original keyframes according to some arbitrary logic. 
+	-> we use way #2 because much more straightforward ( not easy to match curves to bones )		
+*/
 void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
 	// set active layer first so that the per-node callbacks can access it later
 	if ( scene == nullptr ) {

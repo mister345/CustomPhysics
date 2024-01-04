@@ -158,9 +158,6 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 			const Keyframe & start = keyframes[ i ];
 			const Keyframe & end = keyframes[ i + 1 ];
 			if ( t >= start.timePos && t <= end.timePos ) {
-				// we have found the two keyframes that t lies between, 
-				// so interpolate it within the range of start ~ end
-
 				// lerp translation
 				const float range = end.timePos - start.timePos;
 				const float progress = ( t - start.timePos ) / range;
@@ -170,7 +167,7 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 				outTransform.rotation = Slerp( start.transform.rotation, end.transform.rotation, progress );
 
 				if ( myIdx != -1 ) {
-					printf( "\tinput time:%1.3f\tprog btwn frames %i~%i\t:\t%2.2f\t\n", t, i, i + 1, progress );
+					printf( "\tbone %i:\tinput time:%1.3f\tprog btwn frames %i~%i\t:\t%2.2f\t\n", myIdx, t, i, i + 1, progress );
 				}
 				break;
 			}
