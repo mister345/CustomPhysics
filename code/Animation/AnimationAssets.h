@@ -9,14 +9,12 @@ namespace fbxsdk {
 class SkinnedData;
 
 namespace AnimationAssets {
-	enum eWhichAnim : uint8_t {
+	enum eSkeleton : uint8_t {
 		SINGLE_BONE = 0,
 		MULTI_BONE = 1,
 		SKELETON_ONLY = 2,
 		SKINNED_MESH = 3,
 		COUNT = 4,
 	};
-	extern std::vector< std::string > animNames;
-
-	void FillAnimInstanceData( SkinnedData *& skinnedData, const eWhichAnim which, fbxsdk::FbxScene * sceneData = nullptr );
+	void FillAnimInstanceData( SkinnedData * skinnedData, const eSkeleton which, fbxsdk::FbxScene * sceneData = nullptr );
 } // namespace AnimationAssets

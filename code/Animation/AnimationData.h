@@ -17,7 +17,7 @@ class FbxAnimCurve;
 }
 
 namespace AnimationAssets {
-	enum eWhichAnim : uint8_t;
+	enum eAnimType : uint8_t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ public:
 	void Set( const std::vector< BoneInfo_t > & boneHierarchy,
 			  std::vector< BoneTransform > & boneOffsets,
 			  std::map< std::string, AnimationClip > & animations );
-	void Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim );
+	void Set( fbxsdk::FbxScene * scene );
 //	void FillBoneAnimKeyframes( fbxsdk::FbxNode * node, fbxsdk::FbxAnimLayer * layer, AnimationClip & clip, int whichBoneIdx );
 
 // PLAYBACK

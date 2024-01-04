@@ -59,17 +59,12 @@ namespace {
 	}
 } // anonymous namespace
 
-namespace AnimationAssets {
-	std::vector< std::string > animNames = {
-		"SingleBone",
-		"MultiBone",
-		"SkeletonOnly",
-		"SkinnedMesh",
-		"Count"
-	};
 
-	void FillAnimInstanceData( SkinnedData *& skinnedData, eWhichAnim whichAnim, fbxsdk::FbxScene * sceneData ) {
-		switch ( whichAnim ) {
+namespace AnimationAssets {
+	#define stringify( s ) #s
+
+	void FillAnimInstanceData( SkinnedData * skinnedData, eSkeleton whichSkeleton, fbxsdk::FbxScene * sceneData ) {
+		switch ( whichSkeleton ) {
 			case SINGLE_BONE: {
 				int boneCount;
 				std::vector< BoneInfo_t > hierarchy;
@@ -80,7 +75,7 @@ namespace AnimationAssets {
 				boneOffsets.assign( { BoneTransform::Identity() } );
 				clip.BoneAnimations.assign( { MakeBoneAnim1(), } );
 
-				std::map< std::string, AnimationClip > animMap = { { animNames[ whichAnim ], clip } };
+				std::map< std::string, AnimationClip > animMap = { { stringify( SINGLE_BONE ), clip } };
 				skinnedData->Set( hierarchy, boneOffsets, animMap );
 				break;
 			}
@@ -115,16 +110,17 @@ namespace AnimationAssets {
 											  boneAnim } );
 				assert( clip.BoneAnimations.size() == boneCount );
 
-				std::map< std::string, AnimationClip > animMap = { { animNames[ whichAnim ], clip } };
+				std::map< std::string, AnimationClip > animMap = { { stringify( MULTI_BONE ), clip } };
 				skinnedData->Set( hierarchy, boneOffsets, animMap );
 				break;
 			}
 			case SKELETON_ONLY:
 			case SKINNED_MESH:
 			default: {
-				skinnedData->Set( sceneData, whichAnim );
+				skinnedData->Set( sceneData );
 				break;
 			}
 		}
 	}
+	#undef stringify
 } // namespace AnimationAssets

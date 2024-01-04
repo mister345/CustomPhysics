@@ -23,7 +23,7 @@ struct AnimationInstance {
 
 	AnimationInstance();
 	~AnimationInstance();
-	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay );
+	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS );
 	void Update( float deltaT );
 	const char * CycleCurClip() {
 		if ( ++pCurAnim == animData->animations.end() ) {

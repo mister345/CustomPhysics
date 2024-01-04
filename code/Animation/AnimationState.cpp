@@ -16,8 +16,10 @@ AnimationInstance::~AnimationInstance() {
 	bodiesToAnimate = nullptr;
 }
 
-void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, const char * clipToPlay ) {
-	curClipName				   = clipToPlay;
+void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS ) {
+	assert( !animData->animations.empty() );
+
+	curClipName				   = animData->animations.begin()->first.c_str();
 	bodiesToAnimate			   = bodies;
 	worldPos				   = startPos_WS;
 	std::vector< BoneTransform > initialTransforms;

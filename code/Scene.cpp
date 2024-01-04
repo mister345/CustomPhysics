@@ -20,10 +20,10 @@ Scene
 // Animation
 constexpr bool SHOW_ORIGIN = false;
 // type
-//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SINGLE_BONE;
-//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::MULTI_BONE;
-//static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKINNED_MESH;
-static constexpr AnimationAssets::eWhichAnim ANIM_TYPE = AnimationAssets::SKELETON_ONLY;
+//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SINGLE_BONE;
+//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
+//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
+static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKELETON_ONLY;
 
 // asset
 constexpr float ANIMDEMO_SCALE = 0.0105f;
@@ -173,7 +173,7 @@ void Scene::InitializeAnimInstanceDemo() {
 	if ( bAnimDataInitialized ) {
 		return;
 	}
-	switch ( ANIM_TYPE ) {
+	switch ( WHICH_SKELETON ) {
 		case AnimationAssets::SKELETON_ONLY:
 		case AnimationAssets::SKINNED_MESH: {
 			const bool loaded = FbxUtil::LoadFBXFile(
@@ -192,7 +192,7 @@ void Scene::InitializeAnimInstanceDemo() {
 
 					// @TODO - currently getting a crash here
 					SkinnedData * animData = reinterpret_cast< SkinnedData * >( userData );
-					AnimationAssets::FillAnimInstanceData( animData, ANIM_TYPE, scene );
+					AnimationAssets::FillAnimInstanceData( animData, WHICH_SKELETON, scene );
 
 				},
 				animInstanceDemo->animData,
@@ -203,7 +203,7 @@ void Scene::InitializeAnimInstanceDemo() {
 		case AnimationAssets::MULTI_BONE:
 		case AnimationAssets::SINGLE_BONE:
 		default: {
-			AnimationAssets::FillAnimInstanceData( animInstanceDemo->animData, ANIM_TYPE );
+			AnimationAssets::FillAnimInstanceData( animInstanceDemo->animData, WHICH_SKELETON );
 			break;
 		}
 	}
@@ -220,9 +220,7 @@ void Scene::InitializeAnimatedBodies() {
 	animInstanceDemo->Initialize(
 		numBones > 0 ? m_animatedBodies.data() : nullptr,
 		numBones,
-		worldPos,
-		AnimationAssets::animNames[ ANIM_TYPE ].c_str()
-	);
+		worldPos);
 
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	// put it at the end so it gets rendered on top ( hopefully )

@@ -50,16 +50,16 @@ void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTrans
 void SkinnedData::Set( 
 	const std::vector<BoneInfo_t> & boneHierarchy,
 	std::vector<BoneTransform> & boneOffsets, 
-	std::map<std::string, AnimationClip> & animations ) {
+	std::map<std::string, AnimationClip> & _animations ) {
 
 	// make sure we have no negative keyframes
-	for ( auto & iter = animations.begin(); iter != animations.end(); iter++ ) {
-		assert( iter->second.HasValidKeyframes() );
-	}
+	//for ( auto & iter = _animations.begin(); iter != _animations.end(); iter++ ) {
+	//	assert( iter->second.HasValidKeyframes() );
+	//}
 
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
 	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
-	animations.insert( animations.begin(), animations.end() );
+	animations.insert( _animations.begin(), _animations.end() );
 }
 
 void SkinnedData::OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
@@ -115,19 +115,19 @@ NOTE - 2 ways to get frames from fbx file
 		bc its resampling the original keyframes according to some arbitrary logic. 
 	-> we use way #2 because much more straightforward ( not easy to match curves to bones )		
 */
-void SkinnedData::Set( fbxsdk::FbxScene * scene, const AnimationAssets::eWhichAnim whichAnim ) {
+
+void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	// set active layer first so that the per-node callbacks can access it later
 	if ( scene == nullptr ) {
 		assert( !"ERROR - trying to load data from an empty FbxScene!" );
 		return;
 	}
 
+	// @TODO delete most of this
 	fbxScene  = scene;
 	animStack = fbxScene->GetCurrentAnimationStack();
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
 	const std::string animName = animStack->GetName();
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKELETON_ONLY ] = animName;
-	AnimationAssets::animNames[ AnimationAssets::eWhichAnim::SKINNED_MESH ]  = animName;
 	assert( activeLayer != nullptr && !animName.empty() );
 
 	const int boneCount = FbxUtil::CountBonesInSkeleton( fbxScene->GetRootNode() );
