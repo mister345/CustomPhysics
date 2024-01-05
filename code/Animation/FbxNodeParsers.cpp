@@ -2,6 +2,7 @@
 #include "AnimationData.h"
 #include "FbxNodeParsers.h"
 #include "fbxInclude.h"
+#include "../Renderer/model.h"
 
 namespace FbxNodeParsers {
 	void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
@@ -42,9 +43,42 @@ namespace FbxNodeParsers {
 	void OnFoundMeshCB( void * user, fbxsdk::FbxNode * meshNode ) {
 		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
 
-		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
-		const char * meshName = meshNode->GetName();
+		SkinnedData * me	   = reinterpret_cast< SkinnedData * >( user );
+		fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
+		const int numVerts	   = mesh->GetControlPointsCount();
+		printf( "found mesh named:%s\n with %i vertices.\n", meshNode->GetName(), numVerts );
 
+		// Check for UV set
+		fbxsdk::FbxStringList uvSetNameList;
+		mesh->GetUVSetNames( uvSetNameList );
+		const char * uvSetName = uvSetNameList.GetCount() > 0 ? uvSetNameList[ 0 ] : nullptr;
+		if ( !uvSetName ) {
+			assert( !"No UV set found in the mesh.\n" );
+		}
+
+		for ( int i = 0; i < numVerts; i++ ) {
+			vert_t vert;
+
+			fbxsdk::FbxVector4 fbxVert = mesh->GetControlPointAt( i );
+			vert.xyz[ 0 ] = static_cast< float >( fbxVert[ 0 ] );
+			vert.xyz[ 1 ] = static_cast< float >( fbxVert[ 1 ] );
+			vert.xyz[ 2 ] = static_cast< float >( fbxVert[ 2 ] );
+
+			fbxsdk::FbxVector2 uv;
+			bool unmappedUV;
+			if ( mesh->GetPolygonVertexUV( 0, i, uvSetName, uv, unmappedUV ) ) {
+				vert.st[ 0 ] = static_cast< float >( uv[ 0 ] );
+				vert.st[ 1 ] = static_cast< float >( uv[ 1 ] );
+			}
+
+			// @TODO - note this fbxsdk sample mesh might not have valid uvs, just init to 0 instead!
+			printf( "Vertex %i: %3.2f, %3.2f, %3.2f, uv:%3.2f,%3.2f\n", 
+					i, vert.xyz[ 0 ], vert.xyz[ 1 ], vert.xyz[ 2 ], vert.st[ 0 ], vert.st[ 1 ] 
+			);
+
+			// @TODO - we need to add a receptacle for this data somewhere first!
+			//me->vertices.push_back( newVert );
+		}
 	}
 
 } // namespace FbxNodeParsers
