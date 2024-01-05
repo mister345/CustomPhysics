@@ -395,15 +395,28 @@ bool Model::BuildFromShape( const Shape * shape ) {
 		return false;
 	}
 
-	const ShapeSphere * shapeSphere = (const ShapeSphere *)shape;
+	const Shape::shapeType_t shapeType = shape->GetType();
+	switch ( shapeType ) {
+		case Shape::SHAPE_SPHERE: {
+			const ShapeSphere * shapeSphere = ( const ShapeSphere * )shape;
+			m_vertices.clear();
+			m_indices.clear();
+			FillSphere( *this, shapeSphere->m_radius );
+			for ( int v = 0; v < m_vertices.size(); v++ ) {
+				for ( int i = 0; i < 3; i++ ) {
+					m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
+				}
+			}
+			break;
+		}
+		case Shape::SHAPE_LOADED_MESH: {
+			const ShapeLoadedMesh * shapeMesh = reinterpret_cast< const ShapeLoadedMesh * >( shape );
+			m_vertices.clear();
+			m_indices.clear();
 
-	m_vertices.clear();
-	m_indices.clear();
+			// @TODO - take ownership of teh vert_t * renderedVerts array that was allocated by AnimatedData! 
 
-	FillSphere( *this, shapeSphere->m_radius );
-	for ( int v = 0; v < m_vertices.size(); v++ ) {
-		for ( int i = 0; i < 3; i++ ) {
-			m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
+			break;
 		}
 	}
 

@@ -83,9 +83,6 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	const std::string animName = animStack->GetName();
 	assert( activeLayer != nullptr && !animName.empty() );
 
-	const int boneCount = FbxUtil::CountBonesInSkeleton( fbxScene->GetRootNode() );
-	curAnimName = animName.c_str();
-
 	for ( int i = 0; i < scene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
 		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
 		animations.insert( { curStack->GetName(), AnimationClip() } );
@@ -94,6 +91,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
 
 	// accumulate local bone transforms to bring into component space
+	const int boneCount = BoneCount();
 	for ( int i = 1; i < boneCount; i++ ) {
 		BoneSpaceToModelSpace( i, OffsetMatrices );
 	}

@@ -11,15 +11,14 @@ class Body;
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
 struct AnimationInstance {
-	SkinnedData * animData = nullptr;
+	float animTimePos        = 0.f;
+	float speedMultiplier    = 2.f;
+	SkinnedData * animData   = nullptr;
+	const char * curClipName = "NONE";
+	std::map< std::string, AnimationClip >::iterator pCurAnim;
 
 	Vec3 worldPos		     = Vec3( 0, 0, 15 );
 	Body * bodiesToAnimate   = nullptr;
-	const char * curClipName = "NONE";
-
-	float animTimePos      = 0.f;
-	float speedMultiplier  = 2.f;
-	std::map< std::string, AnimationClip >::iterator pCurAnim;
 
 	AnimationInstance();
 	~AnimationInstance();

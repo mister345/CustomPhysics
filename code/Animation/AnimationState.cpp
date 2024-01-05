@@ -70,5 +70,10 @@ void AnimationInstance::Update( float deltaT ) {
 		const BoneTransform & transform = boneTransforms[ i ];
 		bodyToAnimate->m_orientation = transform.rotation;
 		bodyToAnimate->m_position = worldPos + transform.translation;
+
+		// @TODO - now that we're using SKINNED MESH, 
+		// we have to handle the case of only ONE BODY, with ONE SHAPE,
+		// and call an additional function on that to deform the verts, etc
+		// bodyToAnimate->ApplyDeformation();
 	}
 }

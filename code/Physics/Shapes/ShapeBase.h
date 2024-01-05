@@ -30,6 +30,7 @@ public:
 
 	enum shapeType_t {
 		SHAPE_SPHERE,
+		SHAPE_LOADED_MESH,
 	};
 
 	virtual shapeType_t GetType() const = 0;

@@ -153,6 +153,9 @@
     <ClCompile Include="code\Animation\FbxNodeParsers.cpp">
       <Filter>code\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="code\Physics\Shapes\ShapeLoadedMesh.cpp">
+      <Filter>code\Physics\Shapes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">
@@ -292,6 +295,9 @@
     </ClInclude>
     <ClInclude Include="code\Animation\fbxInclude.h">
       <Filter>code\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="code\Physics\Shapes\ShapeLoadedMesh.h">
+      <Filter>code\Physics\Shapes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

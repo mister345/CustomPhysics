@@ -56,8 +56,14 @@ namespace FbxNodeParsers {
 			assert( !"No UV set found in the mesh.\n" );
 		}
 
+		// @TODO - we need to add a receptacle for this data somewhere first!
+		me->numVerts = numVerts;
+		me->renderedVerts = reinterpret_cast< vert_t * >( malloc( sizeof( vert_t ) * me->numVerts ) );
+		vert_t * pVert = me->renderedVerts;
+
 		for ( int i = 0; i < numVerts; i++ ) {
-			vert_t vert;
+			vert_t & vert = *pVert;
+			pVert++;
 
 			fbxsdk::FbxVector4 fbxVert = mesh->GetControlPointAt( i );
 			vert.xyz[ 0 ] = static_cast< float >( fbxVert[ 0 ] );
@@ -75,9 +81,6 @@ namespace FbxNodeParsers {
 			printf( "Vertex %i: %3.2f, %3.2f, %3.2f, uv:%3.2f,%3.2f\n", 
 					i, vert.xyz[ 0 ], vert.xyz[ 1 ], vert.xyz[ 2 ], vert.st[ 0 ], vert.st[ 1 ] 
 			);
-
-			// @TODO - we need to add a receptacle for this data somewhere first!
-			//me->vertices.push_back( newVert );
 		}
 	}
 

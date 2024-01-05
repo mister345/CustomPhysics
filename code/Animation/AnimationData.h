@@ -6,6 +6,8 @@
 #include "Bone.h"
 #include "../Physics/Body.h"
 
+struct vert_t;
+
 namespace fbxsdk {
 class FbxScene;
 class FbxNode;
@@ -77,6 +79,10 @@ NOTE - 2 ways to get frames from fbx file
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 
 public:
+	// @TODO - very crude temp implementation for now!
+	vert_t * renderedVerts = nullptr;
+	int numVerts = 0;
+
 	std::map< std::string, AnimationClip > animations;
  	std::unordered_map< std::string, int > BoneIdxMap;
 	std::vector< BoneInfo_t > BoneHierarchy; // flattened tree, parent-child order, idx=bone, element@idx=that bone's parent
@@ -87,7 +93,6 @@ public:
 	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
 
 // FBX RELATED
-	const char * curAnimName		   = nullptr;
 	fbxsdk::FbxScene * fbxScene		   = nullptr;
 	fbxsdk::FbxAnimStack * animStack   = nullptr;	
 	fbxsdk::FbxAnimLayer * activeLayer = nullptr; // @TODO - expand to contain ALL layers

@@ -45,6 +45,7 @@
     <ClCompile Include="code\Physics\Intersections.cpp" />
     <ClCompile Include="code\Physics\Manifold.cpp" />
     <ClCompile Include="code\Physics\Shapes.cpp" />
+    <ClCompile Include="code\Physics\Shapes\ShapeLoadedMesh.cpp" />
     <ClCompile Include="code\Physics\Shapes\ShapeSphere.cpp" />
     <ClCompile Include="code\Renderer\Buffer.cpp" />
     <ClCompile Include="code\Renderer\Descriptor.cpp" />
@@ -93,6 +94,7 @@
     <ClInclude Include="code\Physics\Shapes.h" />
     <ClInclude Include="code\Physics\Shapes\ShapeAnimated.h" />
     <ClInclude Include="code\Physics\Shapes\ShapeBase.h" />
+    <ClInclude Include="code\Physics\Shapes\ShapeLoadedMesh.h" />
     <ClInclude Include="code\Physics\Shapes\ShapeSphere.h" />
     <ClInclude Include="code\Renderer\Buffer.h" />
     <ClInclude Include="code\Renderer\Descriptor.h" />
