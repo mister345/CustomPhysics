@@ -87,7 +87,10 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
-	FbxUtil::callbackAPI_t cb{ &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB };
+	FbxUtil::callbackAPI_t cb{ 
+		&FbxNodeParsers::OnFoundBoneCB, 
+		skeletonType == AnimationAssets::SKINNED_MESH ? &FbxNodeParsers::OnFoundMeshCB : nullptr 
+	};
 	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
 
 	// accumulate local bone transforms to bring into component space

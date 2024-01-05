@@ -19,7 +19,7 @@ class FbxAnimCurve;
 }
 
 namespace AnimationAssets {
-	enum eAnimType : uint8_t;
+	enum eSkeleton : uint8_t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +53,14 @@ class SkinnedData {
 	friend struct AnimationInstance;
 
 public:
+	SkinnedData() = default;
+	~SkinnedData() {
+		if ( renderedVerts != nullptr ) {
+			free( renderedVerts );
+			renderedVerts = nullptr;
+		}
+	}
+
 	inline uint32_t BoneCount() const { 
 		assert( OffsetMatrices.size() == BoneHierarchy.size() );
 		return BoneHierarchy.size();
@@ -80,12 +88,16 @@ NOTE - 2 ways to get frames from fbx file
 
 public:
 	// @TODO - very crude temp implementation for now!
-	vert_t * renderedVerts = nullptr;
 	int numVerts = 0;
+	vert_t * renderedVerts = nullptr;
+	int numIdxes = 0;
+	int * idxes = nullptr;
 
-	std::map< std::string, AnimationClip > animations;
+	AnimationAssets::eSkeleton skeletonType;
  	std::unordered_map< std::string, int > BoneIdxMap;
 	std::vector< BoneInfo_t > BoneHierarchy; // flattened tree, parent-child order, idx=bone, element@idx=that bone's parent
+	std::map< std::string, AnimationClip > animations;
+
 // INVERSE bind pose matrices of each bone, in MODEL SPACE - they undo the Bind Pose transformations of these bones, 
 // so that they can be REPLACED with the ANIMATED Pose ( interpolated bone transforms @ curr time ) 
 // https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1

@@ -4,6 +4,8 @@
 #pragma once
 #include "ShapeBase.h"
 
+struct vert_t;
+
 /*
 ====================================================
 ShapeLoadedMesh
@@ -11,8 +13,14 @@ ShapeLoadedMesh
 */
 class ShapeLoadedMesh : public Shape {
 public:
-	explicit ShapeLoadedMesh( const float radius = 10.f ) : m_radius( radius ) {
-		m_centerOfMass.Zero();
+	explicit ShapeLoadedMesh( vert_t * pVerts, int numV, int * pIdxes, int nIdxes, const float radius = 10.f ) : 
+		verts( pVerts ),
+		numVerts( numV ),
+		idxes( pIdxes ),
+		numIdxes( nIdxes ),
+		m_radius( radius ) { 
+
+		m_centerOfMass.Zero(); 
 	}
 	Mat3 InertiaTensorGeometric() const override;
 
@@ -21,10 +29,20 @@ public:
 
 	shapeType_t GetType() const override { return SHAPE_LOADED_MESH; }
 
+	void PopulateMatrixPalette( void * bTransforms );
+
 public:
 	// @TODO - we just copied implementation from sphere for now to get this working,
 	// since we wont even be using physics for this shape yet...
 	// after I add a convex body shape to the code base, I will just copy the implementation
 	// to some approximation of that
 	float m_radius;
+
+	// @TODO - make these weak pointers
+	int numIdxes   = 0;
+	int numVerts   = 0;
+	int * idxes	   = nullptr;
+	vert_t * verts = nullptr;
+
+	std::vector< Mat4 > matrixPalette;
 };

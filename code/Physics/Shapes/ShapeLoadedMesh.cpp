@@ -2,6 +2,7 @@
 //  ShapeLoadedMesh.cpp
 //
 #include "ShapeLoadedMesh.h"
+#include "../../Animation/Bone.h"
 
 /*
 ========================================================================================================
@@ -44,4 +45,11 @@ Bounds ShapeLoadedMesh::GetBounds() const {
 	bounds.mins = Vec3( -m_radius );
 	bounds.maxs = Vec3(  m_radius );
 	return bounds;
+}
+
+void ShapeLoadedMesh::PopulateMatrixPalette( void * bTransforms ) {
+	std::vector< BoneTransform > * boneTransforms = reinterpret_cast< std::vector< BoneTransform > * >( bTransforms );
+	for ( BoneTransform & t : *boneTransforms ) {
+		// @TODO - convert these into matrix palette
+	}
 }

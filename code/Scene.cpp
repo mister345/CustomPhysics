@@ -22,7 +22,7 @@ constexpr bool SHOW_ORIGIN = false;
 // type
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
-static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKELETON_ONLY;
+static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DEBUG_SKELETON;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
 
 // asset
@@ -54,8 +54,10 @@ Scene::~Scene() {
 		animInstanceDemo = nullptr;
 	}
 
+	// switched to instanced mode bc we use same body for all bones anyway
+	delete m_animatedBodies[ 0 ].m_shape;
 	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-		delete m_animatedBodies[ i ].m_shape;
+		m_animatedBodies[ i ].m_shape = nullptr;
 	}
 	m_animatedBodies.clear();
 
@@ -81,8 +83,11 @@ void Scene::Reset() {
 		animInstanceDemo = nullptr;
 	}
 
+	// switched to instanced mode bc we use same body for all bones anyway
+	delete m_animatedBodies[ 0 ].m_shape;
+	m_animatedBodies[ 0 ].m_shape = nullptr;
 	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-		delete m_animatedBodies[ i ].m_shape;
+		m_animatedBodies[ i ].m_shape = nullptr;
 	}
 	m_animatedBodies.clear();
 
@@ -168,20 +173,39 @@ void Scene::InitializeAnimInstanceDemo() {
 	if ( bAnimDataInitialized ) {
 		return;
 	}
+	// NOTE - this creates AnimationData class, and will load verts from fbx file if skeleton type is SkinnedMesh
 	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 	bAnimDataInitialized = true;
 
-	// now that we have created the anim data ( either hardcoded or loaded from fbx ), spawn a body for each bone
-	const Vec3 worldPos = Vec3( 0, 0, 10 );
-	const int numBones = animInstanceDemo->animData->BoneCount();
-	for ( int i = 0; i < numBones; i++ ) {
-		m_animatedBodies.push_back( Body() );
+	const Vec3 worldPos = { 0, 0, 10 };
+	switch ( WHICH_SKELETON ) {
+		case AnimationAssets::SINGLE_BONE:
+		case AnimationAssets::MULTI_BONE:
+		case AnimationAssets::DEBUG_SKELETON: {
+			const int numBodies = animInstanceDemo->animData->BoneCount();
+			for ( int i = 0; i < numBodies; i++ ) {
+				m_animatedBodies.push_back( Body() );
+			}
+			animInstanceDemo->Initialize( numBodies > 0 ? m_animatedBodies.data() : nullptr,
+				numBodies, worldPos, new ShapeAnimated( 0.075f, false ) 
+			);
+			break;
+		}
+		case AnimationAssets::SKINNED_MESH: {
+			m_animatedBodies.push_back( Body() );
+			animInstanceDemo->Initialize( 
+				m_animatedBodies.data(), 
+				1, 
+				worldPos, 
+				new ShapeLoadedMesh( 
+					animInstanceDemo->animData->renderedVerts,
+					animInstanceDemo->animData->numVerts,
+					animInstanceDemo->animData->idxes,
+					animInstanceDemo->animData->numIdxes ) 
+			);
+			break;
+		}
 	}
-	animInstanceDemo->Initialize(
-		numBones > 0 ? m_animatedBodies.data() : nullptr,
-		numBones,
-		worldPos 
-	);
 
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	// put it at the end so it gets rendered on top ( hopefully )

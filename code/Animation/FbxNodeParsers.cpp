@@ -62,25 +62,32 @@ namespace FbxNodeParsers {
 		vert_t * pVert = me->renderedVerts;
 
 		for ( int i = 0; i < numVerts; i++ ) {
-			vert_t & vert = *pVert;
+			vert_t & outVert = *pVert;
 			pVert++;
 
 			fbxsdk::FbxVector4 fbxVert = mesh->GetControlPointAt( i );
-			vert.xyz[ 0 ] = static_cast< float >( fbxVert[ 0 ] );
-			vert.xyz[ 1 ] = static_cast< float >( fbxVert[ 1 ] );
-			vert.xyz[ 2 ] = static_cast< float >( fbxVert[ 2 ] );
+			outVert.xyz[ 0 ] = static_cast< float >( fbxVert[ 0 ] );
+			outVert.xyz[ 1 ] = static_cast< float >( fbxVert[ 1 ] );
+			outVert.xyz[ 2 ] = static_cast< float >( fbxVert[ 2 ] );
 
 			fbxsdk::FbxVector2 uv;
 			bool unmappedUV;
 			if ( mesh->GetPolygonVertexUV( 0, i, uvSetName, uv, unmappedUV ) ) {
-				vert.st[ 0 ] = static_cast< float >( uv[ 0 ] );
-				vert.st[ 1 ] = static_cast< float >( uv[ 1 ] );
+				outVert.st[ 0 ] = static_cast< float >( uv[ 0 ] );
+				outVert.st[ 1 ] = static_cast< float >( uv[ 1 ] );
 			}
+
+			//////////////////////////////////////////////////////////
+			// @TODO - idxes
+			int numIdxes = 10; // @TODO - ARBITRARY!
+			assert( !"THIS IS JUST TEMP AND COMPLETELY WRONG @TODO - FIX IT!!!!" );
+			me->numIdxes = numIdxes;
+			me->idxes = reinterpret_cast< int * >( malloc( sizeof( int ) * numIdxes ) );
+			int * pIdx = me->idxes;
 
 			// @TODO - note this fbxsdk sample mesh might not have valid uvs, just init to 0 instead!
 			printf( "Vertex %i: %3.2f, %3.2f, %3.2f, uv:%3.2f,%3.2f\n", 
-					i, vert.xyz[ 0 ], vert.xyz[ 1 ], vert.xyz[ 2 ], vert.st[ 0 ], vert.st[ 1 ] 
-			);
+					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], 0.f/*outVert.st[ 0 ]*/, 0.f/*outVert.st[ 1 ]*/ );
 		}
 	}
 

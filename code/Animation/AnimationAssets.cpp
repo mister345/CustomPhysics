@@ -67,6 +67,8 @@ namespace AnimationAssets {
 	#define stringify( s ) #s
 
 	void FillAnimInstanceData( AnimationInstance * animInstance, eSkeleton whichSkeleton, const char * fileName, float scale ) {
+		animInstance->animData->skeletonType = whichSkeleton;
+
 		switch ( whichSkeleton ) {
 			case SINGLE_BONE: {
 				int boneCount;
@@ -117,7 +119,7 @@ namespace AnimationAssets {
 				animInstance->animData->Set( hierarchy, boneOffsets, animMap );
 				break;
 			}
-			case SKELETON_ONLY:
+			case DEBUG_SKELETON:
 			case SKINNED_MESH:
 			default: {
 				const bool loaded = FbxUtil::LoadFBXFile(

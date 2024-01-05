@@ -16,7 +16,7 @@ AnimationInstance::~AnimationInstance() {
 	bodiesToAnimate = nullptr;
 }
 
-void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS ) {
+void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, Shape * shapeToAnimate ) {
 	assert( !animData->animations.empty() );
 
 	curClipName				   = animData->animations.begin()->first.c_str();
@@ -29,6 +29,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 	} else { // if no anims, just T-pose
 		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
 	}
+	// note - this will be meaningless for a skinned mesh
 	for ( int i = 0; i < numBodies; i++ ) {
 		Body * bodyToAnimate = bodiesToAnimate + i;
 		bodyToAnimate->m_position = worldPos + initialTransforms[ i ].translation;
@@ -37,7 +38,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 		bodyToAnimate->m_invMass = 0.f;	// no grav
 		bodyToAnimate->m_elasticity = 1.f;
 		bodyToAnimate->m_friction = 0.f;
-		bodyToAnimate->m_shape = new ShapeAnimated( 0.075f, false );
+		bodyToAnimate->m_shape = shapeToAnimate;
 	}
 
 	pCurAnim = animData->animations.begin();
@@ -64,16 +65,29 @@ void AnimationInstance::Update( float deltaT ) {
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
 	animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
 
-	// apply each bone transform to each body ( 1 to 1 )
-	for ( int i = 0; i < animData->BoneCount(); i++ ) {
-		Body * bodyToAnimate			= bodiesToAnimate + i;
-		const BoneTransform & transform = boneTransforms[ i ];
-		bodyToAnimate->m_orientation = transform.rotation;
-		bodyToAnimate->m_position = worldPos + transform.translation;
-
-		// @TODO - now that we're using SKINNED MESH, 
-		// we have to handle the case of only ONE BODY, with ONE SHAPE,
-		// and call an additional function on that to deform the verts, etc
-		// bodyToAnimate->ApplyDeformation();
+	// @TODO - this switching is unfortunate, but it'll do for now
+	switch ( animData->skeletonType ) {
+		case AnimationAssets::SINGLE_BONE:
+		case AnimationAssets::MULTI_BONE:
+		case AnimationAssets::DEBUG_SKELETON: {
+			// apply each bone transform to each body ( 1 to 1 )
+			for ( int i = 0; i < animData->BoneCount(); i++ ) {
+				Body * bodyToAnimate			= bodiesToAnimate + i;
+				const BoneTransform & transform = boneTransforms[ i ];
+				bodyToAnimate->m_orientation = transform.rotation;
+				bodyToAnimate->m_position = worldPos + transform.translation;
+			}
+			break;
+		}
+		case AnimationAssets::SKINNED_MESH: {
+			// handle the case of only ONE BODY, with ONE SHAPE,
+			Body * bodyToAnimate = bodiesToAnimate;
+			assert( bodyToAnimate != nullptr );
+			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate->m_shape );
+			// @TODO - we will convert all these BoneTransforms into matrices,
+			// the rest is up to the GPU skinning stage in teh vertex shader
+			mesh->PopulateMatrixPalette( &boneTransforms );
+			break;
+		}
 	}
 }

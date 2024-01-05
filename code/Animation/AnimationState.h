@@ -6,6 +6,7 @@
 
 class SkinnedData;
 class Body;
+class Shape;
 
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION INSTANCE
@@ -22,7 +23,7 @@ struct AnimationInstance {
 
 	AnimationInstance();
 	~AnimationInstance();
-	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS );
+	void Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, Shape * shapeToAnimate );
 	void Update( float deltaT );
 	const char * CycleCurClip() {
 		if ( ++pCurAnim == animData->animations.end() ) {

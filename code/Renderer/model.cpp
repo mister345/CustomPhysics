@@ -413,8 +413,9 @@ bool Model::BuildFromShape( const Shape * shape ) {
 			const ShapeLoadedMesh * shapeMesh = reinterpret_cast< const ShapeLoadedMesh * >( shape );
 			m_vertices.clear();
 			m_indices.clear();
-
-			// @TODO - take ownership of teh vert_t * renderedVerts array that was allocated by AnimatedData! 
+			// @TODO - i dont like copying all this data here, refactor the architecture later to do it in place here
+			m_vertices.assign( shapeMesh->verts, shapeMesh->verts + shapeMesh->numVerts );
+			m_indices.assign( shapeMesh->idxes, shapeMesh->idxes + shapeMesh->numIdxes );
 
 			break;
 		}
