@@ -91,7 +91,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		&FbxNodeParsers::OnFoundBoneCB, 
 		skeletonType == AnimationAssets::SKINNED_MESH ? &FbxNodeParsers::OnFoundMeshCB : nullptr 
 	};
-	FbxUtil::HarvestSceneData( fbxScene, false, cb, this );
+	FbxUtil::HarvestSceneData( fbxScene, true, cb, this );
 
 	// accumulate local bone transforms to bring into component space
 	const int boneCount = BoneCount();

@@ -7,6 +7,122 @@ namespace FbxUtil {
 	float g_scale = 1.f;
 
 	/////////////////////////////////////
+	// Data Extraction Functions
+	/////////////////////////////////////
+	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
+		if ( pNode != nullptr ) {
+			// PrintNode( pNode );
+			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
+				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
+				if ( pAttribute != nullptr ) {
+					// PrintAttribute( pAttribute );
+					const fbxsdk::FbxNodeAttribute::EType attrType = pAttribute->GetAttributeType();
+					if ( attrType == fbxsdk::FbxNodeAttribute::EType::eSkeleton && callback.onFoundBone != nullptr ) {
+						callback.onFoundBone( dataRecipient, pNode );
+						// break;	// @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
+					} else if ( attrType == fbxsdk::FbxNodeAttribute::EType::eMesh && callback.onFoundMesh != nullptr ) {
+						callback.onFoundMesh( dataRecipient, pNode );
+						// break; // @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
+					}
+				}
+			}
+
+			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
+				ProcessNode( pNode->GetChild( j ), callback, dataRecipient );
+			}
+		}
+	}
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const FbxUtil::callbackAPI_t & callback, void * caller ) {
+		if ( bConvert ) {
+			fbxsdk::FbxAxisSystem targetAxisSystem( fbxsdk::FbxAxisSystem::EUpVector::eZAxis,
+													fbxsdk::FbxAxisSystem::EFrontVector::eParityEven,
+													fbxsdk::FbxAxisSystem::ECoordSystem::eRightHanded
+			);
+			targetAxisSystem.DeepConvertScene( pScene );
+		}
+		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
+		if ( pRootNode != nullptr ) {
+			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
+				ProcessNode( pRootNode->GetChild( i ), callback, caller );
+			}
+		}
+	}
+
+
+	/////////////////////////////////////
+	// Init Functions
+	/////////////////////////////////////
+	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter ) {
+		pManager = fbxsdk::FbxManager::Create();
+		if ( !pManager ) {
+			std::cout << "Error: Unable to create FBX Manager!\n";
+			return false;
+		}
+
+		fbxsdk::FbxIOSettings * ios = fbxsdk::FbxIOSettings::Create( pManager, IOSROOT );
+		pManager->SetIOSettings( ios );
+
+		pImporter = FbxImporter::Create( pManager, "" );
+		if ( !pImporter ) {
+			std::cout << "Error: Unable to create FBX Importer!\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, float scale /* = 1.f */ ) {
+		FbxUtil::g_scale = scale;
+
+		fbxsdk::FbxManager * pManager = nullptr;
+		fbxsdk::FbxImporter * pImporter = nullptr;
+
+		if ( !InitializeSdkObjects( pManager, pImporter ) ) {
+			return false;
+		}
+
+		if ( !pImporter->Initialize( filename, -1, pManager->GetIOSettings() ) ) {
+			std::cout << "Error: Unable to initialize FBX Importer!\n";
+			return false;
+		}
+
+		// Create a new scene so it can be populated by the imported file
+		fbxsdk::FbxScene * pScene = fbxsdk::FbxScene::Create( pManager, "myScene" );
+
+		// Import the contents of the file into the scene
+		bool lStatus = pImporter->Import( pScene );
+
+		onLoaded( lStatus, pImporter, pScene, userData );
+
+		// Destroy the SDK manager and all other objects it was handling
+		// Destroy the importer
+		pImporter->Destroy();
+		pManager->Destroy();
+
+		return lStatus;
+	}
+
+	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
+		struct local_t {
+			static void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
+				if ( node != nullptr ) {
+					fbxsdk::FbxNodeAttribute * attribute = node->GetNodeAttribute();
+					if ( attribute && attribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::eSkeleton ) {
+						boneCount++;
+					}
+					for ( int i = 0; i < node->GetChildCount(); i++ ) {
+						countBones_r( node->GetChild( i ), boneCount );
+					}
+				}
+			}
+		};
+
+		int boneCount = 0;
+		local_t::countBones_r( rootNode, boneCount );
+		return boneCount;
+	}
+
+	/////////////////////////////////////
 	// Debug print functions
 	/////////////////////////////////////
 	void PrintScene( fbxsdk::FbxScene * pScene ) {
@@ -93,126 +209,5 @@ namespace FbxUtil {
 		fbxsdk::FbxString attrName = pAttribute->GetName();
 		printf( "    Attribute Type: %s\n", typeName.Buffer() );
 		printf( "    Attribute Name: %s\n", attrName.Buffer() );
-	}
-
-	/////////////////////////////////////
-	// Data Extraction Functions
-	/////////////////////////////////////
-	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
-		if ( pNode != nullptr ) {
-			// PrintNode( pNode );
-			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
-				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
-				if ( pAttribute != nullptr ) {
-					// PrintAttribute( pAttribute );
-					const fbxsdk::FbxNodeAttribute::EType attrType = pAttribute->GetAttributeType();
-					if ( attrType == fbxsdk::FbxNodeAttribute::EType::eSkeleton && callback.onFoundBone != nullptr ) {
-						callback.onFoundBone( dataRecipient, pNode );
-						// break;	// @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
-					} else if ( attrType == fbxsdk::FbxNodeAttribute::EType::eMesh && callback.onFoundMesh != nullptr ) {
-						callback.onFoundMesh( dataRecipient, pNode );
-						// break; // @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
-					}
-				}
-			}
-
-			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				ProcessNode( pNode->GetChild( j ), callback, dataRecipient );
-			}
-		}
-	}
-
-	void ConvertScene( fbxsdk::FbxScene * pScene ) {
-		constexpr auto xIntoScreen  = fbxsdk::FbxAxisSystem::EFrontVector::eParityEven; // even = positive
-		constexpr auto xOutOfScreen = fbxsdk::FbxAxisSystem::EFrontVector::eParityOdd; // odd  = negative
-		fbxsdk::FbxAxisSystem newAxisSystem( fbxsdk::FbxAxisSystem::EUpVector::eZAxis, xIntoScreen, fbxsdk::FbxAxisSystem::ECoordSystem::eRightHanded );
-//		newAxisSystem.ConvertScene( pScene );
-		newAxisSystem.DeepConvertScene( pScene );
-	}
-
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const FbxUtil::callbackAPI_t & callback, void * caller ) {
-//		FbxUtil::PrintScene( pScene );
-		if ( bConvert ) {
-			ConvertScene( pScene );
-			printf( "/nAFTER CONVERSION:/n" );
-			FbxUtil::PrintScene( pScene );
-		}
-
-		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-		if ( pRootNode != nullptr ) {
-			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-				ProcessNode( pRootNode->GetChild( i ), callback, caller );
-			}
-		}
-	}
-
-	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter ) {
-		pManager = fbxsdk::FbxManager::Create();
-		if ( !pManager ) {
-			std::cout << "Error: Unable to create FBX Manager!\n";
-			return false;
-		}
-
-		fbxsdk::FbxIOSettings * ios = fbxsdk::FbxIOSettings::Create( pManager, IOSROOT );
-		pManager->SetIOSettings( ios );
-
-		pImporter = FbxImporter::Create( pManager, "" );
-		if ( !pImporter ) {
-			std::cout << "Error: Unable to create FBX Importer!\n";
-			return false;
-		}
-
-		return true;
-	}
-
-	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, float scale /* = 1.f */ ) {
-		FbxUtil::g_scale = scale;
-
-		fbxsdk::FbxManager * pManager = nullptr;
-		fbxsdk::FbxImporter * pImporter = nullptr;
-
-		if ( !InitializeSdkObjects( pManager, pImporter ) ) {
-			return false;
-		}
-
-		if ( !pImporter->Initialize( filename, -1, pManager->GetIOSettings() ) ) {
-			std::cout << "Error: Unable to initialize FBX Importer!\n";
-			return false;
-		}
-
-		// Create a new scene so it can be populated by the imported file
-		fbxsdk::FbxScene * pScene = fbxsdk::FbxScene::Create( pManager, "myScene" );
-
-		// Import the contents of the file into the scene
-		bool lStatus = pImporter->Import( pScene );
-
-		onLoaded( lStatus, pImporter, pScene, userData );
-
-		// Destroy the SDK manager and all other objects it was handling
-		// Destroy the importer
-		pImporter->Destroy();
-		pManager->Destroy();
-
-		return lStatus;
-	}
-
-	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
-		struct local_t {
-			static void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
-				if ( node != nullptr ) {
-					fbxsdk::FbxNodeAttribute * attribute = node->GetNodeAttribute();
-					if ( attribute && attribute->GetAttributeType() == fbxsdk::FbxNodeAttribute::eSkeleton ) {
-						boneCount++;
-					}
-					for ( int i = 0; i < node->GetChildCount(); i++ ) {
-						countBones_r( node->GetChild( i ), boneCount );
-					}
-				}
-			}
-		};
-
-		int boneCount = 0;
-		local_t::countBones_r( rootNode, boneCount );
-		return boneCount;
 	}
 } // namepsace fbx util

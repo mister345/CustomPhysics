@@ -60,6 +60,7 @@
     <ClCompile Include="code\Renderer\shader.cpp" />
     <ClCompile Include="code\Renderer\SwapChain.cpp" />
     <ClCompile Include="code\Scene.cpp" />
+    <ClCompile Include="code\SceneUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\Animation\AnimationAssets.h" />
@@ -109,6 +110,7 @@
     <ClInclude Include="code\Renderer\shader.h" />
     <ClInclude Include="code\Renderer\SwapChain.h" />
     <ClInclude Include="code\Scene.h" />
+    <ClInclude Include="code\SceneUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">

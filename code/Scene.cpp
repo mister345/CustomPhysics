@@ -6,6 +6,7 @@
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
 #include "Physics/Shapes/ShapeAnimated.h"
+#include "SceneUtil.h"
 #include <algorithm>
 
 /*
@@ -16,7 +17,12 @@ Scene
 ========================================================================================================
 */
 
-// CONFIG
+//////////////////////////////
+/////////// CONFIG ///////////
+//////////////////////////////
+static constexpr bool RUN_ANIMATION	  = true;
+static constexpr bool RUN_PHYSICS_SIM = false;
+
 // Animation
 constexpr bool SHOW_ORIGIN = false;
 // type
@@ -24,21 +30,16 @@ constexpr bool SHOW_ORIGIN = false;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DEBUG_SKELETON;
 static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
-
 // asset
 constexpr float ANIMDEMO_SCALE = 0.0105f;
 constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
- 
 // constexpr float ANIMDEMO_SCALE = 1.f;
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 
-
 // Physics
 static constexpr float GRAVITY_MAGNITUDE = 10.f;
-static constexpr bool RUN_ANIMATION		 = false;
-static constexpr bool RUN_PHYSICS_SIM	 = false;
 static const Vec3 GRAV_ACCEL			 = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
@@ -150,40 +151,13 @@ void Scene::Initialize() {
 		}
 	}
 
-	// show Fwd, Right, Up
-	auto makeArrow = []( std::vector< Body > & arrow, Vec3 dir ) {
-		// fill
-		for ( int i = 0; i < 11; i++ ) {
-			arrow.push_back( Body() );
-			arrow.back().m_orientation = Quat( 0, 0, 0, 1 );
-			arrow.back().m_linearVelocity.Zero();
-			arrow.back().m_invMass = 0.f;
-			arrow.back().m_elasticity = 0.99f;
-			arrow.back().m_friction = 0.5f;
-			arrow.back().m_shape = new ShapeSphere( 0.25f );
-		}
-		// add a knob at the end
-		( ( ShapeSphere * )arrow.back().m_shape )->m_radius = 0.45f;
-
-		// arrange
-		int curBodIdx = 0;
-		constexpr float arrowLen = 10;
-		constexpr float headWidth = 5;
-		for ( int i = 0; i < 11; i++ ) {
-			const Vec3 pos = Vec3( 0, 0, 10 ) + dir * ( i * 0.35f );
-			arrow[ curBodIdx ].m_position = pos;
-			curBodIdx++;
-		}
-	};
-
-	std::vector< Body > fwd, left, up;
-	makeArrow( fwd,  { 1, 0, 0 } );
-	makeArrow( left, { 0, -1, 0 } );
-	makeArrow( up,   { 0, 0, 1 } );
-
-	m_bodies.insert( m_bodies.end(), fwd.begin(), fwd.end() );
-	m_bodies.insert( m_bodies.end(), left.begin(), left.end() );
-	m_bodies.insert( m_bodies.end(), up.begin(), up.end() );
+	sceneUtil::MakeCoordGizmo( { 0, 0, 10 }, // origin
+					{ 1, 0, 0 },  // fwd
+					{ 0, 1, 0 },  // right
+					{ 0, 0, 1 },  // up
+					0.5f, 
+					&m_bodies 
+	);
 
 	if ( RUN_ANIMATION ) {
 		animInstanceDemo = new AnimationInstance();
@@ -276,7 +250,9 @@ Scene::Update
 */
 void Scene::Update( const float dt_sec ) {
 	// anim demo
-	animInstanceDemo->Update( dt_sec );
+	if ( RUN_ANIMATION ) {
+		animInstanceDemo->Update( dt_sec );
+	}
 
 	// apply gravitational acceleration to velocity
 	for ( int i = 0; i < m_bodies.size(); i++ ) {

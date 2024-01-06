@@ -156,6 +156,9 @@
     <ClCompile Include="code\Physics\Shapes\ShapeLoadedMesh.cpp">
       <Filter>code\Physics\Shapes</Filter>
     </ClCompile>
+    <ClCompile Include="code\SceneUtil.cpp">
+      <Filter>code</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">
@@ -298,6 +301,9 @@
     </ClInclude>
     <ClInclude Include="code\Physics\Shapes\ShapeLoadedMesh.h">
       <Filter>code\Physics\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="code\SceneUtil.h">
+      <Filter>code</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
