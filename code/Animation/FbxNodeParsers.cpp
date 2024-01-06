@@ -45,49 +45,52 @@ namespace FbxNodeParsers {
 
 		SkinnedData * me	   = reinterpret_cast< SkinnedData * >( user );
 		fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
-		const int numVerts	   = mesh->GetControlPointsCount();
-		printf( "found mesh named:%s\n with %i vertices.\n", meshNode->GetName(), numVerts );
 
-		// Check for UV set
+		me->numVerts	  = mesh->GetControlPointsCount();
+		me->numIdxes	  = mesh->GetPolygonVertexCount();
+		me->renderedVerts = reinterpret_cast< vert_t * >( malloc( sizeof( vert_t ) * me->numVerts ) );
+		me->idxes		  = reinterpret_cast< int * >( malloc( sizeof( int ) * me->numIdxes ) );
+		printf( "found mesh named:%s with %i vertices and %i indices. Copying verts and incides...\n", meshNode->GetName(), me->numVerts, me->numIdxes );
+
+		// Load uvs if we have them
 		fbxsdk::FbxStringList uvSetNameList;
 		mesh->GetUVSetNames( uvSetNameList );
 		const char * uvSetName = uvSetNameList.GetCount() > 0 ? uvSetNameList[ 0 ] : nullptr;
-		if ( !uvSetName ) {
-			assert( !"No UV set found in the mesh.\n" );
-		}
 
-		// @TODO - we need to add a receptacle for this data somewhere first!
-		me->numVerts = numVerts;
-		me->renderedVerts = reinterpret_cast< vert_t * >( malloc( sizeof( vert_t ) * me->numVerts ) );
-		vert_t * pVert = me->renderedVerts;
+		// Load vert, uv data into our receptacle
+		for ( int i = 0; i < me->numVerts; i++ ) {
+			vert_t & outVert = me->renderedVerts[ i ];
 
-		for ( int i = 0; i < numVerts; i++ ) {
-			vert_t & outVert = *pVert;
-			pVert++;
-
+			// coordinates
 			fbxsdk::FbxVector4 fbxVert = mesh->GetControlPointAt( i );
-			outVert.xyz[ 0 ] = static_cast< float >( fbxVert[ 0 ] );
-			outVert.xyz[ 1 ] = static_cast< float >( fbxVert[ 1 ] );
-			outVert.xyz[ 2 ] = static_cast< float >( fbxVert[ 2 ] );
+			outVert.xyz[ 0 ]		   = static_cast< float >( fbxVert[ 0 ] );
+			outVert.xyz[ 1 ]		   = static_cast< float >( fbxVert[ 1 ] );
+			outVert.xyz[ 2 ]		   = static_cast< float >( fbxVert[ 2 ] );
 
+			// UVs
+			bool isUnmapped;
 			fbxsdk::FbxVector2 uv;
-			bool unmappedUV;
-			if ( mesh->GetPolygonVertexUV( 0, i, uvSetName, uv, unmappedUV ) ) {
+			if ( mesh->GetPolygonVertexUV( 0, i, uvSetName, uv, isUnmapped ) ) {
 				outVert.st[ 0 ] = static_cast< float >( uv[ 0 ] );
 				outVert.st[ 1 ] = static_cast< float >( uv[ 1 ] );
 			}
+			printf( "Vertex %i: %3.1f, %3.1f, %3.2f, uv:%1.1f,%1.1f\n", 
+					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], outVert.st[ 0 ], outVert.st[ 1 ] );
+		}
 
-			//////////////////////////////////////////////////////////
-			// @TODO - idxes
-			int numIdxes = 10; // @TODO - ARBITRARY!
-			assert( !"THIS IS JUST TEMP AND COMPLETELY WRONG @TODO - FIX IT!!!!" );
-			me->numIdxes = numIdxes;
-			me->idxes = reinterpret_cast< int * >( malloc( sizeof( int ) * numIdxes ) );
-			int * pIdx = me->idxes;
-
-			// @TODO - note this fbxsdk sample mesh might not have valid uvs, just init to 0 instead!
-			printf( "Vertex %i: %3.2f, %3.2f, %3.2f, uv:%3.2f,%3.2f\n", 
-					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], 0.f/*outVert.st[ 0 ]*/, 0.f/*outVert.st[ 1 ]*/ );
+		// Load indices
+		// points to an element in the raw array of vertex data; used as a point in the whole mesh
+		int vertIdx = 0;
+		const int numTriangles = mesh->GetPolygonCount();
+		// triangleIdx points to an element in fbx's internal array of POLYGONS( assume triangles );
+		// each triangle is just a grouping of three ints, representing indices
+		// each of those indices will point to an element in the raw array of vertex data for the WHOLE MESH
+		for ( int triangleIdx = 0; triangleIdx < numTriangles; triangleIdx++ ) {
+			assert( mesh->GetPolygonSize( triangleIdx ) == 3 );
+			me->idxes[ vertIdx + 0 ] = mesh->GetPolygonVertex( triangleIdx, 0 );
+			me->idxes[ vertIdx + 1 ] = mesh->GetPolygonVertex( triangleIdx, 1 );
+			me->idxes[ vertIdx + 2 ] = mesh->GetPolygonVertex( triangleIdx, 2 );
+			vertIdx += 3;
 		}
 	}
 
