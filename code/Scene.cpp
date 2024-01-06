@@ -37,7 +37,7 @@ constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 
 // Physics
 static constexpr float GRAVITY_MAGNITUDE = 10.f;
-static constexpr bool RUN_ANIMATION		 = true;
+static constexpr bool RUN_ANIMATION		 = false;
 static constexpr bool RUN_PHYSICS_SIM	 = false;
 static const Vec3 GRAV_ACCEL			 = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
@@ -52,14 +52,14 @@ Scene::~Scene() {
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
-	}
 
-	// switched to instanced mode bc we use same body for all bones anyway
-	delete m_animatedBodies[ 0 ].m_shape;
-	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-		m_animatedBodies[ i ].m_shape = nullptr;
+		// switched to instanced mode bc we use same body for all bones anyway
+		delete m_animatedBodies[ 0 ].m_shape;
+		for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
+			m_animatedBodies[ i ].m_shape = nullptr;
+		}
+		m_animatedBodies.clear();
 	}
-	m_animatedBodies.clear();
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
@@ -81,15 +81,15 @@ void Scene::Reset() {
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
-	}
 
-	// switched to instanced mode bc we use same body for all bones anyway
-	delete m_animatedBodies[ 0 ].m_shape;
-	m_animatedBodies[ 0 ].m_shape = nullptr;
-	for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-		m_animatedBodies[ i ].m_shape = nullptr;
+		// switched to instanced mode bc we use same body for all bones anyway
+		delete m_animatedBodies[ 0 ].m_shape;
+		m_animatedBodies[ 0 ].m_shape = nullptr;
+		for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
+			m_animatedBodies[ i ].m_shape = nullptr;
+		}
+		m_animatedBodies.clear();
 	}
-	m_animatedBodies.clear();
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
@@ -149,6 +149,41 @@ void Scene::Initialize() {
 			m_bodies.push_back( body );
 		}
 	}
+
+	// show Fwd, Right, Up
+	auto makeArrow = []( std::vector< Body > & arrow, Vec3 dir ) {
+		// fill
+		for ( int i = 0; i < 11; i++ ) {
+			arrow.push_back( Body() );
+			arrow.back().m_orientation = Quat( 0, 0, 0, 1 );
+			arrow.back().m_linearVelocity.Zero();
+			arrow.back().m_invMass = 0.f;
+			arrow.back().m_elasticity = 0.99f;
+			arrow.back().m_friction = 0.5f;
+			arrow.back().m_shape = new ShapeSphere( 0.25f );
+		}
+		// add a knob at the end
+		( ( ShapeSphere * )arrow.back().m_shape )->m_radius = 0.45f;
+
+		// arrange
+		int curBodIdx = 0;
+		constexpr float arrowLen = 10;
+		constexpr float headWidth = 5;
+		for ( int i = 0; i < 11; i++ ) {
+			const Vec3 pos = Vec3( 0, 0, 10 ) + dir * ( i * 0.35f );
+			arrow[ curBodIdx ].m_position = pos;
+			curBodIdx++;
+		}
+	};
+
+	std::vector< Body > fwd, left, up;
+	makeArrow( fwd,  { 1, 0, 0 } );
+	makeArrow( left, { 0, -1, 0 } );
+	makeArrow( up,   { 0, 0, 1 } );
+
+	m_bodies.insert( m_bodies.end(), fwd.begin(), fwd.end() );
+	m_bodies.insert( m_bodies.end(), left.begin(), left.end() );
+	m_bodies.insert( m_bodies.end(), up.begin(), up.end() );
 
 	if ( RUN_ANIMATION ) {
 		animInstanceDemo = new AnimationInstance();
