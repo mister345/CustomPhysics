@@ -86,11 +86,11 @@ namespace FbxNodeParsers {
 		// each triangle is just a grouping of three ints, representing indices
 		// each of those indices will point to an element in the raw array of vertex data for the WHOLE MESH
 		for ( int triangleIdx = 0; triangleIdx < numTriangles; triangleIdx++ ) {
-			assert( mesh->GetPolygonSize( triangleIdx ) == 3 );
-			me->idxes[ vertIdx + 0 ] = mesh->GetPolygonVertex( triangleIdx, 0 );
-			me->idxes[ vertIdx + 1 ] = mesh->GetPolygonVertex( triangleIdx, 1 );
-			me->idxes[ vertIdx + 2 ] = mesh->GetPolygonVertex( triangleIdx, 2 );
-			vertIdx += 3;
+			const int localVertCount = mesh->GetPolygonSize( triangleIdx );
+			for ( int localVertIdx = 0; localVertIdx < localVertCount; localVertIdx++ ) {
+				me->idxes[ vertIdx + localVertIdx ] = mesh->GetPolygonVertex( triangleIdx, localVertIdx );
+			}
+			vertIdx += localVertCount;
 		}
 	}
 
