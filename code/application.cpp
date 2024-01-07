@@ -17,6 +17,8 @@
 
 #include "Scene.h"
 
+#include "Config.h"
+
 Application * g_application = NULL;
 
 #include <time.h>
@@ -575,7 +577,7 @@ void Application::UpdateUniforms() {
 			glfwGetWindowSize( m_glfwWindow, &windowWidth, &windowHeight );
 
 			const float zNear   = 0.1f;
-			const float zFar    = 1000.0f;
+			const float zFar    = FAR_CLIPPING_PLANE_CAM;
 			const float fovy	= 45.0f;
 			const float aspect	= (float)windowHeight / (float)windowWidth;
 			camera.matProj.PerspectiveVulkan( fovy, aspect, zNear, zFar );
@@ -614,7 +616,7 @@ void Application::UpdateUniforms() {
 			const float ymin	= -halfWidth;
 			const float ymax	= halfWidth;
 			const float zNear	= 25.0f;
-			const float zFar	= 175.0f;
+			const float zFar	= FAR_CLIPPING_PLANE_SHADOW;
 			camera.matProj.OrthoVulkan( xmin, xmax, ymin, ymax, zNear, zFar );
 			camera.matProj = camera.matProj.Transpose();
 

@@ -18,6 +18,8 @@ static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DE
 // asset
 static constexpr bool CONVERT_SCENE = false;
 static constexpr float ANIMDEMO_SCALE = 0.0105f;
+static constexpr float DEBUG_BONE_RAD = 0.075f;
+
 //constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human.fbx";
@@ -27,3 +29,7 @@ static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // Physics
 static constexpr float GRAVITY_MAGNITUDE = 10.f;
 static const Vec3 GRAV_ACCEL = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
+
+// Rendering
+static constexpr float FAR_CLIPPING_PLANE_CAM	 = 10000.f;
+static constexpr float FAR_CLIPPING_PLANE_SHADOW = 175.f;

@@ -172,7 +172,7 @@ void Scene::InitializeAnimInstanceDemo() {
 				m_animatedBodies.push_back( Body() );
 			}
 			animInstanceDemo->Initialize( numBodies > 0 ? m_animatedBodies.data() : nullptr,
-				numBodies, worldPos, new ShapeAnimated( 0.075f, false ) 
+				numBodies, worldPos, new ShapeAnimated( DEBUG_BONE_RAD, false )
 			);
 			break;
 		}
