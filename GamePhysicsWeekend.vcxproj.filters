@@ -305,6 +305,9 @@
     <ClInclude Include="code\SceneUtil.h">
       <Filter>code</Filter>
     </ClInclude>
+    <ClInclude Include="code\Config.h">
+      <Filter>code</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="libs\FBX\2020.3.4\lib\vs2022\x64\debug\libfbxsdk.dll">

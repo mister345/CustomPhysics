@@ -22,9 +22,6 @@ namespace FbxUtil {
 		onFoundNode_fn onFoundMesh;
 	};
 
-	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
-	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const callbackAPI_t & callback, void * caller );
-	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, float scale = 1.f );
-	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
-} // namepsace fbx util
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, const callbackAPI_t & callback, void * caller );
+	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, bool bConvert, float scale = 1.f );
+} // namespace fbx util

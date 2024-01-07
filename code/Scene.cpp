@@ -8,6 +8,7 @@
 #include "Physics/Shapes/ShapeAnimated.h"
 #include "SceneUtil.h"
 #include <algorithm>
+#include "Config.h"
 
 /*
 ========================================================================================================
@@ -16,31 +17,6 @@ Scene
 
 ========================================================================================================
 */
-
-//////////////////////////////
-/////////// CONFIG ///////////
-//////////////////////////////
-static constexpr bool RUN_ANIMATION	  = true;
-static constexpr bool RUN_PHYSICS_SIM = false;
-
-// Animation
-constexpr bool SHOW_ORIGIN = false;
-// type
-//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SINGLE_BONE;
-//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
-//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DEBUG_SKELETON;
-static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
-// asset
-constexpr float ANIMDEMO_SCALE = 0.0105f;
-constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
-// constexpr float ANIMDEMO_SCALE = 1.f;
-// constexpr const char * ANIMDEMO_FILENAME = "assets/human.fbx";
-// constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
-// constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
-
-// Physics
-static constexpr float GRAVITY_MAGNITUDE = 10.f;
-static const Vec3 GRAV_ACCEL			 = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 
 /*
 ====================================================

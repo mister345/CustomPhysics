@@ -17,9 +17,9 @@ AnimationInstance::~AnimationInstance() {
 }
 
 void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, Shape * shapeToAnimate ) {
-	assert( !animData->animations.empty() );
+	assert( animData->BoneCount() > 0 );
 
-	curClipName				   = animData->animations.begin()->first.c_str();
+	curClipName				   = animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
 	bodiesToAnimate			   = bodies;
 	worldPos				   = startPos_WS;
 	std::vector< BoneTransform > initialTransforms;

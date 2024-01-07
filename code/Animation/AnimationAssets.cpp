@@ -3,6 +3,7 @@
 #include "AnimationState.h"
 #include "ModelLoader.h"
 #include "fbxInclude.h"
+#include "../Config.h"
 
 namespace {
 	constexpr float TO_RAD = 3.14159265359f / 180.f;
@@ -129,10 +130,10 @@ namespace AnimationAssets {
 							printf( "Error - Failed to load FBX Scene.\n" );
 							return;
 						}
-						//FbxUtil::PrintSceneAnimData( pImporter );
 						reinterpret_cast< SkinnedData * >( userData )->Set( scene );
 					},
 					animInstance->animData,
+					CONVERT_SCENE,
 					scale
 				);
 				break;

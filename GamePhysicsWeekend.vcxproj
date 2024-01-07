@@ -71,6 +71,7 @@
     <ClInclude Include="code\Animation\FbxNodeParsers.h" />
     <ClInclude Include="code\Animation\ModelLoader.h" />
     <ClInclude Include="code\application.h" />
+    <ClInclude Include="code\Config.h" />
     <ClInclude Include="code\Fileio.h" />
     <ClInclude Include="code\Math\Bounds.h" />
     <ClInclude Include="code\Math\LCP.h" />

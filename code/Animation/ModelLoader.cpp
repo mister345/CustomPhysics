@@ -4,11 +4,28 @@
 #include "ModelLoader.h"
 
 namespace FbxUtil {
+	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter );
+	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
+	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
+	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
+} // fwd declarations for internal use 
+
+
+namespace FbxUtil {
 	float g_scale = 1.f;
 
 	/////////////////////////////////////
 	// Data Extraction Functions
 	/////////////////////////////////////
+	void HarvestSceneData( fbxsdk::FbxScene * pScene, const FbxUtil::callbackAPI_t & callback, void * caller ) {
+		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
+		if ( pRootNode != nullptr ) {
+			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
+				ProcessNode( pRootNode->GetChild( i ), callback, caller );
+			}
+		}
+	}
+
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
 			// PrintNode( pNode );
@@ -32,46 +49,11 @@ namespace FbxUtil {
 			}
 		}
 	}
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, bool bConvert, const FbxUtil::callbackAPI_t & callback, void * caller ) {
-		if ( bConvert ) {
-			fbxsdk::FbxAxisSystem targetAxisSystem( fbxsdk::FbxAxisSystem::EUpVector::eZAxis,
-													fbxsdk::FbxAxisSystem::EFrontVector::eParityEven,
-													fbxsdk::FbxAxisSystem::ECoordSystem::eRightHanded
-			);
-			targetAxisSystem.DeepConvertScene( pScene );
-		}
-		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-		if ( pRootNode != nullptr ) {
-			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-				ProcessNode( pRootNode->GetChild( i ), callback, caller );
-			}
-		}
-	}
-
 
 	/////////////////////////////////////
 	// Init Functions
 	/////////////////////////////////////
-	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter ) {
-		pManager = fbxsdk::FbxManager::Create();
-		if ( !pManager ) {
-			std::cout << "Error: Unable to create FBX Manager!\n";
-			return false;
-		}
-
-		fbxsdk::FbxIOSettings * ios = fbxsdk::FbxIOSettings::Create( pManager, IOSROOT );
-		pManager->SetIOSettings( ios );
-
-		pImporter = FbxImporter::Create( pManager, "" );
-		if ( !pImporter ) {
-			std::cout << "Error: Unable to create FBX Importer!\n";
-			return false;
-		}
-
-		return true;
-	}
-
-	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, float scale /* = 1.f */ ) {
+	bool LoadFBXFile( const char * filename, FbxUtil::onLoadedCallback_fn onLoaded, void * userData, bool bConvert, float scale /* = 1.f */ ) {
 		FbxUtil::g_scale = scale;
 
 		fbxsdk::FbxManager * pManager = nullptr;
@@ -92,6 +74,18 @@ namespace FbxUtil {
 		// Import the contents of the file into the scene
 		bool lStatus = pImporter->Import( pScene );
 
+		if ( bConvert ) {
+			// triangulate
+			FbxGeometryConverter clsConverter( pManager );
+			clsConverter.Triangulate( pScene, true );
+
+			// convert to our coordinate system
+			fbxsdk::FbxAxisSystem targetAxisSystem( fbxsdk::FbxAxisSystem::EUpVector::eZAxis,
+													fbxsdk::FbxAxisSystem::EFrontVector::eParityEven,
+													fbxsdk::FbxAxisSystem::ECoordSystem::eRightHanded );
+			targetAxisSystem.DeepConvertScene( pScene );
+		}
+
 		onLoaded( lStatus, pImporter, pScene, userData );
 
 		// Destroy the SDK manager and all other objects it was handling
@@ -102,6 +96,28 @@ namespace FbxUtil {
 		return lStatus;
 	}
 
+	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter ) {
+		pManager = fbxsdk::FbxManager::Create();
+		if ( !pManager ) {
+			std::cout << "Error: Unable to create FBX Manager!\n";
+			return false;
+		}
+
+		fbxsdk::FbxIOSettings * ios = fbxsdk::FbxIOSettings::Create( pManager, IOSROOT );
+		pManager->SetIOSettings( ios );
+
+		pImporter = FbxImporter::Create( pManager, "" );
+		if ( !pImporter ) {
+			std::cout << "Error: Unable to create FBX Importer!\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	/////////////////////////////////////
+	// Debug INFO functions
+	/////////////////////////////////////
 	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode ) {
 		struct local_t {
 			static void countBones_r( fbxsdk::FbxNode * node, int & boneCount ) {
@@ -122,9 +138,6 @@ namespace FbxUtil {
 		return boneCount;
 	}
 
-	/////////////////////////////////////
-	// Debug print functions
-	/////////////////////////////////////
 	void PrintScene( fbxsdk::FbxScene * pScene ) {
 		printf( "Scene Name: %s\n--------------------------------------\n", pScene->GetName() );
 

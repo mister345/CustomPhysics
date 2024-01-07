@@ -77,8 +77,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	}
 
 	// @TODO delete most of this
-	fbxScene  = scene;
-	animStack = fbxScene->GetCurrentAnimationStack();
+	fbxScene				   = scene;
+	animStack				   = fbxScene->GetCurrentAnimationStack();
 	activeLayer				   = animStack->GetMember<fbxsdk::FbxAnimLayer>();
 	const std::string animName = animStack->GetName();
 	assert( activeLayer != nullptr && !animName.empty() );
@@ -91,7 +91,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		&FbxNodeParsers::OnFoundBoneCB, 
 		skeletonType == AnimationAssets::SKINNED_MESH ? &FbxNodeParsers::OnFoundMeshCB : nullptr 
 	};
-	FbxUtil::HarvestSceneData( fbxScene, true, cb, this );
+	FbxUtil::HarvestSceneData( fbxScene, cb, this);
 
 	// accumulate local bone transforms to bring into component space
 	const int boneCount = BoneCount();
