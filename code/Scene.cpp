@@ -154,47 +154,7 @@ void Scene::InitializeAnimInstanceDemo() {
 	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 
 	const Vec3 worldPos = { 0, 0, 10 };
-	switch ( WHICH_SKELETON ) {
-		case AnimationAssets::SINGLE_BONE:
-		case AnimationAssets::MULTI_BONE:
-		case AnimationAssets::DEBUG_SKELETON: {
-			const int numBodies = animInstanceDemo->animData->BoneCount();
-			for ( int i = 0; i < numBodies; i++ ) {
-				animInstanceDemo->bodiesToAnimate.push_back( Body() );
-			}
-			animInstanceDemo->Initialize( numBodies > 0 ? animInstanceDemo->bodiesToAnimate.data() : nullptr,
-				numBodies, worldPos, new ShapeAnimated( DEBUG_BONE_RAD, false )
-			);
-			break;
-		}
-		case AnimationAssets::SKINNED_MESH: {
-			animInstanceDemo->bodiesToAnimate.push_back( Body() );
-			animInstanceDemo->Initialize( 
-				animInstanceDemo->bodiesToAnimate.data(),
-				1, 
-				worldPos, 
-				new ShapeLoadedMesh( 
-					animInstanceDemo->animData->renderedVerts,
-					animInstanceDemo->animData->numVerts,
-					animInstanceDemo->animData->idxes,
-					animInstanceDemo->animData->numIdxes ) 
-			);
-			break;
-		}
-	}
-
-	// spawn a single debug sphere to indicate the origin pos of the animated object
-	// put it at the end so it gets rendered on top ( hopefully )
-	if ( SHOW_ORIGIN ) {
-		animInstanceDemo->bodiesToAnimate.push_back( Body() );
-		animInstanceDemo->bodiesToAnimate.back().m_position = worldPos;
-		animInstanceDemo->bodiesToAnimate.back().m_orientation = { 0, 0, 0, 1 };
-		animInstanceDemo->bodiesToAnimate.back().m_linearVelocity.Zero();
-		animInstanceDemo->bodiesToAnimate.back().m_invMass = 0.f;	// no grav
-		animInstanceDemo->bodiesToAnimate.back().m_elasticity = 1.f;
-		animInstanceDemo->bodiesToAnimate.back().m_friction = 0.f;
-		animInstanceDemo->bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
-	}
+	animInstanceDemo->Initialize( worldPos );
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {

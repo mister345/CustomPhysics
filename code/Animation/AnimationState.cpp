@@ -2,6 +2,7 @@
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "../Physics/Shapes/ShapeAnimated.h"
+#include "../Config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION INSTANCE
@@ -12,29 +13,63 @@ AnimationInstance::AnimationInstance() {
 
 AnimationInstance::~AnimationInstance() {
 //	bodiesToAnimate = nullptr;
-
-	if ( isInstanced ) {
-		delete bodiesToAnimate[ 0 ].m_shape;	
-	} else {
-		for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
-			delete( bodiesToAnimate[ i ].m_shape );
-			bodiesToAnimate[ i ].m_shape = nullptr;
+	if ( bodiesToAnimate.size() > 0 ) {
+		if ( isInstanced ) {
+			if ( bodiesToAnimate[ 0 ].m_shape != nullptr ) {
+				delete bodiesToAnimate[ 0 ].m_shape;	
+				bodiesToAnimate[ 0 ].m_shape = nullptr;
+			}
+		} else {
+			for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
+				if ( bodiesToAnimate[ i ].m_shape != nullptr ) {
+					delete( bodiesToAnimate[ i ].m_shape );
+					bodiesToAnimate[ i ].m_shape = nullptr;
+				}
+			}
 		}
+		bodiesToAnimate.clear();
 	}
-	bodiesToAnimate.clear();
 
 	delete animData;
 	animData = nullptr;
 }
 
-void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, Shape * shapeToAnimate ) {
-	assert( animData->BoneCount() > 0 );
+void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
+	if ( animData->BoneCount() <= 0 ) {
+		printf( "~WARNING~\tSkeleton contains 0 bones, AnimationIstance will NOT be initialized!\n" );
+		return;
+	}
 
-	curClipName				   = animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
-//	bodiesToAnimate			   = bodies;
-	worldPos				   = startPos_WS;
+	Shape * shapeToAnimate = nullptr;
+	switch ( WHICH_SKELETON ) {
+		case AnimationAssets::SINGLE_BONE:
+		case AnimationAssets::MULTI_BONE:
+		case AnimationAssets::DEBUG_SKELETON: {
+			shapeToAnimate = new ShapeAnimated( DEBUG_BONE_RAD, false );
+			const int numBodies = animData->BoneCount();
+			for ( int i = 0; i < numBodies; i++ ) {
+				bodiesToAnimate.push_back( Body() );
+			}
+			break;
+		}
+		case AnimationAssets::SKINNED_MESH: {
+			shapeToAnimate = new ShapeLoadedMesh(
+				animData->renderedVerts,
+				animData->numVerts,
+				animData->idxes,
+				animData->numIdxes 
+			);
+			bodiesToAnimate.push_back( Body() );
+			break;
+		}
+	}
+	if ( bodiesToAnimate.empty() ) {
+		printf( "~WARNING~\tNo bodies to animate, AnimationIstance will NOT be initialized!\n" );
+		return;
+	}
+
+	curClipName	= animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
 	std::vector< BoneTransform > initialTransforms;
-
 	if ( !animData->animations.empty() ) {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	} else { // if no anims, just T-pose
@@ -43,7 +78,7 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 	// note - this will be meaningless for a skinned mesh
 	for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
 		Body & bodyToAnimate = bodiesToAnimate[ i ];
-		bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
+		bodyToAnimate.m_position = startPos_WS + initialTransforms[ i ].translation;
 		bodyToAnimate.m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
 		bodyToAnimate.m_linearVelocity.Zero();
 		bodyToAnimate.m_invMass = 0.f;	// no grav
@@ -53,6 +88,19 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 	}
 
 	pCurAnim = animData->animations.begin();
+
+	// spawn a single debug sphere to indicate the origin pos of the animated object
+	// put it at the end so it gets rendered on top ( hopefully )
+	if ( SHOW_ORIGIN ) {
+		bodiesToAnimate.push_back( Body() );
+		bodiesToAnimate.back().m_position = worldPos;
+		bodiesToAnimate.back().m_orientation = { 0, 0, 0, 1 };
+		bodiesToAnimate.back().m_linearVelocity.Zero();
+		bodiesToAnimate.back().m_invMass = 0.f;	// no grav
+		bodiesToAnimate.back().m_elasticity = 1.f;
+		bodiesToAnimate.back().m_friction = 0.f;
+		bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
+	}
 }
 
 void AnimationInstance::Update( float deltaT ) {
@@ -76,7 +124,10 @@ void AnimationInstance::Update( float deltaT ) {
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
 	animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
 
-	// @TODO - this switching is unfortunate, but it'll do for now
+	// Apply transforms to all bodies rendered in the scene
+	if ( bodiesToAnimate.empty() ) {
+		return;
+	}
 	switch ( animData->skeletonType ) {
 		case AnimationAssets::SINGLE_BONE:
 		case AnimationAssets::MULTI_BONE:
@@ -93,7 +144,6 @@ void AnimationInstance::Update( float deltaT ) {
 		case AnimationAssets::SKINNED_MESH: {
 			// handle the case of only ONE BODY, with ONE SHAPE,
 			Body & bodyToAnimate = bodiesToAnimate[ 0 ];
-			assert( bodyToAnimate != nullptr );
 			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate.m_shape );
 			// @TODO - we will convert all these BoneTransforms into matrices,
 			// the rest is up to the GPU skinning stage in teh vertex shader
