@@ -48,8 +48,16 @@ Bounds ShapeLoadedMesh::GetBounds() const {
 }
 
 void ShapeLoadedMesh::PopulateMatrixPalette( void * bTransforms ) {
-	std::vector< BoneTransform > * boneTransforms = reinterpret_cast< std::vector< BoneTransform > * >( bTransforms );
-	for ( BoneTransform & t : *boneTransforms ) {
-		// @TODO - convert these into matrix palette
+	std::vector< BoneTransform > & boneTransforms = *reinterpret_cast< std::vector< BoneTransform > * >( bTransforms );
+
+	for ( int i = 0; i < boneTransforms.size(); i++ ) {
+		BoneTransform & t = boneTransforms[ i ];
+		const Mat3 rotMat = t.rotation.ToMat3();
+		matrixPalette.emplace_back( 
+			Vec4{ rotMat.rows[ 0 ][ 0 ], rotMat.rows[ 0 ][ 1 ], rotMat.rows[ 0 ][ 2 ], t.translation.x },
+			Vec4{ rotMat.rows[ 1 ][ 0 ], rotMat.rows[ 1 ][ 1 ], rotMat.rows[ 1 ][ 2 ], t.translation.y },
+			Vec4{ rotMat.rows[ 2 ][ 0 ], rotMat.rows[ 2 ][ 1 ], rotMat.rows[ 2 ][ 2 ], t.translation.z },
+			Vec4{ 0, 0, 0, 1 }
+		);
 	}
 }
