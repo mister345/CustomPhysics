@@ -22,9 +22,8 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 
-	AnimationInstance();
+	AnimationInstance( const Vec3 & worldPos );
 	~AnimationInstance();
-	void Initialize( const Vec3 & startPos_WS );
 	void Update( float deltaT );
 	const char * CycleCurClip() {
 		if( animData->animations.empty() ){

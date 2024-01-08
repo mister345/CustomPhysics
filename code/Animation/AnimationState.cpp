@@ -7,39 +7,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
-AnimationInstance::AnimationInstance() {
+AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
+	// Load the animation data ( bones and verts ) from fbx file
 	animData = new SkinnedData();
-}
-
-AnimationInstance::~AnimationInstance() {
-//	bodiesToAnimate = nullptr;
-	if ( bodiesToAnimate.size() > 0 ) {
-		if ( isInstanced ) {
-			if ( bodiesToAnimate[ 0 ].m_shape != nullptr ) {
-				delete bodiesToAnimate[ 0 ].m_shape;	
-				bodiesToAnimate[ 0 ].m_shape = nullptr;
-			}
-		} else {
-			for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
-				if ( bodiesToAnimate[ i ].m_shape != nullptr ) {
-					delete( bodiesToAnimate[ i ].m_shape );
-					bodiesToAnimate[ i ].m_shape = nullptr;
-				}
-			}
-		}
-		bodiesToAnimate.clear();
-	}
-
-	delete animData;
-	animData = nullptr;
-}
-
-void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
+	AnimationAssets::FillAnimInstanceData( this, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 	if ( animData->BoneCount() <= 0 ) {
 		printf( "~WARNING~\tSkeleton contains 0 bones, AnimationIstance will NOT be initialized!\n" );
 		return;
 	}
 
+	// Create corresponding bodies to debug bones, etc, in the game world, based on loaded skeleton
 	Shape * shapeToAnimate = nullptr;
 	switch ( WHICH_SKELETON ) {
 		case AnimationAssets::SINGLE_BONE:
@@ -57,7 +34,7 @@ void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
 				animData->renderedVerts,
 				animData->numVerts,
 				animData->idxes,
-				animData->numIdxes 
+				animData->numIdxes
 			);
 			bodiesToAnimate.push_back( Body() );
 			break;
@@ -68,7 +45,8 @@ void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
 		return;
 	}
 
-	curClipName	= animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
+	worldPos = worldPos_;
+	curClipName = animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
 	std::vector< BoneTransform > initialTransforms;
 	if ( !animData->animations.empty() ) {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
@@ -78,7 +56,7 @@ void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
 	// note - this will be meaningless for a skinned mesh
 	for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
 		Body & bodyToAnimate = bodiesToAnimate[ i ];
-		bodyToAnimate.m_position = startPos_WS + initialTransforms[ i ].translation;
+		bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
 		bodyToAnimate.m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
 		bodyToAnimate.m_linearVelocity.Zero();
 		bodyToAnimate.m_invMass = 0.f;	// no grav
@@ -101,6 +79,28 @@ void AnimationInstance::Initialize( const Vec3 & startPos_WS ) {
 		bodiesToAnimate.back().m_friction = 0.f;
 		bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
 	}
+}
+
+AnimationInstance::~AnimationInstance() {
+	if ( bodiesToAnimate.size() > 0 ) {
+		if ( isInstanced ) {
+			if ( bodiesToAnimate[ 0 ].m_shape != nullptr ) {
+				delete bodiesToAnimate[ 0 ].m_shape;	
+				bodiesToAnimate[ 0 ].m_shape = nullptr;
+			}
+		} else {
+			for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
+				if ( bodiesToAnimate[ i ].m_shape != nullptr ) {
+					delete( bodiesToAnimate[ i ].m_shape );
+					bodiesToAnimate[ i ].m_shape = nullptr;
+				}
+			}
+		}
+		bodiesToAnimate.clear();
+	}
+
+	delete animData;
+	animData = nullptr;
 }
 
 void AnimationInstance::Update( float deltaT ) {

@@ -148,13 +148,7 @@ void Scene::InitializeAnimInstanceDemo() {
 	if ( animInstanceDemo != nullptr ) {
 		return;
 	}
-	animInstanceDemo = new AnimationInstance();
-
-	// create AnimationData class, and will load verts from fbx file if skeleton type is SkinnedMesh
-	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
-
-	const Vec3 worldPos = { 0, 0, 10 };
-	animInstanceDemo->Initialize( worldPos );
+	animInstanceDemo = new AnimationInstance( { 0, 0, 10 } );
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {

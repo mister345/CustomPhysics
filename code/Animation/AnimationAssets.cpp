@@ -68,8 +68,8 @@ namespace AnimationAssets {
 	#define stringify( s ) #s
 
 	void FillAnimInstanceData( AnimationInstance * animInstance, eSkeleton whichSkeleton, const char * fileName, float scale ) {
-		animInstance->animData->skeletonType = whichSkeleton;
 
+		animInstance->animData->skeletonType = whichSkeleton;
 		switch ( whichSkeleton ) {
 			case SINGLE_BONE: {
 				int boneCount;
