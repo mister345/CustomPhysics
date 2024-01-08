@@ -2,6 +2,7 @@
 
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
+#include "../Physics/Body.h"
 #include "AnimationAssets.h"
 
 class SkinnedData;
@@ -19,7 +20,9 @@ struct AnimationInstance {
 	std::map< std::string, AnimationClip >::iterator pCurAnim;
 
 	Vec3 worldPos		     = Vec3( 0, 0, 15 );
-	Body * bodiesToAnimate   = nullptr;
+	std::vector< Body > bodiesToAnimate;
+
+	bool isInstanced = true;
 
 	AnimationInstance();
 	~AnimationInstance();

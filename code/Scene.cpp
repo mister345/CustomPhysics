@@ -27,13 +27,6 @@ Scene::~Scene() {
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
-
-		// switched to instanced mode bc we use same body for all bones anyway
-		delete m_animatedBodies[ 0 ].m_shape;
-		for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-			m_animatedBodies[ i ].m_shape = nullptr;
-		}
-		m_animatedBodies.clear();
 	}
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
@@ -54,14 +47,6 @@ void Scene::Reset() {
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
-
-		// switched to instanced mode bc we use same body for all bones anyway
-		delete m_animatedBodies[ 0 ].m_shape;
-		m_animatedBodies[ 0 ].m_shape = nullptr;
-		for ( int i = 0; i < m_animatedBodies.size(); i++ ) {
-			m_animatedBodies[ i ].m_shape = nullptr;
-		}
-		m_animatedBodies.clear();
 	}
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
@@ -138,9 +123,19 @@ void Scene::Initialize() {
 	///////////////////////////////////////////////////////////////////////////////////
 	// list of pointers to both ( todo - use placement new to allocate in same block )
 	///////////////////////////////////////////////////////////////////////////////////
-	m_renderedBodies.resize( m_bodies.size() + m_animatedBodies.size() );
+	const int numAnimatedBodies = animInstanceDemo ? animInstanceDemo->bodiesToAnimate.size() : 0;
+
+	m_renderedBodies.resize( m_bodies.size() + numAnimatedBodies );
 	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), []( Body & b ) { return &b; } );
-	std::transform( m_animatedBodies.begin(), m_animatedBodies.end(), m_renderedBodies.begin() + m_bodies.size(), []( Body & b ) { return &b; } );
+	if ( numAnimatedBodies > 0 ) {
+		std::transform( 
+			animInstanceDemo->bodiesToAnimate.begin(), 
+			animInstanceDemo->bodiesToAnimate.end(), 
+			m_renderedBodies.begin() + m_bodies.size(), 
+			[]( Body & b ) { 
+				return &b; 
+			} );
+	}
 }
 
 void Scene::TryCycleAnim() {
@@ -165,17 +160,17 @@ void Scene::InitializeAnimInstanceDemo() {
 		case AnimationAssets::DEBUG_SKELETON: {
 			const int numBodies = animInstanceDemo->animData->BoneCount();
 			for ( int i = 0; i < numBodies; i++ ) {
-				m_animatedBodies.push_back( Body() );
+				animInstanceDemo->bodiesToAnimate.push_back( Body() );
 			}
-			animInstanceDemo->Initialize( numBodies > 0 ? m_animatedBodies.data() : nullptr,
+			animInstanceDemo->Initialize( numBodies > 0 ? animInstanceDemo->bodiesToAnimate.data() : nullptr,
 				numBodies, worldPos, new ShapeAnimated( DEBUG_BONE_RAD, false )
 			);
 			break;
 		}
 		case AnimationAssets::SKINNED_MESH: {
-			m_animatedBodies.push_back( Body() );
+			animInstanceDemo->bodiesToAnimate.push_back( Body() );
 			animInstanceDemo->Initialize( 
-				m_animatedBodies.data(), 
+				animInstanceDemo->bodiesToAnimate.data(),
 				1, 
 				worldPos, 
 				new ShapeLoadedMesh( 
@@ -191,14 +186,14 @@ void Scene::InitializeAnimInstanceDemo() {
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	// put it at the end so it gets rendered on top ( hopefully )
 	if ( SHOW_ORIGIN ) {
-		m_animatedBodies.push_back( Body() );
-		m_animatedBodies.back().m_position = worldPos;
-		m_animatedBodies.back().m_orientation = { 0, 0, 0, 1 };
-		m_animatedBodies.back().m_linearVelocity.Zero();
-		m_animatedBodies.back().m_invMass = 0.f;	// no grav
-		m_animatedBodies.back().m_elasticity = 1.f;
-		m_animatedBodies.back().m_friction = 0.f;
-		m_animatedBodies.back().m_shape = new ShapeAnimated( 0.45f, true );
+		animInstanceDemo->bodiesToAnimate.push_back( Body() );
+		animInstanceDemo->bodiesToAnimate.back().m_position = worldPos;
+		animInstanceDemo->bodiesToAnimate.back().m_orientation = { 0, 0, 0, 1 };
+		animInstanceDemo->bodiesToAnimate.back().m_linearVelocity.Zero();
+		animInstanceDemo->bodiesToAnimate.back().m_invMass = 0.f;	// no grav
+		animInstanceDemo->bodiesToAnimate.back().m_elasticity = 1.f;
+		animInstanceDemo->bodiesToAnimate.back().m_friction = 0.f;
+		animInstanceDemo->bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
 	}
 }
 

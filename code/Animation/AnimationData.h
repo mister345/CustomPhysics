@@ -59,6 +59,10 @@ public:
 			free( renderedVerts );
 			renderedVerts = nullptr;
 		}
+		if ( idxes != nullptr ) {
+			free( idxes );
+			idxes = nullptr;
+		}
 	}
 
 	inline uint32_t BoneCount() const { 

@@ -11,16 +11,27 @@ AnimationInstance::AnimationInstance() {
 }
 
 AnimationInstance::~AnimationInstance() {
+//	bodiesToAnimate = nullptr;
+
+	if ( isInstanced ) {
+		delete bodiesToAnimate[ 0 ].m_shape;	
+	} else {
+		for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
+			delete( bodiesToAnimate[ i ].m_shape );
+			bodiesToAnimate[ i ].m_shape = nullptr;
+		}
+	}
+	bodiesToAnimate.clear();
+
 	delete animData;
 	animData = nullptr;
-	bodiesToAnimate = nullptr;
 }
 
 void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec3 & startPos_WS, Shape * shapeToAnimate ) {
 	assert( animData->BoneCount() > 0 );
 
 	curClipName				   = animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
-	bodiesToAnimate			   = bodies;
+//	bodiesToAnimate			   = bodies;
 	worldPos				   = startPos_WS;
 	std::vector< BoneTransform > initialTransforms;
 
@@ -30,22 +41,22 @@ void AnimationInstance::Initialize( Body * bodies, unsigned numBodies, const Vec
 		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
 	}
 	// note - this will be meaningless for a skinned mesh
-	for ( int i = 0; i < numBodies; i++ ) {
-		Body * bodyToAnimate = bodiesToAnimate + i;
-		bodyToAnimate->m_position = worldPos + initialTransforms[ i ].translation;
-		bodyToAnimate->m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
-		bodyToAnimate->m_linearVelocity.Zero();
-		bodyToAnimate->m_invMass = 0.f;	// no grav
-		bodyToAnimate->m_elasticity = 1.f;
-		bodyToAnimate->m_friction = 0.f;
-		bodyToAnimate->m_shape = shapeToAnimate;
+	for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
+		Body & bodyToAnimate = bodiesToAnimate[ i ];
+		bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
+		bodyToAnimate.m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
+		bodyToAnimate.m_linearVelocity.Zero();
+		bodyToAnimate.m_invMass = 0.f;	// no grav
+		bodyToAnimate.m_elasticity = 1.f;
+		bodyToAnimate.m_friction = 0.f;
+		bodyToAnimate.m_shape = shapeToAnimate;
 	}
 
 	pCurAnim = animData->animations.begin();
 }
 
 void AnimationInstance::Update( float deltaT ) {
-	if ( animData->animations.empty() || bodiesToAnimate == nullptr ) {
+	if ( animData->animations.empty() || bodiesToAnimate.empty() ) {
 		// no anim data, so dont update the pose ( just stay in t-pose )
 		return;
 	}
@@ -72,18 +83,18 @@ void AnimationInstance::Update( float deltaT ) {
 		case AnimationAssets::DEBUG_SKELETON: {
 			// apply each bone transform to each body ( 1 to 1 )
 			for ( int i = 0; i < animData->BoneCount(); i++ ) {
-				Body * bodyToAnimate			= bodiesToAnimate + i;
+				Body & bodyToAnimate			= bodiesToAnimate[ i ];
 				const BoneTransform & transform = boneTransforms[ i ];
-				bodyToAnimate->m_orientation = transform.rotation;
-				bodyToAnimate->m_position = worldPos + transform.translation;
+				bodyToAnimate.m_orientation = transform.rotation;
+				bodyToAnimate.m_position = worldPos + transform.translation;
 			}
 			break;
 		}
 		case AnimationAssets::SKINNED_MESH: {
 			// handle the case of only ONE BODY, with ONE SHAPE,
-			Body * bodyToAnimate = bodiesToAnimate;
+			Body & bodyToAnimate = bodiesToAnimate[ 0 ];
 			assert( bodyToAnimate != nullptr );
-			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate->m_shape );
+			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate.m_shape );
 			// @TODO - we will convert all these BoneTransforms into matrices,
 			// the rest is up to the GPU skinning stage in teh vertex shader
 			mesh->PopulateMatrixPalette( &boneTransforms );

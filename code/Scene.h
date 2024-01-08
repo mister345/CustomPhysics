@@ -36,7 +36,7 @@ public:
 
 private:
 	std::vector< Body > m_bodies;
-	std::vector< Body > m_animatedBodies;
+//	std::vector< Body > m_animatedBodies;
 	AnimationInstance * animInstanceDemo = nullptr;
 };
 
