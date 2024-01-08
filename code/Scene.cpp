@@ -24,8 +24,6 @@ Scene::~Scene
 ====================================================
 */
 Scene::~Scene() {
-	bAnimDataInitialized = false;
-
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
@@ -53,8 +51,6 @@ Scene::Reset
 ====================================================
 */
 void Scene::Reset() {
-	bAnimDataInitialized = false;
-
 	if ( RUN_ANIMATION ) {
 		delete( animInstanceDemo );
 		animInstanceDemo = nullptr;
@@ -135,8 +131,7 @@ void Scene::Initialize() {
 					&m_bodies 
 	);
 
-	if ( RUN_ANIMATION ) {
-		animInstanceDemo = new AnimationInstance();
+	if ( RUN_ANIMATION ) {		
 		InitializeAnimInstanceDemo();
 	}
 
@@ -155,12 +150,13 @@ void Scene::TryCycleAnim() {
 }
 
 void Scene::InitializeAnimInstanceDemo() {
-	if ( bAnimDataInitialized ) {
+	if ( animInstanceDemo != nullptr ) {
 		return;
 	}
-	// NOTE - this creates AnimationData class, and will load verts from fbx file if skeleton type is SkinnedMesh
+	animInstanceDemo = new AnimationInstance();
+
+	// create AnimationData class, and will load verts from fbx file if skeleton type is SkinnedMesh
 	AnimationAssets::FillAnimInstanceData( animInstanceDemo, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
-	bAnimDataInitialized = true;
 
 	const Vec3 worldPos = { 0, 0, 10 };
 	switch ( WHICH_SKELETON ) {
