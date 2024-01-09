@@ -50,7 +50,7 @@ struct AnimationClip {
 ////////////////////////////////////////////////////////////////////////////////
 // database of keyframes & bone offsets + logic to evaluate a pose @ time t - HAS NO STATE ( except for while loading )
 class SkinnedData {
-	friend struct AnimationInstance;
+	friend class AnimationInstance;
 
 public:
 	SkinnedData() = default;
@@ -93,7 +93,7 @@ NOTE - 2 ways to get frames from fbx file
 public:
 	// @TODO - very crude temp implementation for now!
 	int numVerts = 0;
-	vert_t * renderedVerts = nullptr;
+	vertSkinned_t * renderedVerts = nullptr;
 	int numIdxes = 0;
 	int * idxes = nullptr;
 

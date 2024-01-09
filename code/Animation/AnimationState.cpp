@@ -37,6 +37,7 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 				animData->numIdxes
 			);
 			bodiesToAnimate.push_back( Body() );
+			bodiesToAnimate.back().isSkinnedMesh = true;
 			break;
 		}
 	}

@@ -66,7 +66,7 @@ private:
 	//	Model
 	//
 	Model m_modelFullScreen;
-	std::vector< Model * > m_models;	// models for the bodies
+	std::vector< ModelBase * > m_models;	// models for the bodies
 
 	//
 	//	Pipeline for copying the offscreen framebuffer to the swapchain

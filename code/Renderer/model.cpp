@@ -386,6 +386,20 @@ void FillSphere( Model & model, const float radius ) {
 }
 
 /*
+================================
+ModelBase::Cleanup
+================================
+*/
+void ModelBase::Cleanup( DeviceContext & deviceContext ) {
+	if ( !m_isVBO ) {
+		return;
+	}
+
+	m_vertexBuffer.Cleanup( &deviceContext );
+	m_indexBuffer.Cleanup( &deviceContext );
+}
+
+/*
 ====================================================
 Model::BuildFromShape
 ====================================================
@@ -395,32 +409,13 @@ bool Model::BuildFromShape( const Shape * shape ) {
 		return false;
 	}
 
-	const Shape::shapeType_t shapeType = shape->GetType();
-	switch ( shapeType ) {
-		case Shape::SHAPE_SPHERE: {
-			const ShapeSphere * shapeSphere = ( const ShapeSphere * )shape;
-			m_vertices.clear();
-			m_indices.clear();
-			FillSphere( *this, shapeSphere->m_radius );
-			for ( int v = 0; v < m_vertices.size(); v++ ) {
-				for ( int i = 0; i < 3; i++ ) {
-					m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
-				}
-			}
-			break;
-		}
-		case Shape::SHAPE_LOADED_MESH: {
-			const ShapeLoadedMesh * shapeMesh = reinterpret_cast< const ShapeLoadedMesh * >( shape );
-			m_vertices.clear();
-			m_indices.clear();
-			// @TODO - i dont like copying all this data here, refactor the architecture later to do it in place here
-			m_vertices.assign( shapeMesh->verts, shapeMesh->verts + shapeMesh->numVerts );
-			m_indices.assign( shapeMesh->idxes, shapeMesh->idxes + shapeMesh->numIdxes );
-
-			// @TODO - make UBO from shapeMesh->matrixPalette
-			// 
-
-			break;
+	const ShapeSphere * shapeSphere = ( const ShapeSphere * )shape;
+	m_vertices.clear();
+	m_indices.clear();
+	FillSphere( *this, shapeSphere->m_radius );
+	for ( int v = 0; v < m_vertices.size(); v++ ) {
+		for ( int i = 0; i < 3; i++ ) {
+			m_vertices[ v ].xyz[ i ] *= shapeSphere->m_radius;
 		}
 	}
 
@@ -458,20 +453,6 @@ bool Model::MakeVBO( DeviceContext * device ) {
 }
 
 /*
-================================
-Model::Cleanup
-================================
-*/
-void Model::Cleanup( DeviceContext & deviceContext ) {
-	if ( !m_isVBO ) {
-		return;
-	}
-
-	m_vertexBuffer.Cleanup( &deviceContext );
-	m_indexBuffer.Cleanup( &deviceContext );
-}
-
-/*
 ====================================================
 Model::DrawIndexed
 ====================================================
@@ -485,4 +466,77 @@ void Model::DrawIndexed( VkCommandBuffer vkCommandBUffer ) {
 
 	// Issue draw command
 	vkCmdDrawIndexed( vkCommandBUffer, (uint32_t)m_indices.size(), 1, 0, 0, 0 );
+}
+
+
+/*
+====================================================
+ModelSkinned::BuildFromShape
+====================================================
+*/
+bool ModelSkinned::BuildFromShape( const Shape * shape ) {
+	if ( NULL == shape ) {
+		return false;
+	}
+
+	assert( shape->GetType() == Shape::SHAPE_LOADED_MESH );
+
+	const ShapeLoadedMesh * shapeMesh = reinterpret_cast< const ShapeLoadedMesh * >( shape );
+	m_skinnedVerts.clear();
+	m_indices.clear();
+	// @TODO - i dont like copying all this data here, refactor the architecture later to do it in place here
+	m_skinnedVerts.assign( shapeMesh->verts, shapeMesh->verts + shapeMesh->numVerts );
+	m_indices.assign( shapeMesh->idxes, shapeMesh->idxes + shapeMesh->numIdxes );
+
+	// @TODO - make UBO from shapeMesh->matrixPalette
+	// 
+
+	return true;
+}
+
+
+/*
+================================
+ModelSkinned::MakeVBO
+================================
+*/
+bool ModelSkinned::MakeVBO( DeviceContext * device ) {
+	VkCommandBuffer vkCommandBuffer = device->m_vkCommandBuffers[ 0 ];
+
+	int bufferSize;
+
+	// Create Vertex Buffer
+	bufferSize = ( int )( sizeof( m_skinnedVerts[ 0 ] ) * m_skinnedVerts.size() );
+	if ( !m_vertexBuffer.Allocate( device, m_skinnedVerts.data(), bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ) ) {
+		printf( "failed to allocate vertex buffer!\n" );
+		assert( 0 );
+		return false;
+	}
+
+	// Create Index Buffer
+	bufferSize = ( int )( sizeof( m_indices[ 0 ] ) * m_indices.size() );
+	if ( !m_indexBuffer.Allocate( device, m_indices.data(), bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT ) ) {
+		printf( "failed to allocate index buffer!\n" );
+		assert( 0 );
+		return false;
+	}
+
+	m_isVBO = true;
+	return true;
+}
+
+/*
+====================================================
+ModelSkinned::DrawIndexed
+====================================================
+*/
+void ModelSkinned::DrawIndexed( VkCommandBuffer vkCommandBUffer ) {
+	// Bind the model
+	VkBuffer vertexBuffers[ ] = { m_vertexBuffer.m_vkBuffer };
+	VkDeviceSize offsets[ ] = { 0 };
+	vkCmdBindVertexBuffers( vkCommandBUffer, 0, 1, vertexBuffers, offsets );
+	vkCmdBindIndexBuffer( vkCommandBUffer, m_indexBuffer.m_vkBuffer, 0, VK_INDEX_TYPE_UINT32 );
+
+	// Issue draw command
+	vkCmdDrawIndexed( vkCommandBUffer, ( uint32_t )m_indices.size(), 1, 0, 0, 0 );
 }

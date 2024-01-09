@@ -4,7 +4,7 @@
 #pragma once
 #include "ShapeBase.h"
 
-struct vert_t;
+struct vertSkinned_t;
 
 /*
 ====================================================
@@ -13,7 +13,7 @@ ShapeLoadedMesh
 */
 class ShapeLoadedMesh : public Shape {
 public:
-	explicit ShapeLoadedMesh( vert_t * pVerts, int numV, int * pIdxes, int nIdxes, const float radius = 10.f ) : 
+	explicit ShapeLoadedMesh( vertSkinned_t * pVerts, int numV, int * pIdxes, int nIdxes, const float radius = 10.f ) :
 		verts( pVerts ),
 		numVerts( numV ),
 		idxes( pIdxes ),
@@ -42,7 +42,7 @@ public:
 	int numIdxes   = 0;
 	int numVerts   = 0;
 	int * idxes	   = nullptr;
-	vert_t * verts = nullptr;
+	vertSkinned_t * verts = nullptr;
 
 	std::vector< Mat4 > matrixPalette;
 };

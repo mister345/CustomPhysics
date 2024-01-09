@@ -86,7 +86,14 @@ void Application::Initialize() {
 	const int numBodies = m_scene->m_renderedBodies.size();
 	m_models.reserve( numBodies );
 	for ( int i = 0; i < numBodies; i++ ) {
-		Model * model = new Model();
+		// @HACK for now
+		ModelBase * model = nullptr;
+		const bool isAnimated = m_scene->m_renderedBodies[ i ]->isSkinnedMesh;
+		if ( isAnimated ) {
+			model = new ModelSkinned();
+		} else {
+			model = new Model();
+		}
 		model->BuildFromShape( m_scene->m_renderedBodies[ i ]->m_shape );
 		model->MakeVBO( &m_deviceContext );
 
@@ -657,6 +664,13 @@ void Application::UpdateUniforms() {
 			m_renderModels.push_back( renderModel );
 
 			uboByteOffset += m_deviceContext.GetAligendUniformByteOffset( sizeof( matOrient ) );
+		}
+
+		//
+		//	@TODO Update the uniform buffer with the matrix palette for skinning
+		//
+		for ( int i = 0; i < m_scene->m_renderedBodies.size(); i++ ) {
+
 		}
 
 		m_uniformBuffer.UnmapBuffer( &m_deviceContext );

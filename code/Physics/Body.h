@@ -20,6 +20,9 @@ class Body {
 public:
 	Body();
 
+	// @HACK for now
+	bool isSkinnedMesh = false;
+
 	Vec3  m_position;
 	Quat  m_orientation;
 	Vec3  m_linearVelocity;

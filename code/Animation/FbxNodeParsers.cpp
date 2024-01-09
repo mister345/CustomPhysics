@@ -48,7 +48,7 @@ namespace FbxNodeParsers {
 
 		me->numVerts	  = mesh->GetControlPointsCount();
 		me->numIdxes	  = mesh->GetPolygonVertexCount();
-		me->renderedVerts = reinterpret_cast< vert_t * >( malloc( sizeof( vert_t ) * me->numVerts ) );
+		me->renderedVerts = reinterpret_cast< vertSkinned_t * >( malloc( sizeof( vertSkinned_t ) * me->numVerts ) );
 		me->idxes		  = reinterpret_cast< int * >( malloc( sizeof( int ) * me->numIdxes ) );
 		printf( "found mesh named:%s with %i vertices and %i indices. Copying verts and incides...\n", meshNode->GetName(), me->numVerts, me->numIdxes );
 
@@ -59,7 +59,7 @@ namespace FbxNodeParsers {
 
 		// Load vert, uv data into our receptacle
 		for ( int i = 0; i < me->numVerts; i++ ) {
-			vert_t & outVert = me->renderedVerts[ i ];
+			vertSkinned_t & outVert = me->renderedVerts[ i ];
 
 			// coordinates
 			fbxsdk::FbxVector4 fbxVert = mesh->GetControlPointAt( i );
@@ -76,6 +76,8 @@ namespace FbxNodeParsers {
 			}
 			printf( "Vertex %i: %3.1f, %3.1f, %3.2f, uv:%1.1f,%1.1f\n", 
 					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], outVert.st[ 0 ], outVert.st[ 1 ] );
+
+			// @TODO - load the bone weights and bone indices for each of these verts
 		}
 
 		// Load indices
