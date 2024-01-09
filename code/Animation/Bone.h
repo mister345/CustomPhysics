@@ -58,6 +58,7 @@ struct BoneAnimation {
 	void Interpolate( float t, BoneTransform & outTransform, int myIdx ) const;
 	inline bool HasData() const { return !keyframes.empty(); }
 	std::vector< Keyframe > keyframes;
+	mutable int lastKeyframeIdx = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

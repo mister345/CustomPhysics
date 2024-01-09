@@ -148,15 +148,21 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 	if ( t <= keyframes.front().timePos ) {
 		outTransform.rotation = keyframes.front().transform.rotation;
 		outTransform.translation = keyframes.front().transform.translation;
+		lastKeyframeIdx = 0;
 	} else if ( t >= keyframes.back().timePos ) {
 		outTransform.rotation = keyframes.back().transform.rotation;
 		outTransform.translation = keyframes.back().transform.translation;
+		lastKeyframeIdx = 0;
 	} else {
 		// where does the given time t fall within our list of keyframes?
-		for ( size_t i = 0; i < keyframes.size() - 1; i++ ) {
+		for ( size_t i = lastKeyframeIdx; i < keyframes.size() - 1; i++ ) {
 			const Keyframe & start = keyframes[ i ];
 			const Keyframe & end = keyframes[ i + 1 ];
 			if ( t >= start.timePos && t <= end.timePos ) {
+				// bookmark where we left off
+				lastKeyframeIdx = i;
+				printf( "~~~~~~~~resuming from keyframe @ %i...\n", lastKeyframeIdx );
+
 				// lerp translation
 				const float range = end.timePos - start.timePos;
 				const float progress = ( t - start.timePos ) / range;
