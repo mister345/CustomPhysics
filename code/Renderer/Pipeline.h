@@ -48,6 +48,8 @@ public:
 
 		int pushConstantSize;
 		VkShaderStageFlagBits pushConstantShaderStages;
+
+		bool isSkinned = false;
 	};
 	bool Create( DeviceContext * device, const CreateParms_t & parms );
 	bool CreateCompute( DeviceContext * device, const CreateParms_t & parms );

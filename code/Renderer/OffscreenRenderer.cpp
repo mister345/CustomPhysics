@@ -25,6 +25,11 @@ Pipeline	g_shadowPipeline;
 Shader		g_shadowShader;
 Descriptors	g_shadowDescriptors;
 
+// @TODO - actually create these
+Pipeline	g_skinningPipeline;
+Shader		g_skinningShader;
+Descriptors	g_skinningDescriptors;
+
 /*
 ====================================================
 InitOffscreen
@@ -182,6 +187,48 @@ bool InitOffscreen( DeviceContext * device, int width, int height ) {
 		}
 	}
 
+	//
+	//	Skinning Shader
+	//
+	{
+		result = g_skinningShader.Load( device, "checkerboardShadowed2" );
+		if ( !result ) {
+			printf( "ERROR: Failed to load shader\n" );
+			assert( 0 );
+			return false;
+		}
+
+		Descriptors::CreateParms_t descriptorParms;
+		memset( &descriptorParms, 0, sizeof( descriptorParms ) );
+		descriptorParms.numUniformsVertex = 3;
+		descriptorParms.numUniformsFragment = 1;
+		descriptorParms.numImageSamplers = 1;
+		result = g_skinningDescriptors.Create( device, descriptorParms );
+		if ( !result ) {
+			printf( "ERROR: Failed to build descriptors\n" );
+			assert( 0 );
+			return false;
+		}
+
+		Pipeline::CreateParms_t pipelineParms;
+		pipelineParms.framebuffer = &g_offscreenFrameBuffer;
+		pipelineParms.descriptors = &g_skinningDescriptors;
+		pipelineParms.shader = &g_skinningShader;
+		pipelineParms.width = g_offscreenFrameBuffer.m_parms.width;
+		pipelineParms.height = g_offscreenFrameBuffer.m_parms.height;
+		pipelineParms.cullMode = Pipeline::CULL_MODE_BACK;
+		pipelineParms.depthTest = true;
+		pipelineParms.depthWrite = true;
+		pipelineParms.isSkinned = true;
+
+		result = g_skinningPipeline.Create( device, pipelineParms );
+		if ( !result ) {
+			printf( "ERROR: Failed to build pipeline\n" );
+			assert( 0 );
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -191,6 +238,10 @@ CleanupOffscreen
 ====================================================
 */
 bool CleanupOffscreen( DeviceContext * device ) {
+	g_skinningPipeline.Cleanup( device );
+	g_skinningDescriptors.Cleanup( device );
+	g_skinningShader.Cleanup( device );
+
 	g_skyPipeline.Cleanup( device );
 	g_skyDescriptors.Cleanup( device );
 	g_skyShader.Cleanup( device );
@@ -234,6 +285,13 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 		g_shadowPipeline.BindPipeline( cmdBuffer );
 		for ( int i = 0; i < numModels; i++ ) {
 			const RenderModel & renderModel = renderModels[ i ];
+
+			// @TODO - for now, skinned object dont cast shadows
+			// later, save the deformed verts somehwere on gpu, 
+			// then reuse them from both the camera and light's perspective
+			if ( renderModel.isSkinned ) {
+				continue;
+			}
 
 			// Descriptor is how we bind our buffers and images
 			Descriptor descriptor = g_shadowPipeline.GetFreeDescriptor();
@@ -279,6 +337,10 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 			for ( int i = 0; i < numModels; i++ ) {
 				const RenderModel & renderModel = renderModels[ i ];
 
+				if ( renderModel.isSkinned ) {
+					continue;
+				}
+
 				// Descriptor is how we bind our buffers and images
 				Descriptor descriptor = g_checkerboardShadowPipeline.GetFreeDescriptor();
 				descriptor.BindBuffer( uniforms, camOffset, camSize, 0 );									// bind the camera matrices
@@ -286,6 +348,33 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 				descriptor.BindBuffer( uniforms, shadowCamOffset, shadowCamSize, 2 );						// bind the shadow camera matrices
 				descriptor.BindImage( VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_shadowFrameBuffer.m_imageDepth.m_vkImageView, Samplers::m_samplerStandard, 0 );
 				descriptor.BindDescriptor( device, cmdBuffer, &g_checkerboardShadowPipeline );
+				renderModel.model->DrawIndexed( cmdBuffer );
+			}
+		}
+
+		// @TODO - super hacky way for now, proceeding w MINIMAL incremental changes
+		// eventually want to maintain two vectors of RenderModel for skinned and unskinned
+		// ( or can we ensure all the skinned ones live at the end of the array? )
+		//
+		//	Draw the skinned models
+		//
+		{
+			// Binding the pipeline is effectively the "use shader" we had back in our opengl apps
+			g_skinningPipeline.BindPipeline( cmdBuffer );
+			for ( int i = 0; i < numModels; i++ ) {
+				const RenderModel & renderModel = renderModels[ i ];
+
+				if ( !renderModel.isSkinned ) {
+					continue;
+				}
+
+				// Descriptor is how we bind our buffers and images
+				Descriptor descriptor = g_skinningPipeline.GetFreeDescriptor();
+				descriptor.BindBuffer( uniforms, camOffset, camSize, 0 );									// bind the camera matrices
+				descriptor.BindBuffer( uniforms, renderModel.uboByteOffset, renderModel.uboByteSize, 1 );	// bind the model matrices
+				descriptor.BindBuffer( uniforms, shadowCamOffset, shadowCamSize, 2 );						// bind the shadow camera matrices
+				descriptor.BindImage( VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_shadowFrameBuffer.m_imageDepth.m_vkImageView, Samplers::m_samplerStandard, 0 );
+				descriptor.BindDescriptor( device, cmdBuffer, &g_skinningPipeline );
 				renderModel.model->DrawIndexed( cmdBuffer );
 			}
 		}

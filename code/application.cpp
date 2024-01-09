@@ -661,6 +661,7 @@ void Application::UpdateUniforms() {
 			renderModel.uboByteSize = sizeof( matOrient );
 			renderModel.pos = body.m_position;
 			renderModel.orient = body.m_orientation;
+			renderModel.isSkinned = body.isSkinnedMesh;
 			m_renderModels.push_back( renderModel );
 
 			uboByteOffset += m_deviceContext.GetAligendUniformByteOffset( sizeof( matOrient ) );
@@ -669,6 +670,10 @@ void Application::UpdateUniforms() {
 		//
 		//	@TODO Update the uniform buffer with the matrix palette for skinning
 		//
+		// NOTE - currently we just cloned the default shader to render the skinned verts,
+		// just to transmit the data correctly w teh new vertSkinned_t sizes.
+		// therefore, the shader will read teh EXACT SAME DATA from a different sized container
+		// @TODO - do the same thing to shadow shader to fix up teh shadows
 		for ( int i = 0; i < m_scene->m_renderedBodies.size(); i++ ) {
 
 		}

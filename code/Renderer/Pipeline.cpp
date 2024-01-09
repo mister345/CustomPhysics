@@ -67,8 +67,17 @@ bool Pipeline::Create( DeviceContext * device, const CreateParms_t & parms ) {
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-	VkVertexInputBindingDescription bindingDescription = vert_t::GetBindingDescription();
-	std::array< VkVertexInputAttributeDescription, 5 > attributeDescriptions = vert_t::GetAttributeDescriptions();
+	VkVertexInputBindingDescription bindingDescription{};
+	std::vector< VkVertexInputAttributeDescription > attributeDescriptions;
+	if ( parms.isSkinned ) {
+		std::array< VkVertexInputAttributeDescription, 7 > descriptions = vertSkinned_t::GetAttributeDescriptions();
+		bindingDescription = vertSkinned_t::GetBindingDescription();
+		attributeDescriptions.assign( descriptions.begin(), descriptions.end() );
+	} else {
+		std::array< VkVertexInputAttributeDescription, 5 > descriptions = vert_t::GetAttributeDescriptions();
+		bindingDescription = vert_t::GetBindingDescription();
+		attributeDescriptions.assign( descriptions.begin(), descriptions.end() );
+	}
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();

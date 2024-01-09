@@ -122,11 +122,13 @@ struct vertSkinned_t {
 
 	// NOTE - this works bc vertSkinned_t is currently identical to vert_t
 	// mesh will get shredded as soon as we introduce these variables:
-	//uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
-	//float boneWeights[ MAX_BONES_PER_VERTEX ];
+	uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
+	float boneWeights[ MAX_BONES_PER_VERTEX ];
 
 	// why? bc size of vertSkinned_t will change, and that requires updating the
-	// ModelSkinned::MakeVBO function to allocate a vertexBuffer w the appropriate info
+	// CreateParms_t for the CreatePipeline function - see OffscreenRenderer line 190
+	// ( just clone the default vert shader for now, call it "skinning" and create a brand new pipeline for it
+	// w the proper VkVertexInputAttributeDescription
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription = {};
@@ -137,8 +139,10 @@ struct vertSkinned_t {
 		return bindingDescription;
 	}
 
-	static std::array< VkVertexInputAttributeDescription, 5 > GetAttributeDescriptions() {
-		std::array< VkVertexInputAttributeDescription, 5 > attributeDescriptions = {};
+//	static std::array< VkVertexInputAttributeDescription, 5 > GetAttributeDescriptions() {
+	static std::array< VkVertexInputAttributeDescription, 7 > GetAttributeDescriptions() {
+//		std::array< VkVertexInputAttributeDescription, 5 > attributeDescriptions = {};
+		std::array< VkVertexInputAttributeDescription, 7 > attributeDescriptions = {};
 
 		attributeDescriptions[ 0 ].binding = 0;
 		attributeDescriptions[ 0 ].location = 0;
@@ -165,6 +169,18 @@ struct vertSkinned_t {
 		attributeDescriptions[ 4 ].format = VK_FORMAT_R8G8B8A8_UNORM;
 		attributeDescriptions[ 4 ].offset = offsetof( vertSkinned_t, buff );
 
+//		uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
+		attributeDescriptions[ 5 ].binding = 0;
+		attributeDescriptions[ 5 ].location = 5;
+		attributeDescriptions[ 5 ].format = VK_FORMAT_R32G32B32A32_UINT;
+		attributeDescriptions[ 5 ].offset = offsetof( vertSkinned_t, boneIdxes );
+
+//		float boneWeights[ MAX_BONES_PER_VERTEX ];
+		attributeDescriptions[ 6 ].binding = 0;
+		attributeDescriptions[ 6 ].location = 6;
+		attributeDescriptions[ 6 ].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		attributeDescriptions[ 6 ].offset = offsetof( vertSkinned_t, boneWeights );
+
 		return attributeDescriptions;
 	}
 };
@@ -179,7 +195,7 @@ public:
 	~ModelSkinned() override {}
 
 	std::vector< vertSkinned_t > m_skinnedVerts;
-	Buffer m_boneMatrixBuffer;
+	Buffer m_boneMatrixBuffer; // @TODO - allocate and populate w matrix palette every frame
 
 	virtual bool BuildFromShape( const Shape * shape ) override;
 	virtual bool MakeVBO( DeviceContext * device ) override;
@@ -197,4 +213,5 @@ struct RenderModel {
 
 	Vec3 pos;
 	Quat orient;
+	bool isSkinned = false;
 };
