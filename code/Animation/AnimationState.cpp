@@ -146,7 +146,7 @@ void AnimationInstance::Update( float deltaT ) {
 			// handle the case of only ONE BODY, with ONE SHAPE,
 			Body & bodyToAnimate = bodiesToAnimate[ 0 ];
 			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate.m_shape );
-			// @TODO - we will convert all these BoneTransforms into matrices,
+			// convert all these BoneTransforms into matrices,
 			// the rest is up to the GPU skinning stage in teh vertex shader
 			mesh->PopulateMatrixPalette( &boneTransforms );
 			break;

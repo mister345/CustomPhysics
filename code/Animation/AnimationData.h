@@ -108,8 +108,5 @@ public:
 	std::vector< BoneTransform > OffsetMatrices;
 	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
 
-// FBX RELATED
-	fbxsdk::FbxScene * fbxScene		   = nullptr;
-	fbxsdk::FbxAnimStack * animStack   = nullptr;	
-	fbxsdk::FbxAnimLayer * activeLayer = nullptr; // @TODO - expand to contain ALL layers
+	fbxsdk::FbxScene * fbxScene = nullptr;
 };
