@@ -161,7 +161,7 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 			if ( t >= start.timePos && t <= end.timePos ) {
 				// bookmark where we left off
 				lastKeyframeIdx = i;
-				printf( "~~~~~~~~resuming from keyframe @ %i...\n", lastKeyframeIdx );
+				// printf( "~~~~~~~~resuming from keyframe @ %i...\n", lastKeyframeIdx );
 
 				// lerp translation
 				const float range = end.timePos - start.timePos;

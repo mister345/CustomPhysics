@@ -25,12 +25,13 @@ public:
 	virtual bool MakeVBO( DeviceContext * device ) = 0;
 	virtual void DrawIndexed( VkCommandBuffer vkCommandBUffer ) = 0;
 
-	std::vector< unsigned int > m_indices;
-
 	// GPU Data
 	bool m_isVBO;
 	Buffer	m_vertexBuffer;
 	Buffer	m_indexBuffer;
+
+	// CPU Data
+	std::vector< unsigned int > m_indices;
 
 	void Cleanup( DeviceContext & deviceContext );
 };
@@ -111,12 +112,21 @@ vertSkinned_t
 // 8 * 4 = 32 bytes - data structure for drawable verts... this should be good for most things
 ====================================================
 */
+static constexpr int MAX_BONES_PER_VERTEX = 4;
 struct vertSkinned_t {
 	float			xyz[ 3 ];	// 12 bytes
 	float			st[ 2 ];	// 8 bytes
 	unsigned char	norm[ 4 ];	// 4 bytes
 	unsigned char	tang[ 4 ];	// 4 bytes
 	unsigned char	buff[ 4 ];	// 4 bytes
+
+	// NOTE - this works bc vertSkinned_t is currently identical to vert_t
+	// mesh will get shredded as soon as we introduce these variables:
+	//uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
+	//float boneWeights[ MAX_BONES_PER_VERTEX ];
+
+	// why? bc size of vertSkinned_t will change, and that requires updating the
+	// ModelSkinned::MakeVBO function to allocate a vertexBuffer w the appropriate info
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription = {};
@@ -169,6 +179,7 @@ public:
 	~ModelSkinned() override {}
 
 	std::vector< vertSkinned_t > m_skinnedVerts;
+	Buffer m_boneMatrixBuffer;
 
 	virtual bool BuildFromShape( const Shape * shape ) override;
 	virtual bool MakeVBO( DeviceContext * device ) override;
@@ -180,7 +191,7 @@ void FillFullScreenQuad( Model & model );
 
 
 struct RenderModel {
-	ModelBase * model;			// The vao buffer to draw
+	ModelBase * model;		// The vao buffer to draw
 	uint32_t uboByteOffset;	// The byte offset into the uniform buffer
 	uint32_t uboByteSize;	// how much space we consume in the uniform buffer
 
