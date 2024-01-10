@@ -191,7 +191,7 @@ bool InitOffscreen( DeviceContext * device, int width, int height ) {
 	//	Skinning Shader
 	//
 	{
-		result = g_skinningShader.Load( device, "checkerboardShadowed2" );
+		result = g_skinningShader.Load( device, "skinnedMesh" );
 		if ( !result ) {
 			printf( "ERROR: Failed to load shader\n" );
 			assert( 0 );
