@@ -29,6 +29,11 @@ namespace {
 			return Lerp( from, to, t ); // small enough ang to just lerp
 		}
 
+		const bool isLongWayAround = cosTheta < 0;
+		if ( isLongWayAround ) {
+			qA *= -1;
+		}
+
 		const float theta = acosf( cosTheta );
 		const float sinTheta = sinf( theta );
 		const float denomInverse = 1.f / sinTheta;
