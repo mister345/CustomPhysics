@@ -662,7 +662,11 @@ void Application::UpdateUniforms() {
 			renderModel.uboByteSize = sizeof( matOrient );
 			renderModel.pos = body.m_position;
 			renderModel.orient = body.m_orientation;
-			renderModel.isSkinned = body.isSkinnedMesh;
+
+			if ( body.isSkinnedMesh ) {
+				renderModel.numBones = reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size();
+			}
+
 			m_renderModels.push_back( renderModel );
 
 			uboByteOffset += m_deviceContext.GetAligendUniformByteOffset( sizeof( matOrient ) );
@@ -689,6 +693,7 @@ void Application::UpdateUniforms() {
 				ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( body.m_shape );
 				const std::vector< Mat4 > * matrixData = mesh->GetMatrixPalette();
 				if ( matrixData != nullptr ) {
+
 					const std::vector< Mat4 > & matrixPalette = *matrixData;
 					for ( int i = 0; i < matrixPalette.size(); i++ ) {
 						const Mat4 & boneMatrix = matrixPalette[ i ];

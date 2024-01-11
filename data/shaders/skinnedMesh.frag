@@ -6,7 +6,7 @@ uniforms
 ==========================================
 */
 
-layout( binding = 3 ) uniform sampler2D texShadow;
+layout( binding = 4 ) uniform sampler2D texShadow;
 
 /*
 ==========================================

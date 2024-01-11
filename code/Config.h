@@ -12,8 +12,8 @@ static constexpr bool SHOW_ORIGIN = false;
 // skeleton type
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SINGLE_BONE;
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::MULTI_BONE;
-//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DEBUG_SKELETON;
-static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
+static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::DEBUG_SKELETON;
+//static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
 
 // assets
 static constexpr bool CONVERT_SCENE = false;

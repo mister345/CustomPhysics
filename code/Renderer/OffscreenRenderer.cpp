@@ -200,7 +200,8 @@ bool InitOffscreen( DeviceContext * device, int width, int height ) {
 
 		Descriptors::CreateParms_t descriptorParms;
 		memset( &descriptorParms, 0, sizeof( descriptorParms ) );
-		descriptorParms.numUniformsVertex = 3;
+//		descriptorParms.numUniformsVertex = 3;
+		descriptorParms.numUniformsVertex = 4;
 		descriptorParms.numUniformsFragment = 1;
 		descriptorParms.numImageSamplers = 1;
 		result = g_skinningDescriptors.Create( device, descriptorParms );
@@ -289,7 +290,7 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 			// @TODO - for now, skinned object dont cast shadows
 			// later, save the deformed verts somehwere on gpu, 
 			// then reuse them from both the camera and light's perspective
-			if ( renderModel.isSkinned ) {
+			if ( renderModel.numBones > 0 ) {
 				continue;
 			}
 
@@ -337,7 +338,7 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 			for ( int i = 0; i < numModels; i++ ) {
 				const RenderModel & renderModel = renderModels[ i ];
 
-				if ( renderModel.isSkinned ) {
+				if ( renderModel.numBones > 0 ) {
 					continue;
 				}
 
@@ -361,21 +362,39 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 		{
 			// Binding the pipeline is effectively the "use shader" we had back in our opengl apps
 			g_skinningPipeline.BindPipeline( cmdBuffer );
+
+			const RenderModel * lastRenderModel	   = &renderModels[ numModels - 1 ];
+			const size_t offsetPastLastRenderModel = device->GetAligendUniformByteOffset( lastRenderModel->uboByteOffset + lastRenderModel->uboByteSize );
+			size_t offsetToCurMatrixPalette		   = offsetPastLastRenderModel;
+
+			// @TODO - we need to expand the UBO to support multiple matrixPalettes, 
+			// so num animated meshes * 80!
+
 			for ( int i = 0; i < numModels; i++ ) {
 				const RenderModel & renderModel = renderModels[ i ];
 
-				if ( !renderModel.isSkinned ) {
+				if ( renderModel.numBones <= 0 ) {
 					continue;
 				}
+
+				// @TODO - we either need a dynamic buffer in the vert shader, 
+				// or create a new vert shader for every skeleton size!
+				// ( currently hardcoded to 80 in the vert shader )
+				assert( renderModel.numBones == 80 );
+
+				const size_t matrixPaletteSize = sizeof( Mat4 ) * renderModel.numBones;
 
 				// Descriptor is how we bind our buffers and images
 				Descriptor descriptor = g_skinningPipeline.GetFreeDescriptor();
 				descriptor.BindBuffer( uniforms, camOffset, camSize, 0 );									// bind the camera matrices
 				descriptor.BindBuffer( uniforms, renderModel.uboByteOffset, renderModel.uboByteSize, 1 );	// bind the model matrices
 				descriptor.BindBuffer( uniforms, shadowCamOffset, shadowCamSize, 2 );						// bind the shadow camera matrices
+				descriptor.BindBuffer( uniforms, offsetToCurMatrixPalette, matrixPaletteSize, 3 );		// @TODO bind the skinning matrices layout info
 				descriptor.BindImage( VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_shadowFrameBuffer.m_imageDepth.m_vkImageView, Samplers::m_samplerStandard, 0 );
 				descriptor.BindDescriptor( device, cmdBuffer, &g_skinningPipeline );
 				renderModel.model->DrawIndexed( cmdBuffer );
+
+				offsetToCurMatrixPalette += device->GetAligendUniformByteOffset( matrixPaletteSize );
 			}
 		}
 

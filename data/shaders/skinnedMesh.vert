@@ -18,6 +18,9 @@ layout( binding = 2 ) uniform uboShadow {
     mat4 view;
     mat4 proj;
 } shadow;
+layout(set = 0, binding = 3) uniform BoneMatrices {
+    mat4 bones[80];
+} boneMatrices;
 
 /*
 ==========================================

@@ -213,5 +213,5 @@ struct RenderModel {
 
 	Vec3 pos;
 	Quat orient;
-	bool isSkinned = false;
+	int numBones = 0;
 };
