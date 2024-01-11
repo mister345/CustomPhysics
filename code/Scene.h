@@ -29,14 +29,15 @@ public:
 	void UpdateWithoutTOI( const float dt_sec );
 
 	void TryCycleAnim();
+	int GetFirstAnimatedBodyIdx();
 
 	std::vector< Constraint * >	m_constraints;
 	ManifoldCollector m_manifolds;
 	std::vector< Body * > m_renderedBodies;
+	AnimationInstance * animInstanceDemo = nullptr;
+
 
 private:
 	std::vector< Body > m_bodies;
-//	std::vector< Body > m_animatedBodies;
-	AnimationInstance * animInstanceDemo = nullptr;
 };
 

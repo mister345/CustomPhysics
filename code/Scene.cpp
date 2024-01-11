@@ -126,7 +126,11 @@ void Scene::Initialize() {
 	const int numAnimatedBodies = animInstanceDemo ? animInstanceDemo->bodiesToAnimate.size() : 0;
 
 	m_renderedBodies.resize( m_bodies.size() + numAnimatedBodies );
+
+	// add all the physics bodies to the array of rendered bodies
 	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), []( Body & b ) { return &b; } );
+
+	// add all the physics bodies to the array of rendered bodies ( always at the end )
 	if ( numAnimatedBodies > 0 ) {
 		std::transform( 
 			animInstanceDemo->bodiesToAnimate.begin(), 
@@ -142,6 +146,13 @@ void Scene::TryCycleAnim() {
 	if ( animInstanceDemo != nullptr ) {
 		printf( "\nACTIVE ANIMATION WAS CHANGED TO: %s\n", animInstanceDemo->CycleCurClip() );
 	}
+}
+
+int Scene::GetFirstAnimatedBodyIdx() {
+	if ( !RUN_ANIMATION || animInstanceDemo->bodiesToAnimate.empty() ) {
+		return -1;
+	}
+	return m_bodies.size();
 }
 
 void Scene::InitializeAnimInstanceDemo() {

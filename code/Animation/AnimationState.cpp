@@ -8,6 +8,18 @@
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
 AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
+	// spawn a single debug sphere to indicate the origin pos of the animated object
+	if ( SHOW_ORIGIN ) {
+		bodiesToAnimate.push_back( Body() );
+		bodiesToAnimate.back().m_position = worldPos;
+		bodiesToAnimate.back().m_orientation = { 0, 0, 0, 1 };
+		bodiesToAnimate.back().m_linearVelocity.Zero();
+		bodiesToAnimate.back().m_invMass = 0.f;	// no grav
+		bodiesToAnimate.back().m_elasticity = 1.f;
+		bodiesToAnimate.back().m_friction = 0.f;
+		bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
+	}
+
 	// Load the animation data ( bones and verts ) from fbx file
 	animData = new SkinnedData();
 	AnimationAssets::FillAnimInstanceData( this, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
@@ -15,6 +27,9 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 		printf( "~WARNING~\tSkeleton contains 0 bones, AnimationIstance will NOT be initialized!\n" );
 		return;
 	}
+	// assign current animation to the first one so it can be cycled
+	pCurAnim = animData->animations.begin();
+	const char * curClipName = GetCurClipName();
 
 	// Create corresponding bodies to debug bones, etc, in the game world, based on loaded skeleton
 	Shape * shapeToAnimate = nullptr;
@@ -46,15 +61,16 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 		return;
 	}
 
-	worldPos = worldPos_;
-	curClipName = animData->animations.empty() ? "NONE" : animData->animations.begin()->first.c_str();
+	// setup the initial bone transforms
 	std::vector< BoneTransform > initialTransforms;
 	if ( !animData->animations.empty() ) {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	} else { // if no anims, just T-pose
 		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
 	}
-	// note - this will be meaningless for a skinned mesh
+
+	// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )
+	worldPos = worldPos_;
 	for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
 		Body & bodyToAnimate = bodiesToAnimate[ i ];
 		bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
@@ -66,19 +82,10 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 		bodyToAnimate.m_shape = shapeToAnimate;
 	}
 
-	pCurAnim = animData->animations.begin();
-
-	// spawn a single debug sphere to indicate the origin pos of the animated object
-	// put it at the end so it gets rendered on top ( hopefully )
-	if ( SHOW_ORIGIN ) {
-		bodiesToAnimate.push_back( Body() );
-		bodiesToAnimate.back().m_position = worldPos;
-		bodiesToAnimate.back().m_orientation = { 0, 0, 0, 1 };
-		bodiesToAnimate.back().m_linearVelocity.Zero();
-		bodiesToAnimate.back().m_invMass = 0.f;	// no grav
-		bodiesToAnimate.back().m_elasticity = 1.f;
-		bodiesToAnimate.back().m_friction = 0.f;
-		bodiesToAnimate.back().m_shape = new ShapeAnimated( 0.45f, true );
+	// populate matrix palette in the case of skinned mesh
+	if ( bodiesToAnimate.back().isSkinnedMesh ) {
+		ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodiesToAnimate[ 0 ].m_shape );
+		mesh->PopulateMatrixPalette( &initialTransforms );
 	}
 }
 
@@ -111,6 +118,7 @@ void AnimationInstance::Update( float deltaT ) {
 	}
 
 	// find our time bounds for looping
+	const char * curClipName    = GetCurClipName();
 	const AnimationClip curClip = animData->animations.at( curClipName );
 	const float loopBoundary	= curClip.GetClipEndTime();
 
@@ -152,4 +160,21 @@ void AnimationInstance::Update( float deltaT ) {
 			break;
 		}
 	}
+}
+
+const char * AnimationInstance::GetCurClipName() {
+	if ( animData->animations.empty() ) {
+		return "NONE";
+	}
+	return pCurAnim->first.c_str();
+}
+
+const char * AnimationInstance::CycleCurClip() {
+	if ( animData->animations.empty() ) {
+		return nullptr;
+	}
+	if ( ++pCurAnim == animData->animations.end() ) {
+		pCurAnim = animData->animations.begin();
+	}
+	return pCurAnim->first.c_str();
 }

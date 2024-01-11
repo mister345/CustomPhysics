@@ -99,8 +99,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
-	const int boneCount = BoneCount();
-	AnimationClip clip  = animations.at( cName );
+	const int boneCount		   = BoneCount();
+	const AnimationClip & clip = animations.at( cName );
 
 	// get interpolated transform for every bone at THIS TIME
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( boneCount );

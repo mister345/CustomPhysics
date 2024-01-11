@@ -30,6 +30,7 @@ public:
 	shapeType_t GetType() const override { return SHAPE_LOADED_MESH; }
 
 	void PopulateMatrixPalette( void * bTransforms );
+	inline const std::vector< Mat4 > * GetMatrixPalette() const { return &matrixPalette;  }
 
 public:
 	// @TODO - we just copied implementation from sphere for now to get this working,

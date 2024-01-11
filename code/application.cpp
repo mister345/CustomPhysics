@@ -16,6 +16,7 @@
 #include "Renderer/OffscreenRenderer.h"
 
 #include "Scene.h"
+#include "Animation/AnimationState.h"
 
 #include "Config.h"
 
@@ -674,8 +675,28 @@ void Application::UpdateUniforms() {
 		// just to transmit the data correctly w teh new vertSkinned_t sizes.
 		// therefore, the shader will read teh EXACT SAME DATA from a different sized container
 		// @TODO - do the same thing to shadow shader to fix up teh shadows
-		for ( int i = 0; i < m_scene->m_renderedBodies.size(); i++ ) {
+		// @TODO - again, a very hacky way to do this, but keep it consistent for now,
+		// later we will want to store the animated bodies in a separate array or just ensure they
+		// always live at the END of the renderered bodies array
+		const int firstAnimatedBodyIdx = m_scene->GetFirstAnimatedBodyIdx();
+		if ( firstAnimatedBodyIdx >= 0 ) {
+			for ( int i = firstAnimatedBodyIdx; i < m_scene->m_renderedBodies.size(); i++ ) {
+				if ( !m_scene->m_renderedBodies[ i ]->isSkinnedMesh ) {
+					continue;
+				}
 
+				Body & body = *( m_scene->m_renderedBodies[ i ] );
+				ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( body.m_shape );
+				const std::vector< Mat4 > * matrixData = mesh->GetMatrixPalette();
+				if ( matrixData != nullptr ) {
+					const std::vector< Mat4 > & matrixPalette = *matrixData;
+					for ( int i = 0; i < matrixPalette.size(); i++ ) {
+						const Mat4 & boneMatrix = matrixPalette[ i ];
+						memcpy( mappedData + uboByteOffset, boneMatrix.ToPtr(), sizeof( boneMatrix ) );
+						uboByteOffset += m_deviceContext.GetAligendUniformByteOffset( sizeof( matrixPalette[ 0 ] ) );
+					}
+				}
+			}
 		}
 
 		m_uniformBuffer.UnmapBuffer( &m_deviceContext );
