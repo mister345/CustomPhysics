@@ -60,4 +60,6 @@ void ShapeLoadedMesh::PopulateMatrixPalette( void * bTransforms ) {
 			Vec4{ 0, 0, 0, 1 }
 		);
 	}
+	static int hitCount = 0;
+	printf( "~~ \tpopulating matrix palette for the %ith time ~~ newBoneTransforms = %llu\n", hitCount++, boneTransforms.size() );
 }

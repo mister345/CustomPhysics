@@ -231,7 +231,10 @@ bool Application::InitializeVulkan() {
 	//
 	//	Uniform Buffer
 	//
-	m_uniformBuffer.Allocate( &m_deviceContext, NULL, sizeof( float ) * 16 * 4 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
+//	m_uniformBuffer.Allocate( &m_deviceContext, NULL, sizeof( float ) * 16 * 4 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
+	constexpr size_t uniformBufferBytes = sizeof( float ) * 16 * 4 * 128 + // max objects
+										  sizeof( Mat4 ) * 80 * 4;		   // pretend 4 skeletons to be safe
+	m_uniformBuffer.Allocate( &m_deviceContext, NULL, uniformBufferBytes, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT );
 
 	//
 	//	Offscreen rendering
@@ -665,6 +668,10 @@ void Application::UpdateUniforms() {
 
 			if ( body.isSkinnedMesh ) {
 				renderModel.numBones = reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size();
+				static int hitcount = 0;
+				printf( "~~ \t\treporting matrix palette size for the %ith time ~~ size = %llu\n", hitcount++, 
+						reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size() 
+				);
 			}
 
 			m_renderModels.push_back( renderModel );
