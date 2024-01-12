@@ -49,7 +49,8 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 				animData->renderedVerts,
 				animData->numVerts,
 				animData->idxes,
-				animData->numIdxes
+				animData->numIdxes,
+				animData->BoneCount()
 			);
 			bodiesToAnimate.push_back( Body() );
 			bodiesToAnimate.back().isSkinnedMesh = true;

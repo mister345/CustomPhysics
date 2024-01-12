@@ -13,7 +13,7 @@ ShapeLoadedMesh
 */
 class ShapeLoadedMesh : public Shape {
 public:
-	explicit ShapeLoadedMesh( vertSkinned_t * pVerts, int numV, int * pIdxes, int nIdxes, const float radius = 10.f ) :
+	explicit ShapeLoadedMesh( vertSkinned_t * pVerts, int numV, int * pIdxes, int nIdxes, int nBones, const float radius = 10.f ) :
 		verts( pVerts ),
 		numVerts( numV ),
 		idxes( pIdxes ),
@@ -21,6 +21,9 @@ public:
 		m_radius( radius ) { 
 
 		m_centerOfMass.Zero(); 
+
+		assert( nBones == 80 );
+		matrixPalette.resize( nBones );
 	}
 	Mat3 InertiaTensorGeometric() const override;
 

@@ -27,7 +27,7 @@ Mat3 ShapeLoadedMesh::InertiaTensorGeometric() const {
 	tensorWithoutMass.rows[ 0 ][ 0 ] = diagValNoMass;
 	tensorWithoutMass.rows[ 1 ][ 1 ] = diagValNoMass;
 	tensorWithoutMass.rows[ 2 ][ 2 ] = diagValNoMass;
-	
+
 	return tensorWithoutMass;
 }
 
@@ -35,7 +35,7 @@ Mat3 ShapeLoadedMesh::InertiaTensorGeometric() const {
 Bounds ShapeLoadedMesh::GetBounds( const Vec3 & pos, const Quat & orient ) const {
 	Bounds bounds;
 	bounds.mins = Vec3( -m_radius ) + pos;
-	bounds.maxs = Vec3(  m_radius ) + pos;
+	bounds.maxs = Vec3( m_radius ) + pos;
 	return bounds;
 }
 
@@ -43,25 +43,25 @@ Bounds ShapeLoadedMesh::GetBounds( const Vec3 & pos, const Quat & orient ) const
 Bounds ShapeLoadedMesh::GetBounds() const {
 	Bounds bounds;
 	bounds.mins = Vec3( -m_radius );
-	bounds.maxs = Vec3(  m_radius );
+	bounds.maxs = Vec3( m_radius );
 	return bounds;
 }
 
+extern bool * g_isPaused;
 void ShapeLoadedMesh::PopulateMatrixPalette( void * bTransforms ) {
 	std::vector< BoneTransform > & boneTransforms = *reinterpret_cast< std::vector< BoneTransform > * >( bTransforms );
 
 	for ( int i = 0; i < boneTransforms.size(); i++ ) {
 		BoneTransform & t = boneTransforms[ i ];
 		const Mat3 rotMat = t.rotation.ToMat3();
-		matrixPalette.emplace_back( 
+		matrixPalette[ i ] = {
 			Vec4{ rotMat.rows[ 0 ][ 0 ], rotMat.rows[ 0 ][ 1 ], rotMat.rows[ 0 ][ 2 ], t.translation.x },
 			Vec4{ rotMat.rows[ 1 ][ 0 ], rotMat.rows[ 1 ][ 1 ], rotMat.rows[ 1 ][ 2 ], t.translation.y },
 			Vec4{ rotMat.rows[ 2 ][ 0 ], rotMat.rows[ 2 ][ 1 ], rotMat.rows[ 2 ][ 2 ], t.translation.z },
 			Vec4{ 0, 0, 0, 1 }
-		);
+		};
 	}
 
-	extern bool * g_isPaused;
 	if ( !*g_isPaused ) {
 		static int hitCount = 0;
 		printf( "~~ \tpopulating matrix palette for the %ith time: boneTransforms:%llu\tmatPaletteSz:%llu \n", 
