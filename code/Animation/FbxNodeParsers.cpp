@@ -78,6 +78,16 @@ namespace FbxNodeParsers {
 					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], outVert.st[ 0 ], outVert.st[ 1 ] );
 
 			// @TODO - load the bone weights and bone indices for each of these verts
+			// currently seed w random values to check if they're showing up in vtx shader in renderdoc
+			outVert.boneIdxes[ 0 ] = 0;
+			outVert.boneIdxes[ 1 ] = 1;
+			outVert.boneIdxes[ 2 ] = 2;
+			outVert.boneIdxes[ 3 ] = 3;
+
+			outVert.boneWeights[ 0 ] = 0.15f;
+			outVert.boneWeights[ 1 ] = 0.35f;
+			outVert.boneWeights[ 2 ] = 0.75f;
+			outVert.boneWeights[ 3 ] = 1.00f;
 		}
 
 		// Load indices

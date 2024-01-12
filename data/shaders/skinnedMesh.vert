@@ -33,6 +33,8 @@ layout( location = 1 ) in vec2 inTexCoord;
 layout( location = 2 ) in vec4 inNormal;
 layout( location = 3 ) in vec4 inTangent;
 layout( location = 4 ) in vec4 inColor;
+layout( location = 5 ) in ivec4 inBoneIdxes;
+layout( location = 6 ) in vec4 inBoneWeights;
 
 /*
 ==========================================
@@ -57,14 +59,31 @@ main
 void main() {
     vec3 normal = 2.0 * ( inNormal.xyz - vec3( 0.5 ) );
 	modelNormal = normal;
+
+    // @TODO - actually use this value for the position
+    const int boneIdx0 = inBoneIdxes.x;
+    const int boneIdx1 = inBoneIdxes.y;
+    const int boneIdx2 = inBoneIdxes.z;
+    const int boneIdx3 = inBoneIdxes.w;
+    vec4 deformedPos0 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx0 ];
+    vec4 deformedPos1 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx1 ];
+    vec4 deformedPos2 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx2 ];
+    vec4 deformedPos3 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx3 ];
+    vec4 weightedPos  = deformedPos3 * inBoneWeights[ 0 ] + 
+                        deformedPos3 * inBoneWeights[ 1 ] + 
+                        deformedPos3 * inBoneWeights[ 2 ] + 
+                        deformedPos3 * inBoneWeights[ 3 ];
+//    vec3 position = weightedPos.xyz;
+
+    vec3 position = inPosition;
 	modelPos = vec4( inPosition, 1.0 );
    
     // Get the tangent space in world coordinates
     worldNormal = model.model * vec4( normal.xyz, 0.0 );
    
     // Project coordinate to screen
-    gl_Position = camera.proj * camera.view * model.model * vec4( inPosition, 1.0 );
+    gl_Position = camera.proj * camera.view * model.model * vec4( position, 1.0 );
 
     // Project the world position into the shadow texture position
-    shadowPos = shadow.proj * shadow.view * model.model * vec4( inPosition, 1.0 );
+    shadowPos = shadow.proj * shadow.view * model.model * vec4( position, 1.0 );
 }

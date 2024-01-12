@@ -382,44 +382,11 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 				// ( currently hardcoded to 80 in the vert shader )
 				assert( renderModel.numBones == 80 );
 
-				/*	ALL YOU NEED TO KNOW
-				
-				~~ drawing skinned mesh for the 209th time ~~ numbones = 80
-				~~ drawing skinned mesh for the 210th time ~~ numbones = 80
-				~~ drawing skinned mesh for the 211th time ~~ numbones = 80
-
-	*** this happens on AFTER you hit T, to start running sim
-	*** therefore, it is being causing by the update loop!
-
-				~~ drawing skinned mesh for the 212th time ~~ numbones = 240
-				~~ drawing skinned mesh for the 213th time ~~ numbones = 400
-				~~ drawing skinned mesh for the 214th time ~~ numbones = 560
-				~~ drawing skinned mesh for the 215th time ~~ numbones = 720
-				~~ drawing skinned mesh for the 216th time ~~ numbones = 880
-				ERROR: VulkanErrorMessage: Validation Error: [ VUID-VkDescriptorBufferInfo-range-00342 ] Object 0: handle = 0xd897d90000000016, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0xe9e00038 | vkUpdateDescriptorSets(): pDescriptorWrites[3].pBufferInfo[0].range (56320) is larger than buffer size (53248) + offset (3264). The Vulkan spec states: If range is not equal to VK_WHOLE_SIZE, range must be less than or equal to the size of buffer minus offset (https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkDescriptorBufferInfo-range-00342)
-				~~ drawing skinned mesh for the 217th time ~~ numbones = 1040
-				ERROR: VulkanErrorMessage: Validation Error: [ VUID-VkDescriptorBufferInfo-range-00342 ] Object 0: handle = 0xd897d90000000016, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0xe9e00038 | vkUpdateDescriptorSets(): pDescriptorWrites[3].pBufferInfo[0].range (66560) is larger than buffer size (53248) + offset (3264). The Vulkan spec states: If range is not equal to VK_WHOLE_SIZE, range must be less than or equal to the size of buffer minus offset (https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkDescriptorBufferInfo-range-00342)
-				~~ drawing skinned mesh for the 218th time ~~ numbones = 1200
-				ERROR: VulkanErrorMessage: Validation Error: [ VUID-VkDescriptorBufferInfo-range-00342 ] Object 0: handle = 0xd897d90000000016, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0xe9e00038 | vkUpdateDescriptorSets(): pDescriptorWrites[3].pBufferInfo[0].range (76800) is larger than buffer size (53248) + offset (3264). The Vulkan spec states: If range is not equal to VK_WHOLE_SIZE, range must be less than or equal to the size of buffer minus offset (https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkDescriptorBufferInfo-range-00342)
-				~~ drawing skinned mesh for the 219th time ~~ numbones = 1360
-				ERROR: VulkanErrorMessage: Validation Error: [ VUID-VkDescriptorBufferInfo-range-00342 ] Object 0: handle = 0xd897d90000000016, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0xe9e00038 | vkUpdateDescriptorSets(): pDescriptorWrites[3].pBufferInfo[0].range (87040) is larger than buffer size (53248) + offset (3264). The Vulkan spec states: If range is not equal to VK_WHOLE_SIZE, range must be less than or equal to the size of buffer minus offset (https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkDescriptorBufferInfo-range-00342)
-				~~ drawing skinned mesh for the 220th time ~~ numbones = 1520
-				ERROR: VulkanErrorMessage: Validation Error: [ VUID-VkDescriptorBufferInfo-range-00342 ] Object 0: handle = 0xd897d90000000016, type = VK_OBJECT_TYPE_BUFFER; | MessageID = 0xe9e00038 | vkUpdateDescriptorSets(): pDescriptorWrites[3].pBufferInfo[0].range (97280) is larger than buffer size (53248) + offset (3264). The Vulkan spec states: If range is not equal to VK_WHOLE_SIZE, range must be less than or equal to the size of buffer minus offset (https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkDescriptorBufferInfo-range-00342)
-				~~ drawing skinned mesh for the 221th time ~~ numbones = 1680
-				
-
-	*** OTHER ISSUE - the new command buffer doesnt even show up in renderdoc! ( why not? )
-
-				ALL YOU NEED TO KNOW */
-
-				extern bool * g_isPaused;
-				if ( !*g_isPaused ) {
-					static int hitcount = 0;
-					printf( "~~ \t\t\tdrawing skinned mesh for the %ith time ~~ numbones = %i\n", hitcount++, renderModel.numBones );
-				}
-				/////////////////////////////////////////////////////////////////////////
-				// @TODO - MEMORY LEAK HERE! - renderModelBones NOT BEING CLEANED UP!!!
-				/////////////////////////////////////////////////////////////////////////
+				//extern bool * g_isPaused;
+				//if ( !*g_isPaused ) {
+				//	static int hitcount = 0;
+				//	printf( "~~ \t\t\tdrawing skinned mesh for the %ith time ~~ numbones = %i\n", hitcount++, renderModel.numBones );
+				//}
 
 				const size_t matrixPaletteSize = sizeof( Mat4 ) * renderModel.numBones;
 

@@ -62,12 +62,12 @@ void ShapeLoadedMesh::PopulateMatrixPalette( void * bTransforms ) {
 		};
 	}
 
-	if ( !*g_isPaused ) {
-		static int hitCount = 0;
-		printf( "~~ \tpopulating matrix palette for the %ith time: boneTransforms:%llu\tmatPaletteSz:%llu \n", 
-				hitCount++, 
-				boneTransforms.size(),
-				matrixPalette.size()
-		);
-	}
+	//if ( !*g_isPaused ) {
+	//	static int hitCount = 0;
+	//	printf( "~~ \tpopulating matrix palette for the %ith time: boneTransforms:%llu\tmatPaletteSz:%llu \n", 
+	//			hitCount++, 
+	//			boneTransforms.size(),
+	//			matrixPalette.size()
+	//	);
+	//}
 }
