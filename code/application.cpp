@@ -69,6 +69,9 @@ Application
 ========================================================================================================
 */
 
+// @TODO - temp for debugging awareness of whether we are paused or not!
+bool * g_isPaused = nullptr;
+
 /*
 ====================================================
 Application::Initialize
@@ -668,10 +671,13 @@ void Application::UpdateUniforms() {
 
 			if ( body.isSkinnedMesh ) {
 				renderModel.numBones = reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size();
-				static int hitcount = 0;
-				printf( "~~ \t\treporting matrix palette size for the %ith time ~~ size = %llu\n", hitcount++, 
-						reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size() 
-				);
+
+				extern bool * g_isPaused;
+				if ( !*g_isPaused ) {
+					static int hitcount = 0;
+					printf( "~~ \t\treporting matrix palette size for the %ith time ~~ size = %llu\n", hitcount++,
+							reinterpret_cast< ShapeLoadedMesh * >( body.m_shape )->matrixPalette.size() );
+				}
 			}
 
 			m_renderModels.push_back( renderModel );

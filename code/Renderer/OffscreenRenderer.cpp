@@ -383,12 +383,7 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 				assert( renderModel.numBones == 80 );
 
 				/*	ALL YOU NEED TO KNOW
-				/*	ALL YOU NEED TO KNOW
-				/*	ALL YOU NEED TO KNOW
 				
-				~~ drawing skinned mesh for the 206th time ~~ numbones = 80
-				~~ drawing skinned mesh for the 207th time ~~ numbones = 80
-				~~ drawing skinned mesh for the 208th time ~~ numbones = 80
 				~~ drawing skinned mesh for the 209th time ~~ numbones = 80
 				~~ drawing skinned mesh for the 210th time ~~ numbones = 80
 				~~ drawing skinned mesh for the 211th time ~~ numbones = 80
@@ -415,12 +410,13 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 
 	*** OTHER ISSUE - the new command buffer doesnt even show up in renderdoc! ( why not? )
 
-				ALL YOU NEED TO KNOW 
-				ALL YOU NEED TO KNOW 
 				ALL YOU NEED TO KNOW */
 
-				static int hitcount = 0;
-				printf( "~~ \t\t\tdrawing skinned mesh for the %ith time ~~ numbones = %i\n", hitcount++, renderModel.numBones );
+				extern bool * g_isPaused;
+				if ( !*g_isPaused ) {
+					static int hitcount = 0;
+					printf( "~~ \t\t\tdrawing skinned mesh for the %ith time ~~ numbones = %i\n", hitcount++, renderModel.numBones );
+				}
 				/////////////////////////////////////////////////////////////////////////
 				// @TODO - MEMORY LEAK HERE! - renderModelBones NOT BEING CLEANED UP!!!
 				/////////////////////////////////////////////////////////////////////////
