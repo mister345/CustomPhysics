@@ -172,7 +172,7 @@ struct vertSkinned_t {
 //		uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
 		attributeDescriptions[ 5 ].binding = 0;
 		attributeDescriptions[ 5 ].location = 5;
-		attributeDescriptions[ 5 ].format = VK_FORMAT_R32G32B32A32_UINT;
+		attributeDescriptions[ 5 ].format = VK_FORMAT_R32G32B32A32_SINT;
 		attributeDescriptions[ 5 ].offset = offsetof( vertSkinned_t, boneIdxes );
 
 //		float boneWeights[ MAX_BONES_PER_VERTEX ];
