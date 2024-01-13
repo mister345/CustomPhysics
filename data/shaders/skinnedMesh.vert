@@ -18,9 +18,9 @@ layout( binding = 2 ) uniform uboShadow {
     mat4 view;
     mat4 proj;
 } shadow;
-layout(set = 0, binding = 3) uniform BoneMatrices {
+layout( set = 0, binding = 3 ) uniform matrixPalette {
     mat4 bones[80];
-} boneMatrices;
+} matPalette;
 
 /*
 ==========================================
@@ -65,17 +65,18 @@ void main() {
     const int boneIdx1 = inBoneIdxes.y;
     const int boneIdx2 = inBoneIdxes.z;
     const int boneIdx3 = inBoneIdxes.w;
-    vec4 deformedPos0 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx0 ];
-    vec4 deformedPos1 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx1 ];
-    vec4 deformedPos2 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx2 ];
-    vec4 deformedPos3 = vec4( inPosition, 1.0 ) * boneMatrices.bones[ boneIdx3 ];
-    vec4 weightedPos  = deformedPos3 * inBoneWeights[ 0 ] + 
-                        deformedPos3 * inBoneWeights[ 1 ] + 
-                        deformedPos3 * inBoneWeights[ 2 ] + 
+    const vec4 homoPos = vec4( inPosition, 1.0 );
+    vec4 deformedPos0 = homoPos * matPalette.bones[ boneIdx0 ];
+    vec4 deformedPos1 = homoPos * matPalette.bones[ boneIdx1 ];
+    vec4 deformedPos2 = homoPos * matPalette.bones[ boneIdx2 ];
+    vec4 deformedPos3 = homoPos * matPalette.bones[ boneIdx3 ];
+    vec4 weightedPos  = deformedPos0 * inBoneWeights[ 0 ] + 
+                        deformedPos1 * inBoneWeights[ 1 ] + 
+                        deformedPos2 * inBoneWeights[ 2 ] + 
                         deformedPos3 * inBoneWeights[ 3 ];
-//    vec3 position = weightedPos.xyz;
+    const vec3 position = weightedPos.xyz;
 
-    vec3 position = inPosition;
+//    vec3 position = inPosition;
 	modelPos = vec4( inPosition, 1.0 );
    
     // Get the tangent space in world coordinates
