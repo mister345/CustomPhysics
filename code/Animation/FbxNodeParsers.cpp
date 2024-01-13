@@ -40,6 +40,45 @@ namespace FbxNodeParsers {
 		}
 	}
 
+	bool TryPopulateBoneWeights( vertSkinned_t & outVert, int vertIdx, fbxsdk::FbxSkin * skinDeformer ) {
+		constexpr int MAX_BONES_PER_VERT = 4;
+
+		// Proceed only if the skin deformer is present
+		if ( skinDeformer == nullptr ) {
+			return false;
+		}
+
+		for ( int i = 0; i < MAX_BONES_PER_VERT; ++i ) {
+			outVert.boneWeights[ i ] = 0.0f;
+			outVert.boneIdxes[ i ]	 = -1;
+		}
+		for ( int clusterIdx = 0; clusterIdx < skinDeformer->GetClusterCount(); ++clusterIdx ) {
+			fbxsdk::FbxCluster * cluster = skinDeformer->GetCluster( clusterIdx );
+			// links are basically the real bones
+			if ( !cluster->GetLink() ) {
+				continue;
+			}
+
+			// Get the indices and weights
+			int * ctrlPtIdxes	   = cluster->GetControlPointIndices();
+			const int numCtrlPts   = cluster->GetControlPointIndicesCount();
+			double * inVertWeights = cluster->GetControlPointWeights();
+
+			for ( int ctrlPtIdx = 0; ctrlPtIdx < numCtrlPts; ++ctrlPtIdx ) {
+				if ( ctrlPtIdxes[ ctrlPtIdx ] == vertIdx ) {
+					for ( int boneSlot = 0; boneSlot < MAX_BONES_PER_VERT; ++boneSlot ) {
+						if ( outVert.boneWeights[ boneSlot ] == 0.0f ) {
+							outVert.boneIdxes[ boneSlot ] = clusterIdx;
+							outVert.boneWeights[ boneSlot ] = static_cast< float >( inVertWeights[ ctrlPtIdx ] );
+							break;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
 	void OnFoundMeshCB( void * user, fbxsdk::FbxNode * meshNode ) {
 		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
 
@@ -79,15 +118,9 @@ namespace FbxNodeParsers {
 
 			// @TODO - load the bone weights and bone indices for each of these verts
 			// currently seed w random values to check if they're showing up in vtx shader in renderdoc
-			outVert.boneIdxes[ 0 ] = 0;
-			outVert.boneIdxes[ 1 ] = 1;
-			outVert.boneIdxes[ 2 ] = 2;
-			outVert.boneIdxes[ 3 ] = 3;
-
-			outVert.boneWeights[ 0 ] = 0.15f;
-			outVert.boneWeights[ 1 ] = 0.35f;
-			outVert.boneWeights[ 2 ] = 0.75f;
-			outVert.boneWeights[ 3 ] = 1.00f;
+			const bool populated = TryPopulateBoneWeights( 
+				outVert, i, reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) ) );
+			assert( populated );
 		}
 
 		// Load indices
