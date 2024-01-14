@@ -65,12 +65,8 @@ public:
 		}
 	}
 
-	inline uint32_t BoneCount() const { 
-		assert( OffsetMatrices.size() == BoneHierarchy.size() );
-		return BoneHierarchy.size();
-	};
+	inline uint32_t BoneCount() const { return BoneIdxMap.size(); };
 	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
-//	static BoneTransform FbxToBoneTransform( fbxsdk::FbxQuaternion * q, const fbxsdk::FbxVector4 * t );
 
 // INITIALIZATION / LOADING
 	void Set( const std::vector< BoneInfo_t > & boneHierarchy,

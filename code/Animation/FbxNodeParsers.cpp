@@ -9,29 +9,21 @@ namespace FbxNodeParsers {
 		assert( boneNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
 
 		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
-		const char * boneName = boneNode->GetName();
 
-		/////////////////////////////////////////////////////////////////
-		// Populate OffsetMatrices array Bone Map, and Bone Hierarchy
-		/////////////////////////////////////////////////////////////////
-		// @BUG - this is NOT getting the bind pose; it's getting the pose @ time 0 of top anim in stack!
-		fbxsdk::FbxAMatrix localTransform = boneNode->EvaluateLocalTransform( FBXSDK_TIME_INFINITE ); // infinite gets default w/o any anims
-		fbxsdk::FbxVector4 translation = localTransform.GetT();
-		fbxsdk::FbxQuaternion rotation = localTransform.GetQ();
-		me->OffsetMatrices.emplace_back( &rotation, &translation );
-
-		const int boneIdx = me->OffsetMatrices.size() - 1;
-		if ( !me->BoneIdxMap.insert( { boneName, boneIdx } ).second ) {
+		// try register a new bone. if it's already in our map, our job here is done
+		if ( !me->BoneIdxMap.insert( { boneNode->GetName(), me->BoneCount() } ).second ) {
 			return;
 		}
 
+		// just fill w identify for now so it has the right size
+		me->OffsetMatrices.emplace_back( BoneTransform() );
+
+		// populate the bone hierarchy, telling bone @ which idx is parent to which
 		const char * parentName = boneNode->GetParent()->GetName();
 		const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
 		me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
 
-		//////////////////////////////////////
 		// Get all animations for this bone
-		//////////////////////////////////////
 		for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
 			fbxsdk::FbxAnimStack * stack = me->fbxScene->GetSrcObject< FbxAnimStack >( i );
 			me->fbxScene->SetCurrentAnimationStack( stack );
