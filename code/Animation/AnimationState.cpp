@@ -67,7 +67,7 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 	if ( !animData->animations.empty() ) {
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	} else { // if no anims, just T-pose
-		initialTransforms.assign( animData->OffsetMatrices_DIRECT_DEBUG.begin(), animData->OffsetMatrices_DIRECT_DEBUG.end() );
+		initialTransforms.assign( animData->BindPoseMatrices.begin(), animData->BindPoseMatrices.end() );
 	}
 
 	// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )

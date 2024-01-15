@@ -16,8 +16,8 @@ namespace FbxNodeParsers {
 		}
 
 		// just fill w identify for now so it has the right size
-		me->OffsetMatrices.emplace_back( BoneTransform() );
-		me->OffsetMatrices_DIRECT_DEBUG.emplace_back( BoneTransform() );
+		me->InvBindPoseMatrices.emplace_back( BoneTransform() );
+		me->BindPoseMatrices.emplace_back( BoneTransform() );
 
 		// populate the bone hierarchy, telling bone @ which idx is parent to which
 		const char * parentName = boneNode->GetParent()->GetName();

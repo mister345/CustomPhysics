@@ -101,8 +101,8 @@ public:
 // INVERSE bind pose matrices of each bone, in MODEL SPACE - they undo the Bind Pose transformations of these bones, 
 // so that they can be REPLACED with the ANIMATED Pose ( interpolated bone transforms @ curr time ) 
 // https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1
-	std::vector< BoneTransform > OffsetMatrices;
-	std::vector< BoneTransform > OffsetMatrices_DIRECT_DEBUG;
+	std::vector< BoneTransform > InvBindPoseMatrices;
+	std::vector< BoneTransform > BindPoseMatrices;
 
 	fbxsdk::FbxScene * fbxScene = nullptr;
 };

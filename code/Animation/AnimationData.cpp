@@ -65,7 +65,7 @@ void SkinnedData::Set(
 	//}
 
 	BoneHierarchy.assign( boneHierarchy.begin(), boneHierarchy.end() );
-	OffsetMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
+	InvBindPoseMatrices.assign( boneOffsets.begin(), boneOffsets.end() );
 	animations.insert( _animations.begin(), _animations.end() );
 }
 
@@ -90,11 +90,11 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	// accumulate local bone transforms to bring into component space
 	const int boneCount = BoneCount();
 	for ( int i = 1; i < boneCount; i++ ) {
-		BoneSpaceToModelSpace( i, OffsetMatrices );
+		BoneSpaceToModelSpace( i, InvBindPoseMatrices );
 	}
 
-	OffsetMatrices_DIRECT_DEBUG.assign( OffsetMatrices.begin(), OffsetMatrices.end() );
-	std::transform( OffsetMatrices.begin(), OffsetMatrices.end(), OffsetMatrices.begin(),
+	BindPoseMatrices.assign( InvBindPoseMatrices.begin(), InvBindPoseMatrices.end() );
+	std::transform( InvBindPoseMatrices.begin(), InvBindPoseMatrices.end(), InvBindPoseMatrices.begin(),
 					[]( BoneTransform & bTransform ) { return bTransform.Inverse(); } );
 }
 
