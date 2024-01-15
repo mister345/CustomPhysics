@@ -89,16 +89,6 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	for ( int i = 0; i < InvBindPoseMatrices.size(); i++ ) {
 		InvBindPoseMatrices[ i ] = BindPoseMatrices[ i ].Inverse();
 	}
-
-	// accumulate local bone transforms to bring into component space
-	const int boneCount = BoneCount();
-	for ( int i = 1; i < boneCount; i++ ) {
-		BoneSpaceToModelSpace( i, InvBindPoseMatrices );
-	}
-
-	BindPoseMatrices.assign( InvBindPoseMatrices.begin(), InvBindPoseMatrices.end() );
-	std::transform( InvBindPoseMatrices.begin(), InvBindPoseMatrices.end(), InvBindPoseMatrices.begin(),
-					[]( BoneTransform & bTransform ) { return bTransform.Inverse(); } );
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
@@ -114,10 +104,15 @@ void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std
 		BoneSpaceToModelSpace( i, interpolatedBoneSpaceTransforms );
 	}
 
-	// @TODO - multiply these by inverse bind pose matrix ONLY if vertex shader bound
-	// for debug purposes, we just use the loaded anim poses directly as they are already in model space
 	outFinalTransforms = std::vector< BoneTransform >( boneCount, BoneTransform::Identity() );
+
 	for ( int i = 0; i < boneCount; i++ ) {
 		outFinalTransforms[ i ] *= interpolatedBoneSpaceTransforms[ i ];
+	}
+
+	if ( skeletonType == AnimationAssets::eSkeleton::SKINNED_MESH ) {
+		for ( int i = 0; i < boneCount; i++ ) {
+			outFinalTransforms[ i ] *= BindPoseMatrices[ i ];
+		}
 	}
 }
