@@ -1,7 +1,8 @@
 #include <cassert>
+#include "fbxInclude.h"
 #include "AnimationData.h"
 #include "FbxNodeParsers.h"
-#include "fbxInclude.h"
+#include "ModelLoader.h"
 #include "../Renderer/model.h"
 
 namespace FbxNodeParsers {
@@ -111,7 +112,10 @@ namespace FbxNodeParsers {
 			// @TODO - load the bone weights and bone indices for each of these verts
 			// currently seed w random values to check if they're showing up in vtx shader in renderdoc
 			const bool populated = TryPopulateBoneWeights( 
-				outVert, i, reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) ) );
+				outVert, 
+				i, 
+				reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) ) 
+			);
 			assert( populated );
 		}
 
@@ -128,6 +132,30 @@ namespace FbxNodeParsers {
 				me->idxes[ vertIdx + localVertIdx ] = mesh->GetPolygonVertex( triangleIdx, localVertIdx );
 			}
 			vertIdx += localVertCount;
+		}
+	}
+
+	void PopulateBindPoseData( void * user, fbxsdk::FbxNode * meshNode ) {
+		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
+		fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
+		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
+
+		fbxsdk::FbxSkin * deformer								  = reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) );
+		const std::unordered_map< std::string, int > & boneIdxMap = me->BoneIdxMap;
+		std::vector< BoneTransform > & outBindPoses				  = me->BindPoseMatrices;
+
+		for ( int clusterIdx = 0; clusterIdx < deformer->GetClusterCount(); ++clusterIdx ) {
+			fbxsdk::FbxCluster * cluster = deformer->GetCluster( clusterIdx );
+
+			const std::string boneName = cluster->GetLink()->GetName();
+			if ( boneIdxMap.find( boneName ) == boneIdxMap.end() ) {
+				assert( !"Bone did not exist in the bone map!" );
+				continue;
+			}
+
+			FbxAMatrix outBindPose;
+			FbxUtil::GetBindPose( meshNode, cluster, outBindPose );
+			outBindPoses[ boneIdxMap.at( boneName ) ] = BoneTransform( &outBindPose.GetQ(), &outBindPose.GetT() );
 		}
 	}
 

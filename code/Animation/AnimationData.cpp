@@ -81,11 +81,14 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
-	FbxUtil::callbackAPI_t cb{ 
-		&FbxNodeParsers::OnFoundBoneCB,
-		&FbxNodeParsers::OnFoundMeshCB
-	};
-	FbxUtil::HarvestSceneData( fbxScene, cb, this );
+	// get bone and vert data
+	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
+
+	// get inv bind poses
+	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &FbxNodeParsers::PopulateBindPoseData }, this );
+	for ( int i = 0; i < InvBindPoseMatrices.size(); i++ ) {
+		InvBindPoseMatrices[ i ] = BindPoseMatrices[ i ].Inverse();
+	}
 
 	// accumulate local bone transforms to bring into component space
 	const int boneCount = BoneCount();

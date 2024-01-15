@@ -6,9 +6,12 @@ namespace fbxsdk {
 	class FbxNode;
 	class FbxQuaternion;
 	class FbxVector4;
+	class FbxAMatrix;
 	class FbxAnimStack;
 	class FbxAnimLayer;
 	class FbxAnimCurve;
+	class FbxSkin;
+	class FbxCluster;
 }
 
 namespace FbxUtil {
@@ -23,5 +26,6 @@ namespace FbxUtil {
 	};
 
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, const callbackAPI_t & callback, void * caller );
+	void GetBindPose( fbxsdk::FbxNode * meshNode, fbxsdk::FbxCluster * cluster, fbxsdk::FbxAMatrix & outGlobalBindposeInverseMatrix );
 	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, bool bConvert, float scale = 1.f );
 } // namespace fbx util
