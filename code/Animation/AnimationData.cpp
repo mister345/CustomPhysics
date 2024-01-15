@@ -82,8 +82,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 	FbxUtil::callbackAPI_t cb{ 
-		&FbxNodeParsers::OnFoundBoneCB, 
-		skeletonType == AnimationAssets::SKINNED_MESH ? &FbxNodeParsers::OnFoundMeshCB : nullptr 
+		&FbxNodeParsers::OnFoundBoneCB,
+		&FbxNodeParsers::OnFoundMeshCB
 	};
 	FbxUtil::HarvestSceneData( fbxScene, cb, this );
 
