@@ -17,6 +17,7 @@ namespace FbxNodeParsers {
 
 		// just fill w identify for now so it has the right size
 		me->OffsetMatrices.emplace_back( BoneTransform() );
+		me->OffsetMatrices_DIRECT_DEBUG.emplace_back( BoneTransform() );
 
 		// populate the bone hierarchy, telling bone @ which idx is parent to which
 		const char * parentName = boneNode->GetParent()->GetName();
@@ -35,7 +36,6 @@ namespace FbxNodeParsers {
 	bool TryPopulateBoneWeights( vertSkinned_t & outVert, int vertIdx, fbxsdk::FbxSkin * skinDeformer ) {
 		constexpr int MAX_BONES_PER_VERT = 4;
 
-		// Proceed only if the skin deformer is present
 		if ( skinDeformer == nullptr ) {
 			return false;
 		}
