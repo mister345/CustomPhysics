@@ -9,6 +9,7 @@
 namespace FbxUtil {
 	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter );
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
+	void PrintNodeTransform( fbxsdk::FbxNode * node );
 	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
 	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
 } // fwd declarations for internal use 
@@ -16,6 +17,41 @@ namespace FbxUtil {
 
 namespace FbxUtil {
 	float g_scale = 1.f;
+
+	// EXPERIMENT w T-pose
+	void PrintNodeTransform( fbxsdk::FbxNode * node ) {
+		if ( node == nullptr ) {
+			printf( "Null node provided.\n" );
+			return;
+		}
+
+		fbxsdk::FbxVector4 translation = node->LclTranslation.Get();
+		fbxsdk::FbxVector4 rotation = node->LclRotation.Get();
+		fbxsdk::FbxVector4 scaling = node->LclScaling.Get();
+
+		printf( "%s:\n", node->GetName() );
+		printf( "\tTranslation: %f, %f, %f\n", translation[ 0 ], translation[ 1 ], translation[ 2 ] );
+		printf( "\tRotation: %f, %f, %f\n", rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
+		printf( "\tScaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
+
+	}
+	void ProcessNodeTPose( fbxsdk::FbxNode * pNode, const onFoundTPose_fn & callback, void * dataRecipient ) {
+		if ( pNode != nullptr ) {
+			PrintNodeTransform( pNode );
+			callback( pNode, dataRecipient );
+			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
+				ProcessNodeTPose( pNode->GetChild( j ), callback, dataRecipient );
+			}
+		}
+	}
+	void HarvestTPose( fbxsdk::FbxScene * pScene, const onFoundTPose_fn & callback, void * caller ) {
+		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
+		if ( pRootNode != nullptr ) {
+			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
+				ProcessNodeTPose( pRootNode->GetChild( i ), callback, caller );
+			}
+		}
+	}
 
 	/////////////////////////////////////
 	// Data Extraction Functions
@@ -32,6 +68,7 @@ namespace FbxUtil {
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
 			// PrintNode( pNode );
+			PrintNodeTransform( pNode );
 			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
 				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 				if ( pAttribute != nullptr ) {
@@ -61,6 +98,7 @@ namespace FbxUtil {
 		const FbxVector4 lR = meshNode->GetGeometricRotation( FbxNode::eSourcePivot );
 		const FbxVector4 lS = meshNode->GetGeometricScaling( FbxNode::eSourcePivot );
 		FbxAMatrix geometryTransform = FbxAMatrix( lT, lR, lS ); // Additional deformation to this vertex ( why??? ), always identity
+
 		FbxAMatrix meshTransform;		// The transformation of the mesh at binding time
 		FbxAMatrix boneTransformTPose;	// The transformation of the cluster(joint) at binding time from joint space to world space
 		cluster->GetTransformMatrix( meshTransform );
