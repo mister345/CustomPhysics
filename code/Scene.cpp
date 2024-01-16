@@ -112,7 +112,7 @@ void Scene::Initialize() {
 					{ 1, 0, 0 },  // fwd
 					{ 0, 1, 0 },  // right
 					{ 0, 0, 1 },  // up
-					0.5f, 
+					GIZMO_SCALE,
 					&m_bodies 
 	);
 

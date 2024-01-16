@@ -9,9 +9,9 @@ namespace sceneUtil {
 		constexpr float F_HEAD_SIZE = 0.75;
 		constexpr float R_HEAD_SIZE = 0.45;
 		constexpr float U_HEAD_SIZE = 0.15;
+		constexpr float THICKNESS   = 0.25f;
 
-		auto makeArrow = [ origin, scale ]( std::vector< Body > & arrow, Vec3 dir, float headSize ) {
-			constexpr float THICKNESS = 0.25f;
+		auto makeArrow = [ origin, scale, THICKNESS ]( std::vector< Body > & arrow, Vec3 dir, float headSize ) {
 			// fill
 			for ( int i = 0; i < 11; i++ ) {
 				arrow.push_back( Body() );
