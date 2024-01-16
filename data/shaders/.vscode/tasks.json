@@ -8,7 +8,7 @@
         "args": [
           "${file}",
           "-o",
-          "${fileDirname}/${fileBasenameNoExtension}.spv"
+          "${fileDirname}/spirv/${fileBasename}.spirv"
         ],
         "group": {
           "kind": "build",

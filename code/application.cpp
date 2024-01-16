@@ -25,11 +25,6 @@ Application * g_application = NULL;
 #include <time.h>
 #include <windows.h>
 
-// CONFIG
-static constexpr float ZOOM_MULTIPLIER = 5.f;
-static constexpr bool TEST_WITHOUT_TOI = false;
-static constexpr bool PRINT_FRAME_TIME = false;
-
 static bool gIsInitialized( false );
 static unsigned __int64 gTicksPerSecond;
 static unsigned __int64 gStartTicks;

@@ -5,6 +5,9 @@
 //////////////////////////////
 static constexpr bool RUN_ANIMATION = true;
 static constexpr bool RUN_PHYSICS_SIM = false;
+static constexpr float ZOOM_MULTIPLIER = 20.f;
+static constexpr bool TEST_WITHOUT_TOI = false;
+static constexpr bool PRINT_FRAME_TIME = false;
 
 // Animation
 static constexpr bool SHOW_ORIGIN = false;
@@ -17,11 +20,11 @@ static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SK
 
 // assets
 static constexpr bool CONVERT_SCENE = false;
+//static constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr float ANIMDEMO_SCALE = 0.0105f;
 //static constexpr float ANIMDEMO_SCALE = 1.f;
 //static constexpr float DEBUG_BONE_RAD = 7.5f;
 static constexpr float DEBUG_BONE_RAD = 0.075f;
-//constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
