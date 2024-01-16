@@ -160,12 +160,12 @@ void Scene::InitializeAnimInstanceDemo() {
 		return;
 	}
 
-	for ( int i = 0; i < WHICH_SKELETON.size(); i++ ) {
+	for ( int i = 0; i < ANIM_DEMO_SKELETONS.size(); i++ ) {
 		AnimationInstance *& animInst = animInstanceDemo[ i ];
 		if ( animInst != nullptr ) {
 			continue;
 		}
-		animInst = new AnimationInstance( { 0, 0, 10 }, WHICH_SKELETON[ i ] );
+		animInst = new AnimationInstance( { 0, 0, 10 }, ANIM_DEMO_SKELETONS[ i ] );
 	}
 }
 void Scene::DeInitAnimInstanceDemo() {
@@ -173,7 +173,7 @@ void Scene::DeInitAnimInstanceDemo() {
 		return;
 	}
 
-	for ( int i = WHICH_SKELETON.size() - 1; i != 0; i-- ) {
+	for ( int i = ANIM_DEMO_SKELETONS.size() - 1; i != 0; i-- ) {
 		AnimationInstance *& animInst = animInstanceDemo[ i ];
 		if ( animInst == nullptr ) {
 			continue;

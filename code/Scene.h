@@ -36,7 +36,7 @@ public:
 	std::vector< Constraint * >	m_constraints;
 	ManifoldCollector m_manifolds;
 	std::vector< Body * > m_renderedBodies;
-	std::array< AnimationInstance *, WHICH_SKELETON.size() > animInstanceDemo = {};
+	std::array< AnimationInstance *, ANIM_DEMO_SKELETONS.size() > animInstanceDemo = {};
 
 private:
 	std::vector< Body > m_bodies;

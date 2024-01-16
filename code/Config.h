@@ -15,7 +15,7 @@ static constexpr bool PRINT_FRAME_TIME = false;
 static constexpr bool SHOW_ORIGIN = false;
 
 // skeleton type
-static constexpr std::array< AnimationAssets::eSkeleton, 2 > WHICH_SKELETON = {
+static constexpr std::array< AnimationAssets::eSkeleton, 2 > ANIM_DEMO_SKELETONS = {
 	AnimationAssets::DEBUG_SKELETON,
 	AnimationAssets::SKINNED_MESH 
 };
