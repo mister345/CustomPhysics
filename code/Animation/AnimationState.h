@@ -20,6 +20,7 @@ struct AnimationInstance {
 	std::vector< Body > bodiesToAnimate;
 
 	bool isInstanced = true;
+	bool startInTPose = true;
 
 	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();

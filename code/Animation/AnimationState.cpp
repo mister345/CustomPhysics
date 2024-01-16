@@ -64,10 +64,10 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::e
 
 	// setup the initial bone transforms
 	std::vector< BoneTransform > initialTransforms;
-	if ( !animData->animations.empty() ) {
-		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
-	} else { // if no anims, just T-pose
+	if ( startInTPose || animData->animations.empty() ) {
 		initialTransforms.assign( animData->BindPoseMatrices.begin(), animData->BindPoseMatrices.end() );
+	} else {
+		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	}
 
 	// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )
