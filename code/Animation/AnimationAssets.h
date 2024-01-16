@@ -14,5 +14,5 @@ namespace AnimationAssets {
 		SKINNED_MESH = 3,
 		INVALID = 4,
 	};
-	void FillAnimInstanceData( AnimationInstance * animInstance, eSkeleton whichSkeleton, const char * fileName, float scale );
+	void FillAnimInstanceData( AnimationInstance * animInstance, const char * fileName, float scale );
 } // namespace AnimationAssets

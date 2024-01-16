@@ -24,10 +24,7 @@ Scene::~Scene
 ====================================================
 */
 Scene::~Scene() {
-	if ( RUN_ANIMATION ) {
-		delete( animInstanceDemo );
-		animInstanceDemo = nullptr;
-	}
+	DeInitAnimInstanceDemo();
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
@@ -44,10 +41,7 @@ Scene::Reset
 ====================================================
 */
 void Scene::Reset() {
-	if ( RUN_ANIMATION ) {
-		delete( animInstanceDemo );
-		animInstanceDemo = nullptr;
-	}
+	DeInitAnimInstanceDemo();
 
 	for ( int i = 0; i < m_bodies.size(); i++ ) {
 		delete m_bodies[ i ].m_shape;
@@ -123,43 +117,70 @@ void Scene::Initialize() {
 	///////////////////////////////////////////////////////////////////////////////////
 	// list of pointers to both ( todo - use placement new to allocate in same block )
 	///////////////////////////////////////////////////////////////////////////////////
-	const int numAnimatedBodies = animInstanceDemo ? animInstanceDemo->bodiesToAnimate.size() : 0;
-
+	int numAnimatedBodies = 0;
+	for ( const AnimationInstance * animInst : animInstanceDemo ) {
+		numAnimatedBodies += animInst ? animInst->bodiesToAnimate.size() : 0;
+	}
 	m_renderedBodies.resize( m_bodies.size() + numAnimatedBodies );
 
 	// add all the physics bodies to the array of rendered bodies
 	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), []( Body & b ) { return &b; } );
 
 	// add all the physics bodies to the array of rendered bodies ( always at the end )
-	if ( numAnimatedBodies > 0 ) {
-		std::transform( 
-			animInstanceDemo->bodiesToAnimate.begin(), 
-			animInstanceDemo->bodiesToAnimate.end(), 
-			m_renderedBodies.begin() + m_bodies.size(), 
-			[]( Body & b ) { 
-				return &b; 
-			} );
+	size_t offset = m_bodies.size();
+	for ( AnimationInstance * animInst : animInstanceDemo ) {
+			std::transform( 
+				animInst->bodiesToAnimate.begin(), 
+				animInst->bodiesToAnimate.end(), 
+				m_renderedBodies.begin() + offset, 
+				[]( Body & b )  { 
+					return &b; 
+				} );
+			offset += animInst->bodiesToAnimate.size();
 	}
 }
 
 void Scene::TryCycleAnim() {
-	if ( animInstanceDemo != nullptr ) {
-		printf( "\nACTIVE ANIMATION WAS CHANGED TO: %s\n", animInstanceDemo->CycleCurClip() );
+	for ( AnimationInstance * animInst : animInstanceDemo ) {
+		if ( animInst != nullptr ) {
+			printf( "\nACTIVE ANIMATION WAS CHANGED TO: %s\n", animInst->CycleCurClip() );
+		}
 	}
 }
 
 int Scene::GetFirstAnimatedBodyIdx() {
-	if ( !RUN_ANIMATION || animInstanceDemo->bodiesToAnimate.empty() ) {
+	if ( !RUN_ANIMATION || animInstanceDemo[ 0 ]->bodiesToAnimate.empty() ) {
 		return -1;
 	}
 	return m_bodies.size();
 }
 
 void Scene::InitializeAnimInstanceDemo() {
-	if ( animInstanceDemo != nullptr ) {
+	if ( !RUN_ANIMATION ) {
 		return;
 	}
-	animInstanceDemo = new AnimationInstance( { 0, 0, 10 } );
+
+	for ( int i = 0; i < WHICH_SKELETON.size(); i++ ) {
+		AnimationInstance *& animInst = animInstanceDemo[ i ];
+		if ( animInst != nullptr ) {
+			continue;
+		}
+		animInst = new AnimationInstance( { 0, 0, 10 }, WHICH_SKELETON[ i ] );
+	}
+}
+void Scene::DeInitAnimInstanceDemo() {
+	if ( !RUN_ANIMATION ) {
+		return;
+	}
+
+	for ( int i = WHICH_SKELETON.size() - 1; i != 0; i-- ) {
+		AnimationInstance *& animInst = animInstanceDemo[ i ];
+		if ( animInst == nullptr ) {
+			continue;
+		}
+		delete( animInst );
+		animInst = nullptr;
+	}
 }
 
 int CompareContacts( const void * p1, const void * p2 ) {
@@ -183,7 +204,9 @@ Scene::Update
 void Scene::Update( const float dt_sec ) {
 	// anim demo
 	if ( RUN_ANIMATION ) {
-		animInstanceDemo->Update( dt_sec );
+		for ( AnimationInstance * animInst : animInstanceDemo ) {
+			animInst->Update( dt_sec );
+		}
 	}
 
 	// apply gravitational acceleration to velocity

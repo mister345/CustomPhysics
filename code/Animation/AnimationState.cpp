@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
-AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
+AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::eSkeleton whichSkeleton ) {
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	if ( SHOW_ORIGIN ) {
 		bodiesToAnimate.push_back( Body() );
@@ -21,8 +21,8 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 	}
 
 	// Load the animation data ( bones and verts ) from fbx file
-	animData = new SkinnedData();
-	AnimationAssets::FillAnimInstanceData( this, WHICH_SKELETON, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
+	animData = new SkinnedData( whichSkeleton );
+	AnimationAssets::FillAnimInstanceData( this, ANIMDEMO_FILENAME, ANIMDEMO_SCALE );
 	if ( animData->BoneCount() <= 0 ) {
 		printf( "~WARNING~\tSkeleton contains 0 bones, AnimationIstance will NOT be initialized!\n" );
 		return;
@@ -33,7 +33,7 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_ ) {
 
 	// Create corresponding bodies to debug bones, etc, in the game world, based on loaded skeleton
 	Shape * shapeToAnimate = nullptr;
-	switch ( WHICH_SKELETON ) {
+	switch ( whichSkeleton ) {
 		case AnimationAssets::SINGLE_BONE:
 		case AnimationAssets::MULTI_BONE:
 		case AnimationAssets::DEBUG_SKELETON: {

@@ -11,6 +11,7 @@
 #include "Animation/AnimationData.h"
 #include "Animation/AnimationState.h"
 #include "Animation/ModelLoader.h"
+#include "Config.h"
 
 /*
 ====================================================
@@ -25,6 +26,7 @@ public:
 	void Reset();
 	void Initialize();
 	void InitializeAnimInstanceDemo();
+	void DeInitAnimInstanceDemo();
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
@@ -34,8 +36,7 @@ public:
 	std::vector< Constraint * >	m_constraints;
 	ManifoldCollector m_manifolds;
 	std::vector< Body * > m_renderedBodies;
-	AnimationInstance * animInstanceDemo = nullptr;
-
+	std::array< AnimationInstance *, WHICH_SKELETON.size() > animInstanceDemo = {};
 
 private:
 	std::vector< Body > m_bodies;

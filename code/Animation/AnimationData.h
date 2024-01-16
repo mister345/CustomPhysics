@@ -53,7 +53,8 @@ class SkinnedData {
 	friend class AnimationInstance;
 
 public:
-	SkinnedData() = default;
+	SkinnedData( AnimationAssets::eSkeleton whichSkeleton ) : 
+		skeletonType( whichSkeleton ) {}
 	~SkinnedData() {
 		if ( renderedVerts != nullptr ) {
 			free( renderedVerts );

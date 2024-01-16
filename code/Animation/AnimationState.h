@@ -21,7 +21,7 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 
-	AnimationInstance( const Vec3 & worldPos );
+	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();
 	void Update( float deltaT );
 	const char * GetCurClipName();
