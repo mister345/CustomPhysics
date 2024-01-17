@@ -32,7 +32,8 @@ static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 
-static constexpr bool CONVERT_SCENE = false;
+//static constexpr bool CONVERT_SCENE = false;
+static constexpr bool CONVERT_SCENE = true;
 
 // Physics
 #include "Math/Vector.h"
