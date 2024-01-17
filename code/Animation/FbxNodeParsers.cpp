@@ -34,6 +34,22 @@ namespace FbxNodeParsers {
 		}
 	}
 
+	/*
+		Ported from fbxsdk - ViewScene demo
+	*/
+	void ComputeClusterDeformation( fbxsdk::FbxCluster * pCluster,
+									fbxsdk::FbxAMatrix & outVertexTransformMatrix,
+									fbxsdk::FbxTime pTime ) {
+		FbxAMatrix lReferenceGlobalInitPosition;
+		FbxAMatrix lClusterGlobalInitPosition;
+		FbxAMatrix lClusterGlobalCurrentPosition;
+
+		pCluster->GetTransformMatrix( lReferenceGlobalInitPosition );
+		pCluster->GetTransformLinkMatrix( lClusterGlobalInitPosition );
+		lClusterGlobalCurrentPosition = pCluster->GetLink()->EvaluateGlobalTransform( pTime );	// same as above; works
+		outVertexTransformMatrix = lClusterGlobalCurrentPosition * lClusterGlobalInitPosition.Inverse() * lReferenceGlobalInitPosition;
+	}
+
 	bool TryPopulateBoneWeights( vertSkinned_t & outVert, int vertIdx, fbxsdk::FbxSkin * skinDeformer ) {
 		constexpr int MAX_BONES_PER_VERT = 4;
 
@@ -57,6 +73,8 @@ namespace FbxNodeParsers {
 			const int numCtrlPts   = cluster->GetControlPointIndicesCount();
 			double * inVertWeights = cluster->GetControlPointWeights();
 
+			// note - fbxsdk inverts bone-vert relationship; each cluster ( bone ) has a list of VERTS that it affects
+			// ( but in the shader, we need each VERT to have a list of BONES that affect IT
 			for ( int ctrlPtIdx = 0; ctrlPtIdx < numCtrlPts; ++ctrlPtIdx ) {
 				if ( ctrlPtIdxes[ ctrlPtIdx ] == vertIdx ) {
 					for ( int boneSlot = 0; boneSlot < MAX_BONES_PER_VERT; ++boneSlot ) {
