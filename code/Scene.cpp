@@ -83,22 +83,21 @@ void Scene::Initialize() {
 				m_bodies.push_back( body );
 			}
 		}
-	}
-
-	// Static floor
-	for ( int x = 0; x < 3; x++ ) {
-		for ( int y = 0; y < 3; y++ ) {
-			float radius = 80.f;
-			float xx = float( x - 1 ) * radius * 0.25f;
-			float yy = float( y - 1 ) * radius * 0.25f;
-			body.m_position = Vec3( xx, yy, -radius );
-			body.m_orientation = Quat( 0, 0, 0, 1 );
-			body.m_linearVelocity.Zero();
-			body.m_invMass = 0.f;
-			body.m_elasticity = 0.99f;
-			body.m_friction = 0.5f;
-			body.m_shape = new ShapeSphere( radius );
-			m_bodies.push_back( body );
+		// Static floor
+		for ( int x = 0; x < 3; x++ ) {
+			for ( int y = 0; y < 3; y++ ) {
+				float radius = 80.f;
+				float xx = float( x - 1 ) * radius * 0.25f;
+				float yy = float( y - 1 ) * radius * 0.25f;
+				body.m_position = Vec3( xx, yy, -radius );
+				body.m_orientation = Quat( 0, 0, 0, 1 );
+				body.m_linearVelocity.Zero();
+				body.m_invMass = 0.f;
+				body.m_elasticity = 0.99f;
+				body.m_friction = 0.5f;
+				body.m_shape = new ShapeSphere( radius );
+				m_bodies.push_back( body );
+			}
 		}
 	}
 
@@ -165,7 +164,7 @@ void Scene::InitializeAnimInstanceDemo() {
 		if ( animInst != nullptr ) {
 			continue;
 		}
-		animInst = new AnimationInstance( { 0, 0, 10 }, ANIM_DEMO_SKELETONS[ i ] );
+		animInst = new AnimationInstance( { 0, 0, 0 }, ANIM_DEMO_SKELETONS[ i ] );
 	}
 }
 void Scene::DeInitAnimInstanceDemo() {
