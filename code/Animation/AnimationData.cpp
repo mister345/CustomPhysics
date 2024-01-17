@@ -69,6 +69,30 @@ void SkinnedData::Set(
 	animations.insert( _animations.begin(), _animations.end() );
 }
 
+typedef void( *onFoundTPose_fn )( fbxsdk::FbxNode * n, void * me );
+void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
+	SkinnedData * skinnedData = ( SkinnedData * )me;
+	const char * name = n->GetName();
+	if ( skinnedData->BoneIdxMap.find( name ) == skinnedData->BoneIdxMap.end() ) {
+		return;
+	}
+
+	fbxsdk::FbxVector4 translation = n->LclTranslation.Get();
+	
+	fbxsdk::FbxVector4 eulerRot = n->LclRotation.Get();
+	double roll  = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 0 ] ); // X
+	double pitch = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 1 ] ); // Y
+	double yaw   = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 2 ] ); // Z
+	fbxsdk::FbxQuaternion quaternion;
+	quaternion.ComposeSphericalXYZ( fbxsdk::FbxVector4( roll, pitch, yaw ) );
+	quaternion.Normalize();
+
+	fbxsdk::FbxVector4 scaling = n->LclScaling.Get();
+
+	int boneIdx = skinnedData->BoneIdxMap[ name ];
+	skinnedData->BindPoseMatrices[ boneIdx ] = { &quaternion, &translation };
+}
+
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	// set active layer first so that the per-node callbacks can access it later
 	if ( scene == nullptr ) {
@@ -84,11 +108,8 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	// get bone and vert data
 	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
 
-	// get inv bind poses
-	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &FbxNodeParsers::PopulateBindPoseData }, this );
-	for ( int i = 0; i < InvBindPoseMatrices.size(); i++ ) {
-		InvBindPoseMatrices[ i ] = BindPoseMatrices[ i ].Inverse();
-	}
+	// @TODO - either these bind pose matrices are in local space, or something else is wrong
+	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
