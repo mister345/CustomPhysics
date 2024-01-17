@@ -8,6 +8,8 @@
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
 AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::eSkeleton whichSkeleton ) {
+	worldPos = worldPos_;
+
 	// spawn a single debug sphere to indicate the origin pos of the animated object
 	if ( SHOW_ORIGIN ) {
 		bodiesToAnimate.push_back( Body() );
@@ -37,23 +39,23 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::e
 		case AnimationAssets::SINGLE_BONE:
 		case AnimationAssets::MULTI_BONE:
 		case AnimationAssets::DEBUG_SKELETON: {
-			shapeToAnimate = new ShapeAnimated( DEBUG_BONE_RAD, false );
 			const int numBodies = animData->BoneCount();
 			for ( int i = 0; i < numBodies; i++ ) {
 				bodiesToAnimate.push_back( Body() );
+				bodiesToAnimate.back().m_shape = new ShapeAnimated( DEBUG_BONE_RAD, false );;
 			}
 			break;
 		}
 		case AnimationAssets::SKINNED_MESH: {
-			shapeToAnimate = new ShapeLoadedMesh(
+			bodiesToAnimate.push_back( Body() );
+			bodiesToAnimate.back().isSkinnedMesh = true;
+			bodiesToAnimate.back().m_shape = new ShapeLoadedMesh( 
 				animData->renderedVerts,
 				animData->numVerts,
 				animData->idxes,
 				animData->numIdxes,
 				animData->BoneCount()
 			);
-			bodiesToAnimate.push_back( Body() );
-			bodiesToAnimate.back().isSkinnedMesh = true;
 			break;
 		}
 	}
@@ -70,23 +72,20 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::e
 		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
 	}
 
-	// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )
-	worldPos = worldPos_;
-	for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
-		Body & bodyToAnimate = bodiesToAnimate[ i ];
-		bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
-		bodyToAnimate.m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
-		bodyToAnimate.m_linearVelocity.Zero();
-		bodyToAnimate.m_invMass = 0.f;	// no grav
-		bodyToAnimate.m_elasticity = 1.f;
-		bodyToAnimate.m_friction = 0.f;
-		bodyToAnimate.m_shape = shapeToAnimate;
-	}
-
-	// populate matrix palette in the case of skinned mesh
-	if ( bodiesToAnimate.back().isSkinnedMesh ) {
+	if ( whichSkeleton == AnimationAssets::eSkeleton::SKINNED_MESH ) {
 		ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodiesToAnimate[ 0 ].m_shape );
 		mesh->PopulateMatrixPalette( &initialTransforms );
+	} else {
+		// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )
+		for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
+			Body & bodyToAnimate = bodiesToAnimate[ i ];
+			bodyToAnimate.m_position = worldPos + initialTransforms[ i ].translation;
+			bodyToAnimate.m_orientation = initialTransforms[ i ].rotation; // @TODO - add world rotation member
+			bodyToAnimate.m_linearVelocity.Zero();
+			bodyToAnimate.m_invMass = 0.f;	// no grav
+			bodyToAnimate.m_elasticity = 1.f;
+			bodyToAnimate.m_friction = 0.f;
+		}
 	}
 }
 
