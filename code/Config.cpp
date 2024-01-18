@@ -8,16 +8,16 @@ void openDebugLog( int whichFile ) {
 	if ( g_debugFiles[ whichFile ] == nullptr ) {
 
 		char fname[ 256 ];
-		sprintf( fname, debugFiles[ whichFile ] );
+		sprintf( fname, debugFNames[ whichFile ] );
 		int offset = strlen( fname );
 		sprintf( fname + offset, ".json" );
 
 		g_debugFiles[ whichFile ] = fopen( fname, "a" );
-		fprintf( g_debugFiles[ whichFile ], "{ \"%s\" : [\n", debugFiles[ whichFile ] );
+		fprintf( g_debugFiles[ whichFile ], "{ \"%s\" : [\n", debugFNames[ whichFile ] );
 	}
 }
 void closeDebugLog( int whichFile ) {
-	fprintf( g_debugFiles[ whichFile ], "] }\n\n" );
+	fprintf( g_debugFiles[ whichFile ], "] },\n\n" );
 	fclose( g_debugFiles[ whichFile ] );
 	g_debugFiles[ whichFile ] = nullptr;
 }

@@ -9,13 +9,13 @@
 //////////////////////////////
 #define BONES 0
 #define CLUSTERS 1
-void openDebugLog( int whichFile );
-void closeDebugLog( int whichFile );
-void writeToDebugLog( int whichFile, const char * s, ... );
-static std::array< const char *, 2 > debugFiles = {
+static std::array< const char *, 2 > debugFNames = {
 	"bones",
 	"clusters"
 };
+void openDebugLog( int whichFile );
+void closeDebugLog( int whichFile );
+void writeToDebugLog( int whichFile, const char * s, ... );
 
 static constexpr bool RUN_ANIMATION    = true;
 static constexpr bool RUN_PHYSICS_SIM  = false;

@@ -95,12 +95,10 @@ void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
 	skinnedData->BindPoseMatrices[ boneIdx ] = { &quaternion, &translation };
 
 	{
-//		writeToDebugLog( CLUSTERS, "\t{ %i : %s },\n", boneIdx, name );
-
-
-		writeToDebugLog( CLUSTERS, "\t{{ %i:\"%s\"},{\"transform\":{ \"euler\":"		\
-						 "[ %.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"		\
-						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}}},\n",
+		writeToDebugLog( CLUSTERS,
+						 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
+						 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
+						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
 						 boneIdx, name,
 						 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
 						 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
