@@ -26,6 +26,7 @@
     <ClCompile Include="code\Animation\FbxNodeParsers.cpp" />
     <ClCompile Include="code\Animation\ModelLoader.cpp" />
     <ClCompile Include="code\application.cpp" />
+    <ClCompile Include="code\Config.cpp" />
     <ClCompile Include="code\Fileio.cpp" />
     <ClCompile Include="code\main.cpp" />
     <ClCompile Include="code\Math\Bounds.cpp" />

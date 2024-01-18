@@ -9,3 +9,5 @@ libs/FBX/2020.3.4/lib/vs2022/arm64
 libs/FBX/2020.3.4/uninstall.exe
 libs/FBX/2020.3.4/W16_FBX_launch_TX.ico
 rdsettings.cap
+bones.json.bak
+bones.json

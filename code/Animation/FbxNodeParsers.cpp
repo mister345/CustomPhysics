@@ -4,6 +4,7 @@
 #include "FbxNodeParsers.h"
 #include "ModelLoader.h"
 #include "../Renderer/model.h"
+#include "../Config.h"
 
 namespace FbxNodeParsers {
 	void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
@@ -24,6 +25,9 @@ namespace FbxNodeParsers {
 		const char * parentName = boneNode->GetParent()->GetName();
 		const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
 		me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
+
+		fprintf( g_debugFile, "\t{ %i : %s },\n", me->BoneCount() - 1, boneNode->GetName() );
+//		fflush( g_debugFile );
 
 		// Get all animations for this bone
 		for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {

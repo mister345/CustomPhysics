@@ -159,6 +159,9 @@
     <ClCompile Include="code\SceneUtil.cpp">
       <Filter>code</Filter>
     </ClCompile>
+    <ClCompile Include="code\Config.cpp">
+      <Filter>code</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\application.h">

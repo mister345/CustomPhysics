@@ -1,8 +1,14 @@
 #pragma once
 
+#include <stdio.h>
+#include "Animation/AnimationAssets.h"
+#include <array>
+
 //////////////////////////////
 /////////// CONFIG ///////////
 //////////////////////////////
+extern FILE * g_debugFile;
+
 static constexpr bool RUN_ANIMATION    = true;
 static constexpr bool RUN_PHYSICS_SIM  = false;
 static constexpr float ZOOM_MULTIPLIER = 35.f;
@@ -32,8 +38,8 @@ static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 
-//static constexpr bool CONVERT_SCENE = false;
-static constexpr bool CONVERT_SCENE = true;
+static constexpr bool CONVERT_SCENE = false;
+//static constexpr bool CONVERT_SCENE = true;
 
 // Physics
 #include "Math/Vector.h"
