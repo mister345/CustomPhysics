@@ -33,6 +33,8 @@ Scene::~Scene() {
 
 	// note - this does NOT call the destructor on these pointers!
 	m_renderedBodies.clear();
+
+	endDebugSession();
 } 
 
 /*

@@ -20,7 +20,7 @@ Scene
 */
 class Scene {
 public:
-	Scene() { m_bodies.reserve( 128 ); }
+	Scene() { m_bodies.reserve( 128 ); startDebugSession(); }
 	~Scene();
 
 	void Reset();

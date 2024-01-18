@@ -2,18 +2,48 @@
 #include <cstdio>
 #include <cstdarg>
 
-FILE * g_debugFiles[ 2 ] = {};
+constexpr int DEBUG_FILE_COUNT = 2;
+FILE * g_debugFiles[ DEBUG_FILE_COUNT ] = {};
+
+char fname0[ 256 ];
+char fname1[ 256 ];
+char * debugFileNames[] = {
+	fname0,
+	fname1
+};
+
+void startDebugSession() {
+	for ( int i = 0; i < DEBUG_FILE_COUNT; i++ ) {
+		sprintf( debugFileNames[ i ], debugNames[ i ] );
+		int offset = strlen( debugFileNames[ i ] );
+		sprintf( debugFileNames[ i ] + offset, ".json" );
+
+		g_debugFiles[ i ] = fopen( debugFileNames[ i ], "a" );
+		fprintf( g_debugFiles[ i ], "[" );
+		fclose( g_debugFiles[ i ] );
+	}
+}
+void endDebugSession() {
+	for ( int i = 0; i < DEBUG_FILE_COUNT; i++ ) {
+		sprintf( debugFileNames[ i ], debugNames[ i ] );
+		int offset = strlen( debugFileNames[ i ] );
+		sprintf( debugFileNames[ i ] + offset, ".json" );
+
+		g_debugFiles[ i ] = fopen( debugFileNames[ i ], "a" );
+		fprintf( g_debugFiles[ i ], "]" );
+		fclose( g_debugFiles[ i ] );
+	}
+}
 
 void openDebugLog( int whichFile ) {
 	if ( g_debugFiles[ whichFile ] == nullptr ) {
-
 		char fname[ 256 ];
-		sprintf( fname, debugFNames[ whichFile ] );
+		sprintf( fname, debugNames[ whichFile ] );
 		int offset = strlen( fname );
 		sprintf( fname + offset, ".json" );
 
 		g_debugFiles[ whichFile ] = fopen( fname, "a" );
-		fprintf( g_debugFiles[ whichFile ], "{ \"%s\" : [\n", debugFNames[ whichFile ] );
+		fprintf( g_debugFiles[ whichFile ], "{ \"%s\" : [\n", debugNames[ whichFile ] );
 	}
 }
 void closeDebugLog( int whichFile ) {

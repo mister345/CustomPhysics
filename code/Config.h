@@ -9,10 +9,13 @@
 //////////////////////////////
 #define BONES 0
 #define CLUSTERS 1
-static std::array< const char *, 2 > debugFNames = {
+static std::array< const char *, 2 > debugNames = {
 	"bones",
 	"clusters"
 };
+
+void startDebugSession();
+void endDebugSession();
 void openDebugLog( int whichFile );
 void closeDebugLog( int whichFile );
 void writeToDebugLog( int whichFile, const char * s, ... );
