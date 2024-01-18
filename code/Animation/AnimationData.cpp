@@ -107,17 +107,12 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 
-	if ( g_debugFile == nullptr ) {
-		g_debugFile = fopen( "bones.json", "a" );
-		fprintf( g_debugFile, "{ OnFoundBoneCB : [\n" );
-	}
+	openDebugLog();
 
 	// get bone and vert data
 	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
 
-	fprintf( g_debugFile, "] }\n\n" );
-	fclose( g_debugFile );
-	g_debugFile = nullptr;
+	closeDebugLog();
 
 	// @TODO - either these bind pose matrices are in local space, or something else is wrong
 	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );

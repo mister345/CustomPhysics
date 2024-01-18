@@ -26,9 +26,12 @@ namespace FbxNodeParsers {
 		const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
 		me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
 
-		fprintf( g_debugFile, "\t{ %i : %s },\n", me->BoneCount() - 1, boneNode->GetName() );
-//		fflush( g_debugFile );
-
+		{
+			int idx = me->BoneCount() - 1;
+			const char * n = boneNode->GetName();
+			writeToDebugLog( "\t{ %i : %s },\n", idx, n );
+		}
+		
 		// Get all animations for this bone
 		for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
 			fbxsdk::FbxAnimStack * stack = me->fbxScene->GetSrcObject< FbxAnimStack >( i );
@@ -104,7 +107,8 @@ namespace FbxNodeParsers {
 		me->numIdxes	  = mesh->GetPolygonVertexCount();
 		me->renderedVerts = reinterpret_cast< vertSkinned_t * >( malloc( sizeof( vertSkinned_t ) * me->numVerts ) );
 		me->idxes		  = reinterpret_cast< int * >( malloc( sizeof( int ) * me->numIdxes ) );
-		printf( "found mesh named:%s with %i vertices and %i indices. Copying verts and incides...\n", meshNode->GetName(), me->numVerts, me->numIdxes );
+		printf( "found mesh named:%s with %i vertices and %i indices. Copying verts and incides...\n", 
+				meshNode->GetName(), me->numVerts, me->numIdxes );
 
 		// Load uvs if we have them
 		fbxsdk::FbxStringList uvSetNameList;

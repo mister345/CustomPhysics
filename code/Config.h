@@ -49,3 +49,7 @@ static const Vec3 GRAV_ACCEL = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 // Rendering
 static constexpr float FAR_CLIPPING_PLANE_CAM	 = 30000.f;
 static constexpr float FAR_CLIPPING_PLANE_SHADOW = 175.f;
+
+void openDebugLog();
+void closeDebugLog();
+void writeToDebugLog( const char * s, ... );
