@@ -7,7 +7,15 @@
 //////////////////////////////
 /////////// CONFIG ///////////
 //////////////////////////////
-extern FILE * g_debugFile;
+#define BONES 0
+#define CLUSTERS 1
+void openDebugLog( int whichFile );
+void closeDebugLog( int whichFile );
+void writeToDebugLog( int whichFile, const char * s, ... );
+static std::array< const char *, 2 > debugFiles = {
+	"bones",
+	"clusters"
+};
 
 static constexpr bool RUN_ANIMATION    = true;
 static constexpr bool RUN_PHYSICS_SIM  = false;
@@ -49,7 +57,3 @@ static const Vec3 GRAV_ACCEL = { 0.f, 0.f, -GRAVITY_MAGNITUDE };
 // Rendering
 static constexpr float FAR_CLIPPING_PLANE_CAM	 = 30000.f;
 static constexpr float FAR_CLIPPING_PLANE_SHADOW = 175.f;
-
-void openDebugLog();
-void closeDebugLog();
-void writeToDebugLog( const char * s, ... );

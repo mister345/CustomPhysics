@@ -81,9 +81,10 @@ void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
 	fbxsdk::FbxVector4 translation = n->LclTranslation.Get();
 	
 	fbxsdk::FbxVector4 eulerRot = n->LclRotation.Get();
-	double roll  = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 0 ] ); // X
-	double pitch = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 1 ] ); // Y
-	double yaw   = ( 3.141592653589793238462 / 180.0 ) * ( eulerRot[ 2 ] ); // Z
+	
+	double roll  = FBXSDK_PI_DIV_180 * ( eulerRot[ 0 ] ); // X
+	double pitch = FBXSDK_PI_DIV_180 * ( eulerRot[ 1 ] ); // Y
+	double yaw   = FBXSDK_PI_DIV_180 * ( eulerRot[ 2 ] ); // Z
 	fbxsdk::FbxQuaternion quaternion;
 	quaternion.ComposeSphericalXYZ( fbxsdk::FbxVector4( roll, pitch, yaw ) );
 	quaternion.Normalize();
@@ -92,6 +93,20 @@ void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
 
 	int boneIdx = skinnedData->BoneIdxMap[ name ];
 	skinnedData->BindPoseMatrices[ boneIdx ] = { &quaternion, &translation };
+
+	{
+//		writeToDebugLog( CLUSTERS, "\t{ %i : %s },\n", boneIdx, name );
+
+
+		writeToDebugLog( CLUSTERS, "\t{{ %i:\"%s\"},{\"transform\":{ \"euler\":"		\
+						 "[ %.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"		\
+						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}}},\n",
+						 boneIdx, name,
+						 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
+						 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
+						 translation[ 0 ], translation[ 1 ], translation[ 2 ],
+						 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
+	}
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
@@ -107,15 +122,17 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 
-	openDebugLog();
+	openDebugLog( BONES );
 
 	// get bone and vert data
 	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
 
-	closeDebugLog();
+	closeDebugLog( BONES );
 
+	openDebugLog( CLUSTERS );
 	// @TODO - either these bind pose matrices are in local space, or something else is wrong
 	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
+	closeDebugLog( CLUSTERS );
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {

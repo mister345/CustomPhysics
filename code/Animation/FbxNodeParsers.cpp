@@ -29,7 +29,7 @@ namespace FbxNodeParsers {
 		{
 			int idx = me->BoneCount() - 1;
 			const char * n = boneNode->GetName();
-			writeToDebugLog( "\t{ %i : %s },\n", idx, n );
+			writeToDebugLog( BONES, "\t{ %i : %s },\n", idx, n );
 		}
 		
 		// Get all animations for this bone

@@ -2,23 +2,29 @@
 #include <cstdio>
 #include <cstdarg>
 
-FILE * g_debugFile = nullptr;
+FILE * g_debugFiles[ 2 ] = {};
 
-void openDebugLog() {
-	if ( g_debugFile == nullptr ) {
-		g_debugFile = fopen( "bones.json", "a" );
-		fprintf( g_debugFile, "{ OnFoundBoneCB : [\n" );
+void openDebugLog( int whichFile ) {
+	if ( g_debugFiles[ whichFile ] == nullptr ) {
+
+		char fname[ 256 ];
+		sprintf( fname, debugFiles[ whichFile ] );
+		int offset = strlen( fname );
+		sprintf( fname + offset, ".json" );
+
+		g_debugFiles[ whichFile ] = fopen( fname, "a" );
+		fprintf( g_debugFiles[ whichFile ], "{ \"%s\" : [\n", debugFiles[ whichFile ] );
 	}
 }
-void closeDebugLog() {
-	fprintf( g_debugFile, "] }\n\n" );
-	fclose( g_debugFile );
-	g_debugFile = nullptr;
+void closeDebugLog( int whichFile ) {
+	fprintf( g_debugFiles[ whichFile ], "] }\n\n" );
+	fclose( g_debugFiles[ whichFile ] );
+	g_debugFiles[ whichFile ] = nullptr;
 }
 
-void writeToDebugLog( const char * s, ... ) {
+void writeToDebugLog( int whichFile, const char * s, ... ) {
 	va_list args;
 	va_start( args, s );
-	vfprintf( g_debugFile, s, args );
+	vfprintf( g_debugFiles[ whichFile ], s, args );
 	va_end( args );
 }
