@@ -122,7 +122,7 @@ struct vertSkinned_t {
 
 	// NOTE - this works bc vertSkinned_t is currently identical to vert_t
 	// mesh will get shredded as soon as we introduce these variables:
-	uint32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
+	int32_t boneIdxes[ MAX_BONES_PER_VERTEX ];
 	float boneWeights[ MAX_BONES_PER_VERTEX ];
 
 	// why? bc size of vertSkinned_t will change, and that requires updating the

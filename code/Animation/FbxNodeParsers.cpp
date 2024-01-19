@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include "fbxInclude.h"
 #include "AnimationData.h"
 #include "FbxNodeParsers.h"
@@ -34,7 +35,7 @@ namespace FbxNodeParsers {
 			const char * n = boneNode->GetName();
 			writeToDebugLog( BONES, "\t{ %i : %s },\n", idx, n );
 		}
-		
+
 		// Get all animations for this bone
 		for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
 			fbxsdk::FbxAnimStack * stack = me->fbxScene->GetSrcObject< FbxAnimStack >( i );
@@ -60,7 +61,15 @@ namespace FbxNodeParsers {
 		outVertexTransformMatrix = lClusterGlobalCurrentPosition * lClusterGlobalInitPosition.Inverse() * lReferenceGlobalInitPosition;
 	}
 
-	bool TryPopulateBoneWeights( vertSkinned_t & outVert, int vertIdx, fbxsdk::FbxSkin * skinDeformer ) {
+	void validateBoneWeight( int & idx, double & weight ) {
+		if ( std::fpclassify( weight ) == FP_SUBNORMAL ) {
+			idx = -1;
+			weight = 0.f;
+			printf( "\nbone weight was denormal! invalidating...\n" );
+		}
+	}
+
+	bool TryPopulateBoneWeights( vertSkinned_t & outVert, int vertIdx, fbxsdk::FbxSkin * skinDeformer, SkinnedData * me ) {
 		constexpr int MAX_BONES_PER_VERT = 4;
 
 		if ( skinDeformer == nullptr ) {
@@ -69,9 +78,11 @@ namespace FbxNodeParsers {
 
 		for ( int i = 0; i < MAX_BONES_PER_VERT; ++i ) {
 			outVert.boneWeights[ i ] = 0.0f;
-			outVert.boneIdxes[ i ]	 = -1;
+			outVert.boneIdxes[ i ] = -1;
 		}
-		for ( int clusterIdx = 0; clusterIdx < skinDeformer->GetClusterCount(); ++clusterIdx ) {
+		int clusterCount = skinDeformer->GetClusterCount();
+
+		for ( int clusterIdx = 0; clusterIdx < clusterCount; ++clusterIdx ) {
 			fbxsdk::FbxCluster * cluster = skinDeformer->GetCluster( clusterIdx );
 			// links are basically the real bones
 			if ( !cluster->GetLink() ) {
@@ -79,18 +90,25 @@ namespace FbxNodeParsers {
 			}
 
 			// Get the indices and weights
-			int * ctrlPtIdxes	   = cluster->GetControlPointIndices();
-			const int numCtrlPts   = cluster->GetControlPointIndicesCount();
+			int * ctrlPtIdxes = cluster->GetControlPointIndices();
+			const int numCtrlPts = cluster->GetControlPointIndicesCount();
 			double * inVertWeights = cluster->GetControlPointWeights();
 
 			// note - fbxsdk inverts bone-vert relationship; each cluster ( bone ) has a list of VERTS that it affects
 			// ( but in the shader, we need each VERT to have a list of BONES that affect IT
 			for ( int ctrlPtIdx = 0; ctrlPtIdx < numCtrlPts; ++ctrlPtIdx ) {
 				if ( ctrlPtIdxes[ ctrlPtIdx ] == vertIdx ) {
-					for ( int boneSlot = 0; boneSlot < MAX_BONES_PER_VERT; ++boneSlot ) {
-						if ( outVert.boneWeights[ boneSlot ] == 0.0f ) {
-							outVert.boneIdxes[ boneSlot ] = clusterIdx;
-							outVert.boneWeights[ boneSlot ] = static_cast< float >( inVertWeights[ ctrlPtIdx ] );
+					for ( int boneWtIdx = 0; boneWtIdx < MAX_BONES_PER_VERT; ++boneWtIdx ) {
+						if ( outVert.boneWeights[ boneWtIdx ] == 0.0f ) {
+
+							// @WARNING - cluster idx is NOT the same as the bone idx!
+							const char * boneName = cluster->GetLink()->GetName();
+							int realBoneIdx		  = me->boneNameToIdx[ boneName ];
+							double inWt			  = inVertWeights[ ctrlPtIdx ];
+							validateBoneWeight( realBoneIdx, inWt );
+
+							outVert.boneIdxes[ boneWtIdx ]   = realBoneIdx;
+							outVert.boneWeights[ boneWtIdx ] = static_cast< float >( inWt );
 							break;
 						}
 					}
@@ -143,7 +161,8 @@ namespace FbxNodeParsers {
 			const bool populated = TryPopulateBoneWeights( 
 				outVert, 
 				i, 
-				reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) ) 
+				reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) ),
+				me
 			);
 			assert( populated );
 		}

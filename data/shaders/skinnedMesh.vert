@@ -65,11 +65,14 @@ void main() {
     const int boneIdx1 = inBoneIdxes.y;
     const int boneIdx2 = inBoneIdxes.z;
     const int boneIdx3 = inBoneIdxes.w;
-    const vec4 homoPos = vec4( inPosition, 1.0 );
-    vec4 deformedPos0 = homoPos * matPalette.bones[ boneIdx0 ];
-    vec4 deformedPos1 = homoPos * matPalette.bones[ boneIdx1 ];
-    vec4 deformedPos2 = homoPos * matPalette.bones[ boneIdx2 ];
-    vec4 deformedPos3 = homoPos * matPalette.bones[ boneIdx3 ];
+    
+    const vec4 undeformedPos = vec4( inPosition, 1.0 );
+
+    vec4 deformedPos0 = boneIdx0 == -1 ? vec4( 0, 0, 0, 0 ) : undeformedPos * matPalette.bones[ boneIdx0 ];
+    vec4 deformedPos1 = boneIdx1 == -1 ? vec4( 0, 0, 0, 0 ) : undeformedPos * matPalette.bones[ boneIdx1 ];
+    vec4 deformedPos2 = boneIdx2 == -1 ? vec4( 0, 0, 0, 0 ) : undeformedPos * matPalette.bones[ boneIdx2 ];
+    vec4 deformedPos3 = boneIdx3 == -1 ? vec4( 0, 0, 0, 0 ) : undeformedPos * matPalette.bones[ boneIdx3 ];
+
     vec4 weightedPos  = deformedPos0 * inBoneWeights[ 0 ] + 
                         deformedPos1 * inBoneWeights[ 1 ] + 
                         deformedPos2 * inBoneWeights[ 2 ] + 

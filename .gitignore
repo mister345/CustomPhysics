@@ -14,3 +14,5 @@ bones.json
 clusters.json
 clusters.json.bak
 bonesTrans.json
+bindPosesBefore.json
+bindPosesAfter.json
