@@ -141,6 +141,14 @@ void Scene::Initialize() {
 	}
 }
 
+void Scene::ToggleTPose() {
+	for ( AnimationInstance * animInst : animInstanceDemo ) {
+		if ( animInst != nullptr ) {
+			animInst->toggleTPose();
+		}
+	}
+}
+
 void Scene::TryCycleAnim() {
 	for ( AnimationInstance * animInst : animInstanceDemo ) {
 		if ( animInst != nullptr ) {

@@ -131,7 +131,11 @@ void AnimationInstance::Update( float deltaT ) {
 	// ask AnimData to interpolate each bone transform across its keyframes @ given time point
 	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
-	animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
+	if ( isTPoseActive ) {
+		boneTransforms.assign( animData->BindPoseMatrices.begin(), animData->BindPoseMatrices.end() );
+	} else {
+		animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
+	}
 
 	// Apply transforms to all bodies rendered in the scene
 	if ( bodiesToAnimate.empty() ) {
@@ -145,8 +149,8 @@ void AnimationInstance::Update( float deltaT ) {
 			for ( int i = 0; i < animData->BoneCount(); i++ ) {
 				Body & bodyToAnimate			= bodiesToAnimate[ i ];
 				const BoneTransform & transform = boneTransforms[ i ];
-				bodyToAnimate.m_orientation = transform.rotation;
-				bodyToAnimate.m_position = worldPos + transform.translation;
+				bodyToAnimate.m_orientation		= transform.rotation;
+				bodyToAnimate.m_position		= worldPos + transform.translation;
 			}
 			break;
 		}

@@ -30,6 +30,7 @@ public:
 	void Update( const float dt_sec );
 	void UpdateWithoutTOI( const float dt_sec );
 
+	void ToggleTPose();
 	void TryCycleAnim();
 	int GetFirstAnimatedBodyIdx();
 

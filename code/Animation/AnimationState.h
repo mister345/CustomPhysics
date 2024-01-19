@@ -21,10 +21,14 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 	bool startInTPose = true;
+	bool isTPoseActive = startInTPose;
 
 	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();
 	void Update( float deltaT );
 	const char * GetCurClipName();
 	const char * CycleCurClip();
+	void toggleTPose() { 
+		isTPoseActive = !isTPoseActive;
+	}
 };

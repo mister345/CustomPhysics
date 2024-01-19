@@ -457,6 +457,9 @@ void Application::Keyboard( int key, int scancode, int action, int modifiers ) {
 	if ( GLFW_KEY_U == key && GLFW_RELEASE == action ) {
 		m_scene->TryCycleAnim();
 	}
+	if ( GLFW_KEY_P == key && GLFW_RELEASE == action ) {
+		m_scene->ToggleTPose();
+	}
 }
 
 /*
