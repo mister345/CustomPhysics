@@ -85,7 +85,7 @@ NOTE - 2 ways to get frames from fbx file
 	*/
 	void Set( fbxsdk::FbxScene * scene );
 
-	void GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+	void GetFinalTransforms_Global( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 
 // PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;

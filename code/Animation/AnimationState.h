@@ -12,8 +12,8 @@ class SkinnedData;
 ////////////////////////////////////////////////////////////////////////////////
 enum eAnimMode : uint8_t {
 	TPOSE = 0,
-	KEYFRAMES = 1,
-	FBX_EVAL = 2,
+	LOCAL = 1,
+	GLOBAL = 2,
 	MODE_COUNT = 3
 };
 
@@ -28,7 +28,7 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 	bool startInTPose = true;
-	eAnimMode animMode = startInTPose ? TPOSE : KEYFRAMES;
+	eAnimMode animMode = startInTPose ? TPOSE : LOCAL;
 
 	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();

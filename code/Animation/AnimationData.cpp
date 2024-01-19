@@ -135,7 +135,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &populateTPoseCB }, this );
 }
 
-void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+void SkinnedData::GetFinalTransforms_Global( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount		   = BoneCount();
 	const AnimationClip & clip = animations.at( cName );
 	clip.Interpolate( time, outFinalTransforms, true );

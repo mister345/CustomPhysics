@@ -132,12 +132,12 @@ void AnimationInstance::Update( float deltaT ) {
 	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
 	switch ( animMode ) {
-		case KEYFRAMES: {
+		case LOCAL: {
 			animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
 			break;
 		}
-		case FBX_EVAL: {
-			animData->GetFinalTransforms_v2( curClipName, animTimePos, boneTransforms );
+		case GLOBAL: {
+			animData->GetFinalTransforms_Global( curClipName, animTimePos, boneTransforms );
 			break;
 		}
 		case TPOSE:
