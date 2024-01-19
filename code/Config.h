@@ -7,11 +7,16 @@
 //////////////////////////////
 /////////// CONFIG ///////////
 //////////////////////////////
-#define BONES 0
-#define CLUSTERS 1
-static std::array< const char *, 2 > debugNames = {
+constexpr int DEBUG_FILE_COUNT = 4;
+#define BONES			 0
+#define CLUSTERS		 1
+#define BINDPOSES_BEFORE 2
+#define BINDPOSES_AFTER  3
+static std::array< const char *, DEBUG_FILE_COUNT > debugNames = {
 	"bones",
-	"clusters"
+	"clusters",
+	"bindPosesBefore",
+	"bindPosesAfter",
 };
 
 void startDebugSession();

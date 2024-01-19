@@ -13,9 +13,12 @@ namespace FbxNodeParsers {
 		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
 
 		// try register a new bone. if it's already in our map, our job here is done
-		if ( !me->BoneIdxMap.insert( { boneNode->GetName(), me->BoneCount() } ).second ) {
+		if ( !me->boneNameToIdx.insert( { boneNode->GetName(), me->BoneCount() } ).second ) {
 			return;
 		}
+
+		// for debugging
+		me->boneIdxToName.insert( { me->BoneCount() - 1, boneNode->GetName() } );
 
 		// just fill w identify for now so it has the right size
 		me->InvBindPoseMatrices.emplace_back( BoneTransform() );
@@ -23,8 +26,8 @@ namespace FbxNodeParsers {
 
 		// populate the bone hierarchy, telling bone @ which idx is parent to which
 		const char * parentName = boneNode->GetParent()->GetName();
-		const bool bFoundParent = me->BoneIdxMap.find( parentName ) != me->BoneIdxMap.end();
-		me->BoneHierarchy.push_back( bFoundParent ? me->BoneIdxMap[ parentName ] : -1 );
+		const bool bFoundParent = me->boneNameToIdx.find( parentName ) != me->boneNameToIdx.end();
+		me->BoneHierarchy.push_back( bFoundParent ? me->boneNameToIdx[ parentName ] : -1 );
 
 		{
 			int idx = me->BoneCount() - 1;
@@ -166,22 +169,22 @@ namespace FbxNodeParsers {
 		fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
 		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
 
-		fbxsdk::FbxSkin * deformer								  = reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) );
-		const std::unordered_map< std::string, int > & boneIdxMap = me->BoneIdxMap;
-		std::vector< BoneTransform > & outBindPoses				  = me->BindPoseMatrices;
+		fbxsdk::FbxSkin * deformer									 = reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) );
+		const std::unordered_map< std::string, int > & boneNameToIdx = me->boneNameToIdx;
+		std::vector< BoneTransform > & outBindPoses				     = me->BindPoseMatrices;
 
 		for ( int clusterIdx = 0; clusterIdx < deformer->GetClusterCount(); ++clusterIdx ) {
 			fbxsdk::FbxCluster * cluster = deformer->GetCluster( clusterIdx );
 
 			const std::string boneName = cluster->GetLink()->GetName();
-			if ( boneIdxMap.find( boneName ) == boneIdxMap.end() ) {
+			if ( boneNameToIdx.find( boneName ) == boneNameToIdx.end() ) {
 				assert( !"Bone did not exist in the bone map!" );
 				continue;
 			}
 
 			FbxAMatrix outBindPose;
 			FbxUtil::GetBindPose( meshNode, cluster, outBindPose );
-			outBindPoses[ boneIdxMap.at( boneName ) ] = BoneTransform( &outBindPose.GetQ(), &outBindPose.GetT() );
+			outBindPoses[ boneNameToIdx.at( boneName ) ] = BoneTransform( &outBindPose.GetQ(), &outBindPose.GetT() );
 		}
 	}
 

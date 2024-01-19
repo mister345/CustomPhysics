@@ -8,6 +8,7 @@
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "FbxNodeParsers.h"
+#include <cmath>
 #include "../Config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +75,7 @@ typedef void( *onFoundTPose_fn )( fbxsdk::FbxNode * n, void * me );
 void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
 	SkinnedData * skinnedData = ( SkinnedData * )me;
 	const char * name = n->GetName();
-	if ( skinnedData->BoneIdxMap.find( name ) == skinnedData->BoneIdxMap.end() ) {
+	if ( skinnedData->boneNameToIdx.find( name ) == skinnedData->boneNameToIdx.end() ) {
 		return;
 	}
 
@@ -91,20 +92,21 @@ void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
 
 	fbxsdk::FbxVector4 scaling = n->LclScaling.Get();
 
-	int boneIdx = skinnedData->BoneIdxMap[ name ];
+	int boneIdx = skinnedData->boneNameToIdx[ name ];
 	skinnedData->BindPoseMatrices[ boneIdx ] = { &quaternion, &translation };
 
-	{
-		writeToDebugLog( CLUSTERS,
-						 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
-						 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
-						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
-						 boneIdx, name,
-						 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
-						 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
-						 translation[ 0 ], translation[ 1 ], translation[ 2 ],
-						 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
-	}
+	//{
+	//	writeToDebugLog( CLUSTERS,
+	//					 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
+	//					 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
+	//					 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
+	//					 boneIdx, name,
+	//					 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
+	//					 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
+	//					 translation[ 0 ], translation[ 1 ], translation[ 2 ],
+	//					 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] 
+	//	);
+	//}
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
@@ -120,17 +122,45 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 
-	openDebugLog( BONES );
-
 	// get bone and vert data
+	openDebugLog( BONES );
 	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
-
 	closeDebugLog( BONES );
 
-	openDebugLog( CLUSTERS );
+	openDebugLog( BINDPOSES_BEFORE );
+	for ( int i = 0; i < BindPoseMatrices.size(); i++ ) {
+		BoneTransform bt = BindPoseMatrices[ i ];
+		Quat & q = bt.rotation;
+		writeToDebugLog( BINDPOSES_BEFORE,
+						 "\t{\"%i\":\"%s\",\"transform\":{\"quat\":[%.4f,%.4f,%.4f,%.4f],"
+						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
+						 i, boneIdxToName[ i ].c_str(),
+						 bt.rotation.x, bt.rotation.y, bt.rotation.z, bt.rotation.w,
+						 bt.translation[ 0 ], bt.translation[ 1 ], bt.translation[ 2 ],
+						 1.f, 1.f, 1.f
+		);
+	}
+	closeDebugLog( BINDPOSES_BEFORE );
+
 	// @TODO - either these bind pose matrices are in local space, or something else is wrong
+	//openDebugLog( CLUSTERS );
 	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
-	closeDebugLog( CLUSTERS );
+	//closeDebugLog( CLUSTERS );
+
+	openDebugLog( BINDPOSES_AFTER );
+	for ( int i = 0; i < BindPoseMatrices.size(); i++ ) {
+		BoneTransform bt = BindPoseMatrices[ i ];
+		Quat & q		 = bt.rotation;
+		writeToDebugLog( BINDPOSES_AFTER,
+						 "\t{\"%i\":\"%s\",\"transform\":{\"quat\":[%.4f,%.4f,%.4f,%.4f],"
+						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
+						 i, boneIdxToName[ i ].c_str(),
+						 bt.rotation.x, bt.rotation.y, bt.rotation.z, bt.rotation.w,
+						 bt.translation[ 0 ], bt.translation[ 1 ], bt.translation[ 2 ],
+						 1.f, 1.f, 1.f
+		);
+	}
+	closeDebugLog( BINDPOSES_AFTER );
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {

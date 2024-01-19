@@ -2,15 +2,12 @@
 #include <cstdio>
 #include <cstdarg>
 
-constexpr int DEBUG_FILE_COUNT = 2;
-FILE * g_debugFiles[ DEBUG_FILE_COUNT ] = {};
-
 char fname0[ 256 ];
 char fname1[ 256 ];
-char * debugFileNames[] = {
-	fname0,
-	fname1
-};
+char fname2[ 256 ];
+char fname3[ 256 ];
+char * debugFileNames[ DEBUG_FILE_COUNT ] = { fname0, fname1, fname2, fname3 };
+FILE * g_debugFiles[ DEBUG_FILE_COUNT ]   = {};
 
 void startDebugSession() {
 	for ( int i = 0; i < DEBUG_FILE_COUNT; i++ ) {

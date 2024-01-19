@@ -66,7 +66,7 @@ public:
 		}
 	}
 
-	inline uint32_t BoneCount() const { return BoneIdxMap.size(); };
+	inline uint32_t BoneCount() const { return boneNameToIdx.size(); };
 	void BoneSpaceToModelSpace( int inBoneIdx, std::vector< BoneTransform > & inOutBoneTransforms ) const;
 
 // INITIALIZATION / LOADING
@@ -95,7 +95,8 @@ public:
 	int * idxes = nullptr;
 
 	AnimationAssets::eSkeleton skeletonType;
- 	std::unordered_map< std::string, int > BoneIdxMap;
+ 	std::unordered_map< std::string, int > boneNameToIdx;
+ 	std::unordered_map< int, std::string > boneIdxToName;
 	std::vector< BoneInfo_t > BoneHierarchy; // flattened tree, parent-child order, idx=bone, element@idx=that bone's parent
 	std::map< std::string, AnimationClip > animations;
 
