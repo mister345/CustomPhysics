@@ -125,13 +125,30 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 
 		FbxTime curTime;
 		curTime.SetFrame( i, FbxTime::eFrames24 );
+
 		FbxAMatrix curTransform = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
 		FbxVector4 translation = curTransform.GetT();
 		FbxQuaternion rotation = curTransform.GetQ();
-		keyframeToFill.transform = BoneTransform( &rotation, &translation );
 
-		constexpr float interval = 1.0f / 24; // duration of a single frame in seconds
-		keyframeToFill.timePos = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * interval;
+		// experiment 0 - WORKS if we also disable the BoneSpaceToModelSpace function
+		// - also, it seems to apply a scale and rotation to the whole thing, 
+		// - meaning that is not being taken into account by our bind poses!
+//		FbxAMatrix curTransform = boneNode->EvaluateGlobalTransform( curTime ); // infinite gets default w/o any anims
+
+		// experiment 1 - FAIL - swizzle translation
+		//translation.mData[ 0 ] = translation.mData[ 1 ];
+		//translation.mData[ 1 ] = translation.mData[ 2 ];
+		//translation.mData[ 2 ] = translation.mData[ 0 ];
+
+		// experiment 2 - FAIL - add a 90 degree pitch offset
+		// - NOTE - it will still be problematic bc scale is different
+		//fbxsdk::FbxQuaternion quatOffset;
+		//quatOffset.ComposeSphericalXYZ( fbxsdk::FbxVector4( 0, -90, 0 ) );
+		//rotation = rotation * quatOffset;
+		//rotation.Normalize();
+
+		keyframeToFill.transform = BoneTransform( &rotation, &translation );
+		keyframeToFill.timePos   = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * 1.0f / 24; // duration of a single frame in seconds
 	}
 }
 
