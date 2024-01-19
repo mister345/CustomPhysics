@@ -137,7 +137,7 @@ void AnimationInstance::Update( float deltaT ) {
 			break;
 		}
 		case GLOBAL: {
-			animData->GetFinalTransforms_Global( curClipName, animTimePos, boneTransforms );
+			animData->GetFinalTransforms_v2( curClipName, animTimePos, boneTransforms );
 			break;
 		}
 		case TPOSE:
