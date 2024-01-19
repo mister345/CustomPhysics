@@ -150,9 +150,12 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 		// experiment 3 - NOTE - this flattens the pose out in a similar way to doing node->GetLocalRotation(), suggesting the rotations dont exist until anims are applied
 		//rotation = { 0,0,0,1 };
 
-		// experiment 4 - @TODO - try rotate point by 90 degrees for translation
-
 		keyframeToFill.transform = BoneTransform( &rotation, &translation );
+
+		// experiment 4 - FAIL - rotate point by 90 degrees for translation - does nothing
+		//Quat rOffset( { 0.f, 1.f, 0.f }, 90.f * FBXSDK_PI_DIV_180 );
+		//keyframeToFill.transform.translation = rOffset.RotatePoint( keyframeToFill.transform.translation );
+
 		keyframeToFill.timePos   = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * 1.0f / 24; // duration of a single frame in seconds
 	}
 }

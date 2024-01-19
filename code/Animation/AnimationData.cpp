@@ -151,7 +151,7 @@ void tPoseCB_v2( void * user, fbxsdk::FbxNode * meshNode ) {
 
 		// calculate final transform of this bone, in world space, in t-pose
 		FbxAMatrix invBindPose = boneTransformTPose.Inverse() * meshTransform * geometryTransform;
-		FbxAMatrix bindPose    = boneTransformTPose * meshTransform * geometryTransform;
+		FbxAMatrix bindPose    = boneTransformTPose			  * meshTransform * geometryTransform;
 
 		me->InvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = BoneTransform( &invBindPose.GetQ(), &invBindPose.GetT() );
 		me->BindPoseMatrices[ boneNameToIdx.at( boneName ) ]    = BoneTransform( &bindPose.GetQ(), &bindPose.GetT() );
