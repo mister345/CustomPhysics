@@ -133,19 +133,24 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 		// experiment 0 - WORKS if we also disable the BoneSpaceToModelSpace function
 		// - also, it seems to apply a scale and rotation to the whole thing, 
 		// - meaning that is not being taken into account by our bind poses!
-//		FbxAMatrix curTransform = boneNode->EvaluateGlobalTransform( curTime ); // infinite gets default w/o any anims
+		// FbxAMatrix curTransform = boneNode->EvaluateGlobalTransform( curTime ); // infinite gets default w/o any anims
 
 		// experiment 1 - FAIL - swizzle translation
 		//translation.mData[ 0 ] = translation.mData[ 1 ];
 		//translation.mData[ 1 ] = translation.mData[ 2 ];
 		//translation.mData[ 2 ] = translation.mData[ 0 ];
 
-		// experiment 2 - FAIL - add a 90 degree pitch offset
+		// experiment 2 - FAIL - add a 90 degree pitch offset; does nothing
 		// - NOTE - it will still be problematic bc scale is different
 		//fbxsdk::FbxQuaternion quatOffset;
-		//quatOffset.ComposeSphericalXYZ( fbxsdk::FbxVector4( 0, -90, 0 ) );
-		//rotation = rotation * quatOffset;
+		//quatOffset.ComposeSphericalXYZ( fbxsdk::FbxVector4( -90.f * FBXSDK_PI_DIV_180, 0, 0 ) );
+		//rotation = quatOffset * rotation;
 		//rotation.Normalize();
+
+		// experiment 3 - NOTE - this flattens the pose out in a similar way to doing node->GetLocalRotation(), suggesting the rotations dont exist until anims are applied
+		//rotation = { 0,0,0,1 };
+
+		// experiment 4 - @TODO - try rotate point by 90 degrees for translation
 
 		keyframeToFill.transform = BoneTransform( &rotation, &translation );
 		keyframeToFill.timePos   = ( i - start.GetFrameCount( FbxTime::eFrames24 ) ) * 1.0f / 24; // duration of a single frame in seconds
