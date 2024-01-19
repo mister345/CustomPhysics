@@ -71,57 +71,10 @@ void SkinnedData::Set(
 	animations.insert( _animations.begin(), _animations.end() );
 }
 
-//typedef void( *onFoundTPose_fn )( fbxsdk::FbxNode * n, void * me );
-//void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
-//	SkinnedData * skinnedData = ( SkinnedData * )me;
-//	const char * name = n->GetName();
-//	if ( skinnedData->boneNameToIdx.find( name ) == skinnedData->boneNameToIdx.end() ) {
-//		return;
-//	}
-//
-//	// experiment 0 - this is just completely broken, looks like it's in the wrong space
-//	// NOTE - it looks like the rotation has been zero'd out in this pose!
-//	fbxsdk::FbxVector4 eulerRot = n->LclRotation.Get();
-//	fbxsdk::FbxVector4 trans    = n->LclTranslation.Get();
-//
-//	double rollRad  = FBXSDK_PI_DIV_180 * ( eulerRot[ 0 ] ); // X
-//	double pitchRad = FBXSDK_PI_DIV_180 * ( eulerRot[ 1 ] ); // Y
-//	double yawRad   = FBXSDK_PI_DIV_180 * ( eulerRot[ 2 ] ); // Z
-//	fbxsdk::FbxQuaternion quat;
-//	quat.ComposeSphericalXYZ( fbxsdk::FbxVector4( rollRad, pitchRad, yawRad ) );
-//	quat.Normalize();
-//
-//	fbxsdk::FbxVector4 scaling = n->LclScaling.Get();
-//
-//	// experiment 1 - note, this doesnt get the t-pose, it gets the anim pose at current anim stack
-////	fbxsdk::FbxAMatrix transfrom = n->EvaluateGlobalTransform( fbxsdk::FBXSDK_TIME_INFINITE );
-//	//fbxsdk::FbxVector4 trans   = transfrom.GetT();
-//	//fbxsdk::FbxQuaternion quat = transfrom.GetQ();
-//
-//	skinnedData->InvBindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ] = { &quat, &trans };
-//
-//	// WRONG - these values are already poluted w transforms other than bind poses!
-//	//skinnedData->BindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ] =
-//	//	skinnedData->InvBindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ].Inverse();
-//
-//	//{
-//	//	writeToDebugLog( CLUSTERS,
-//	//					 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
-//	//					 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
-//	//					 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
-//	//					 boneIdx, name,
-//	//					 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
-//	//					 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
-//	//					 translation[ 0 ], translation[ 1 ], translation[ 2 ],
-//	//					 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] 
-//	//	);
-//	//}
-//}
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
 //////////////////////////////////////////////////////////////////////////////////////////////
-void tPoseCB_v2( void * user, fbxsdk::FbxNode * meshNode ) {
+void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 	SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
 	fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
 	assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
@@ -159,7 +112,6 @@ void tPoseCB_v2( void * user, fbxsdk::FbxNode * meshNode ) {
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
-	// set active layer first so that the per-node callbacks can access it later
 	if ( scene == nullptr ) {
 		assert( !"ERROR - trying to load data from an empty FbxScene!" );
 		return;
@@ -171,49 +123,16 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 
-	// get bone and vert data
-	openDebugLog( BONES );
-	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::OnFoundBoneCB, &FbxNodeParsers::OnFoundMeshCB }, this );
-	closeDebugLog( BONES );
+	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::PopulateBoneAnimsCB, &FbxNodeParsers::PopulateVertsDataCB }, this );
 
-	openDebugLog( BINDPOSES_BEFORE );
-	for ( int i = 0; i < BindPoseMatrices.size(); i++ ) {
-		BoneTransform bt = BindPoseMatrices[ i ];
-		Quat & q = bt.rotation;
-		writeToDebugLog( BINDPOSES_BEFORE,
-						 "\t{\"%i\":\"%s\",\"transform\":{\"quat\":[%.4f,%.4f,%.4f,%.4f],"
-						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
-						 i, boneIdxToName[ i ].c_str(),
-						 bt.rotation.x, bt.rotation.y, bt.rotation.z, bt.rotation.w,
-						 bt.translation[ 0 ], bt.translation[ 1 ], bt.translation[ 2 ],
-						 1.f, 1.f, 1.f
-		);
-	}
-	closeDebugLog( BINDPOSES_BEFORE );
+	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
+	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
 
-	// @TODO - either these bind pose matrices are in local space, or something else is wrong
-	openDebugLog( CLUSTERS );
+	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &populateTPoseCB }, this );
+}
 
-//	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
-	// try a different tpose func
-	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &tPoseCB_v2 }, this );
-
-	closeDebugLog( CLUSTERS );
-
-	openDebugLog( BINDPOSES_AFTER );
-	for ( int i = 0; i < BindPoseMatrices.size(); i++ ) {
-		BoneTransform bt = BindPoseMatrices[ i ];
-		Quat & q		 = bt.rotation;
-		writeToDebugLog( BINDPOSES_AFTER,
-						 "\t{\"%i\":\"%s\",\"transform\":{\"quat\":[%.4f,%.4f,%.4f,%.4f],"
-						 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
-						 i, boneIdxToName[ i ].c_str(),
-						 bt.rotation.x, bt.rotation.y, bt.rotation.z, bt.rotation.w,
-						 bt.translation[ 0 ], bt.translation[ 1 ], bt.translation[ 2 ],
-						 1.f, 1.f, 1.f
-		);
-	}
-	closeDebugLog( BINDPOSES_AFTER );
+void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+	// @TODO - just call EvaluateGlobalTransform() directly from fbxsdk - does it contain additional transforms taht we are missing?
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {

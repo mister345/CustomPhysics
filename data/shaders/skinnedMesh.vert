@@ -78,8 +78,9 @@ void main() {
                         deformedPos2 * inBoneWeights[ 2 ] + 
                         deformedPos3 * inBoneWeights[ 3 ];
 
-//    const vec3 position = weightedPos.xyz;
-    const vec3 position = inPosition;
+    const vec3 position = weightedPos.xyz;
+//    const vec3 position = inPosition;
+
 	modelPos = vec4( inPosition, 1.0 );
    
     // Get the tangent space in world coordinates

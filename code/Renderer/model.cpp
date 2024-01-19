@@ -488,9 +488,6 @@ bool ModelSkinned::BuildFromShape( const Shape * shape ) {
 	m_skinnedVerts.assign( shapeMesh->verts, shapeMesh->verts + shapeMesh->numVerts );
 	m_indices.assign( shapeMesh->idxes, shapeMesh->idxes + shapeMesh->numIdxes );
 
-	// @TODO - make UBO from shapeMesh->matrixPalette
-	// 
-
 	return true;
 }
 

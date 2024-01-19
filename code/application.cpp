@@ -680,15 +680,8 @@ void Application::UpdateUniforms() {
 			uboByteOffset += m_deviceContext.GetAligendUniformByteOffset( sizeof( matOrient ) );
 		}
 
-		//
-		//	@TODO Update the uniform buffer with the matrix palette for skinning
-		//
-		// NOTE - currently we just cloned the default shader to render the skinned verts,
-		// just to transmit the data correctly w teh new vertSkinned_t sizes.
-		// therefore, the shader will read teh EXACT SAME DATA from a different sized container
-		// @TODO - do the same thing to shadow shader to fix up teh shadows
-		// @TODO - again, a very hacky way to do this, but keep it consistent for now,
-		// later we will want to store the animated bodies in a separate array or just ensure they
+		// @TODO - cache the skinned data and reuse for shadow shader
+		// @TODO - store the animated bodies in a separate array or just ensure they
 		// always live at the END of the renderered bodies array
 		const int firstAnimatedBodyIdx = m_scene->GetFirstAnimatedBodyIdx();
 		if ( firstAnimatedBodyIdx >= 0 ) {

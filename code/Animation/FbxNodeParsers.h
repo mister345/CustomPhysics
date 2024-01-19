@@ -5,7 +5,7 @@ namespace fbxsdk {
 }
 
 namespace FbxNodeParsers {
-	void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode );
-	void OnFoundMeshCB( void * user, fbxsdk::FbxNode * meshNode );
+	void PopulateBoneAnimsCB( void * user, fbxsdk::FbxNode * boneNode );
+	void PopulateVertsDataCB( void * user, fbxsdk::FbxNode * meshNode );
 	void PopulateBindPoseData( void * user, fbxsdk::FbxNode * meshNode );
 } // namespace FbxNodeParsers

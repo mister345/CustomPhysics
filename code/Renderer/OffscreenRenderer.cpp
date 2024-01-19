@@ -25,7 +25,6 @@ Pipeline	g_shadowPipeline;
 Shader		g_shadowShader;
 Descriptors	g_shadowDescriptors;
 
-// @TODO - actually create these
 Pipeline	g_skinningPipeline;
 Shader		g_skinningShader;
 Descriptors	g_skinningDescriptors;
@@ -367,8 +366,6 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 			const size_t offsetPastLastRenderModel = device->GetAligendUniformByteOffset( lastRenderModel->uboByteOffset + lastRenderModel->uboByteSize );
 			size_t offsetToCurMatrixPalette		   = offsetPastLastRenderModel;
 
-			// @TODO - we need to expand the UBO to support multiple matrixPalettes, 
-			// so num animated meshes * 80!
 
 			for ( int i = 0; i < numModels; i++ ) {
 				const RenderModel & renderModel = renderModels[ i ];

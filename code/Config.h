@@ -46,7 +46,6 @@ static constexpr std::array< AnimationAssets::eSkeleton, 2 > ANIM_DEMO_SKELETONS
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
 
 // assets
-
 //static constexpr float ANIMDEMO_SCALE = 0.0105f;
 static constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr float DEBUG_BONE_RAD = 7.5f * ANIMDEMO_SCALE;

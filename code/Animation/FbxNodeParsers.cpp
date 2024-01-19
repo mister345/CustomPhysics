@@ -8,7 +8,7 @@
 #include "../Config.h"
 
 namespace FbxNodeParsers {
-	void OnFoundBoneCB( void * user, fbxsdk::FbxNode * boneNode ) {
+	void PopulateBoneAnimsCB( void * user, fbxsdk::FbxNode * boneNode ) {
 		assert( boneNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eSkeleton );
 
 		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
@@ -17,24 +17,12 @@ namespace FbxNodeParsers {
 		if ( !me->boneNameToIdx.insert( { boneNode->GetName(), me->BoneCount() } ).second ) {
 			return;
 		}
-
-		// for debugging
 		me->boneIdxToName.insert( { me->BoneCount() - 1, boneNode->GetName() } );
-
-		// just fill w identify for now so it has the right size
-		me->InvBindPoseMatrices.emplace_back( BoneTransform() );
-		me->BindPoseMatrices.emplace_back( BoneTransform() );
 
 		// populate the bone hierarchy, telling bone @ which idx is parent to which
 		const char * parentName = boneNode->GetParent()->GetName();
 		const bool bFoundParent = me->boneNameToIdx.find( parentName ) != me->boneNameToIdx.end();
 		me->BoneHierarchy.push_back( bFoundParent ? me->boneNameToIdx[ parentName ] : -1 );
-
-		{
-			int idx = me->BoneCount() - 1;
-			const char * n = boneNode->GetName();
-			writeToDebugLog( BONES, "\t{ %i : %s },\n", idx, n );
-		}
 
 		// Get all animations for this bone
 		for ( int i = 0; i < me->fbxScene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
@@ -118,7 +106,7 @@ namespace FbxNodeParsers {
 		return true;
 	}
 
-	void OnFoundMeshCB( void * user, fbxsdk::FbxNode * meshNode ) {
+	void PopulateVertsDataCB( void * user, fbxsdk::FbxNode * meshNode ) {
 		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
 
 		SkinnedData * me	   = reinterpret_cast< SkinnedData * >( user );

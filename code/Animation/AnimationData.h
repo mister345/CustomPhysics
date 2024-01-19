@@ -84,11 +84,12 @@ NOTE - 2 ways to get frames from fbx file
 	*/
 	void Set( fbxsdk::FbxScene * scene );
 
+	void GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+
 // PLAYBACK
 	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 
 public:
-	// @TODO - very crude temp implementation for now!
 	int numVerts = 0;
 	vertSkinned_t * renderedVerts = nullptr;
 	int numIdxes = 0;
@@ -104,6 +105,8 @@ public:
 // so that they can be REPLACED with the ANIMATED Pose ( interpolated bone transforms @ curr time ) 
 // https://i0.wp.com/animcoding.com/wp-content/uploads/2021/05/zelda-apply-bind-pose.gif?resize=365%2C519&ssl=1
 	std::vector< BoneTransform > InvBindPoseMatrices;
+
+	// for debug purposes only ( setting a skeleton to t-pose )
 	std::vector< BoneTransform > BindPoseMatrices;
 
 	fbxsdk::FbxScene * fbxScene = nullptr;
