@@ -2,6 +2,13 @@
 #include <cstdio>
 #include <cstdarg>
 
+#ifndef ANIM_DEBUG_LOGGING
+void startDebugSession() {}
+void endDebugSession() {}
+void openDebugLog( int whichFile ) {}
+void closeDebugLog( int whichFile ) {}
+void writeToDebugLog( int whichFile, const char * s, ... ) {}
+#else
 char fname0[ 256 ];
 char fname1[ 256 ];
 char fname2[ 256 ];
@@ -55,3 +62,5 @@ void writeToDebugLog( int whichFile, const char * s, ... ) {
 	vfprintf( g_debugFiles[ whichFile ], s, args );
 	va_end( args );
 }
+
+#endif // ANIM_DEBUG_LOGGING

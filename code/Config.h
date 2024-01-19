@@ -7,6 +7,8 @@
 //////////////////////////////
 /////////// CONFIG ///////////
 //////////////////////////////
+//#define ANIM_DEBUG_LOGGING
+
 constexpr int DEBUG_FILE_COUNT = 4;
 #define BONES			 0
 #define CLUSTERS		 1
@@ -54,8 +56,8 @@ static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/testSkeleton.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 
-static constexpr bool CONVERT_SCENE = false;
-//static constexpr bool CONVERT_SCENE = true;
+//static constexpr bool CONVERT_SCENE = false;
+static constexpr bool CONVERT_SCENE = true;
 
 // Physics
 #include "Math/Vector.h"
