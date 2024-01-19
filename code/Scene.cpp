@@ -144,7 +144,7 @@ void Scene::Initialize() {
 void Scene::ToggleTPose() {
 	for ( AnimationInstance * animInst : animInstanceDemo ) {
 		if ( animInst != nullptr ) {
-			animInst->toggleTPose();
+			animInst->CycleAnimMode();
 		}
 	}
 }

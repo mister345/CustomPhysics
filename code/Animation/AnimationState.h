@@ -10,6 +10,13 @@ class SkinnedData;
 ////////////////////////////////////////////////////////////////////////////////
 // ANIMATION INSTANCE
 ////////////////////////////////////////////////////////////////////////////////
+enum eAnimMode : uint8_t {
+	TPOSE = 0,
+	KEYFRAMES = 1,
+	FBX_EVAL = 2,
+	MODE_COUNT = 3
+};
+
 struct AnimationInstance {
 	float animTimePos = 0.f;
 	float speedMultiplier = 2.f;
@@ -21,14 +28,14 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 	bool startInTPose = true;
-	bool isTPoseActive = startInTPose;
+	eAnimMode animMode = startInTPose ? TPOSE : KEYFRAMES;
 
 	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();
 	void Update( float deltaT );
 	const char * GetCurClipName();
 	const char * CycleCurClip();
-	void toggleTPose() { 
-		isTPoseActive = !isTPoseActive;
+	void CycleAnimMode() { 
+		animMode = static_cast< eAnimMode >( ( animMode + 1 ) % MODE_COUNT );
 	}
 };

@@ -51,7 +51,7 @@ struct Keyframe {
 struct BoneAnimation {
 	BoneAnimation() = default;
 	BoneAnimation( const BoneAnimation & oth ) { *this = oth; }
-	BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode );
+	BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode, bool isGlobal );
 
 	float GetStartTime() const;
 	float GetEndTime() const;

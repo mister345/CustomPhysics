@@ -32,7 +32,7 @@ struct AnimationClip {
 	// latest end time of all bones in the clip
 	float GetClipEndTime() const;
 	// loop over each bone and interpolate animation
-	void Interpolate( float t, std::vector< BoneTransform > & boneTransforms ) const;
+	void Interpolate( float t, std::vector< BoneTransform > & boneTransforms, bool isGlobal ) const;
 
 	AnimationClip() = default;
 	AnimationClip( const int numBones ) { BoneAnimations.resize( numBones ); }
@@ -43,6 +43,7 @@ struct AnimationClip {
 
 	// animation for each bone in the skeleton
 	std::vector< BoneAnimation > BoneAnimations;
+	std::vector< BoneAnimation > BoneAnimationsGlobal;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

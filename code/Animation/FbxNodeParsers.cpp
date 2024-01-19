@@ -29,7 +29,8 @@ namespace FbxNodeParsers {
 			fbxsdk::FbxAnimStack * stack = me->fbxScene->GetSrcObject< FbxAnimStack >( i );
 			me->fbxScene->SetCurrentAnimationStack( stack );
 			AnimationClip & clip = me->animations[ stack->GetName() ];
-			clip.BoneAnimations.emplace_back( me->fbxScene, boneNode );
+			clip.BoneAnimations.emplace_back( me->fbxScene, boneNode, false );
+			clip.BoneAnimationsGlobal.emplace_back( me->fbxScene, boneNode, true );
 		}
 	}
 

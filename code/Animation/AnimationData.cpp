@@ -35,11 +35,15 @@ float AnimationClip::GetClipEndTime() const {
 }
 
 // interpolate bone animations & populate a list of all bone transforms ( aka, the pose ) at this given time
-void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTransforms ) const {
+void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTransforms, bool isGlobal ) const {
 //	bool shouldPrint = true;
 	bool shouldPrint = false;
 	for ( int i = 0; i < BoneAnimations.size(); i++ ) {
-		BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		if ( isGlobal ) {
+			BoneAnimationsGlobal[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		} else {
+			BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		}
 		shouldPrint = false;
 	}
 }
@@ -132,7 +136,9 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 }
 
 void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
-	// @TODO - just call EvaluateGlobalTransform() directly from fbxsdk - does it contain additional transforms taht we are missing?
+	const int boneCount		   = BoneCount();
+	const AnimationClip & clip = animations.at( cName );
+	clip.Interpolate( time, outFinalTransforms, true );
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
@@ -141,7 +147,7 @@ void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std
 
 	// get interpolated transform for every bone at THIS TIME
 	std::vector< BoneTransform > interpolatedBoneSpaceTransforms( boneCount );
-	clip.Interpolate( time, interpolatedBoneSpaceTransforms );
+	clip.Interpolate( time, interpolatedBoneSpaceTransforms, false );
 
 	// bring all the interpolated bones into model space ( accumulate from root to leaf )
 	for ( int i = 1; i < boneCount; i++ ) {

@@ -111,7 +111,7 @@ BoneTransform BoneTransform::operator*( const BoneTransform & b ) const {
 ////////////////////////////////////////////////////////////////////////////////
 // BONE ANIMATION
 ////////////////////////////////////////////////////////////////////////////////
-BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode ) {
+BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * boneNode, bool isGlobal ) {
 	using namespace fbxsdk;
 
 	fbxsdk::FbxAnimStack * anim = fbxScene->GetCurrentAnimationStack();
@@ -126,7 +126,9 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 		FbxTime curTime;
 		curTime.SetFrame( i, FbxTime::eFrames24 );
 
-		FbxAMatrix curTransform = boneNode->EvaluateLocalTransform( curTime ); // infinite gets default w/o any anims
+		FbxAMatrix curTransform = isGlobal ? 
+			boneNode->EvaluateGlobalTransform( curTime ) : 
+			boneNode->EvaluateLocalTransform( curTime );
 		FbxVector4 translation = curTransform.GetT();
 		FbxQuaternion rotation = curTransform.GetQ();
 
