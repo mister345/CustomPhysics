@@ -182,29 +182,4 @@ namespace FbxNodeParsers {
 			vertIdx += localVertCount;
 		}
 	}
-
-	void PopulateBindPoseData( void * user, fbxsdk::FbxNode * meshNode ) {
-		SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
-		fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
-		assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
-
-		fbxsdk::FbxSkin * deformer									 = reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) );
-		const std::unordered_map< std::string, int > & boneNameToIdx = me->boneNameToIdx;
-		std::vector< BoneTransform > & outBindPoses				     = me->BindPoseMatrices;
-
-		for ( int clusterIdx = 0; clusterIdx < deformer->GetClusterCount(); ++clusterIdx ) {
-			fbxsdk::FbxCluster * cluster = deformer->GetCluster( clusterIdx );
-
-			const std::string boneName = cluster->GetLink()->GetName();
-			if ( boneNameToIdx.find( boneName ) == boneNameToIdx.end() ) {
-				assert( !"Bone did not exist in the bone map!" );
-				continue;
-			}
-
-			FbxAMatrix outBindPose;
-			FbxUtil::GetBindPose( meshNode, cluster, outBindPose );
-			outBindPoses[ boneNameToIdx.at( boneName ) ] = BoneTransform( &outBindPose.GetQ(), &outBindPose.GetT() );
-		}
-	}
-
 } // namespace FbxNodeParsers

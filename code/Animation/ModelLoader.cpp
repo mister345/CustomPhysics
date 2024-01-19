@@ -90,24 +90,6 @@ namespace FbxUtil {
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	// https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	void GetBindPose( fbxsdk::FbxNode * meshNode, fbxsdk::FbxCluster * cluster, FbxAMatrix & outGlobalBindposeInverseMatrix ) {
-		const FbxVector4 lT = meshNode->GetGeometricTranslation( FbxNode::eSourcePivot );
-		const FbxVector4 lR = meshNode->GetGeometricRotation( FbxNode::eSourcePivot );
-		const FbxVector4 lS = meshNode->GetGeometricScaling( FbxNode::eSourcePivot );
-		FbxAMatrix geometryTransform = FbxAMatrix( lT, lR, lS ); // Additional deformation to this vertex ( why??? ), always identity
-
-		FbxAMatrix meshTransform;		// The transformation of the mesh at binding time
-		FbxAMatrix boneTransformTPose;	// The transformation of the cluster(joint) at binding time from joint space to world space
-		cluster->GetTransformMatrix( meshTransform );
-		cluster->GetTransformLinkMatrix( boneTransformTPose );
-
-		// calculate final transform of this bone, in world space, in t-pose
-		outGlobalBindposeInverseMatrix = boneTransformTPose.Inverse() * meshTransform * geometryTransform;
-	}
-
 
 	/////////////////////////////////////
 	// Init Functions

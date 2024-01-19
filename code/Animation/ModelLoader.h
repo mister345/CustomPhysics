@@ -28,7 +28,5 @@ namespace FbxUtil {
 
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, const callbackAPI_t & callback, void * caller );
 	void HarvestTPose( fbxsdk::FbxScene * pScene, const onFoundTPose_fn & callback, void * caller );
-
-	void GetBindPose( fbxsdk::FbxNode * meshNode, fbxsdk::FbxCluster * cluster, fbxsdk::FbxAMatrix & outGlobalBindposeInverseMatrix );
 	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, bool bConvert, float scale = 1.f );
 } // namespace fbx util

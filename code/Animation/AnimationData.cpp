@@ -71,42 +71,91 @@ void SkinnedData::Set(
 	animations.insert( _animations.begin(), _animations.end() );
 }
 
-typedef void( *onFoundTPose_fn )( fbxsdk::FbxNode * n, void * me );
-void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
-	SkinnedData * skinnedData = ( SkinnedData * )me;
-	const char * name = n->GetName();
-	if ( skinnedData->boneNameToIdx.find( name ) == skinnedData->boneNameToIdx.end() ) {
-		return;
+//typedef void( *onFoundTPose_fn )( fbxsdk::FbxNode * n, void * me );
+//void tPoseCB( fbxsdk::FbxNode * n, void * me ) {
+//	SkinnedData * skinnedData = ( SkinnedData * )me;
+//	const char * name = n->GetName();
+//	if ( skinnedData->boneNameToIdx.find( name ) == skinnedData->boneNameToIdx.end() ) {
+//		return;
+//	}
+//
+//	// experiment 0 - this is just completely broken, looks like it's in the wrong space
+//	// NOTE - it looks like the rotation has been zero'd out in this pose!
+//	fbxsdk::FbxVector4 eulerRot = n->LclRotation.Get();
+//	fbxsdk::FbxVector4 trans    = n->LclTranslation.Get();
+//
+//	double rollRad  = FBXSDK_PI_DIV_180 * ( eulerRot[ 0 ] ); // X
+//	double pitchRad = FBXSDK_PI_DIV_180 * ( eulerRot[ 1 ] ); // Y
+//	double yawRad   = FBXSDK_PI_DIV_180 * ( eulerRot[ 2 ] ); // Z
+//	fbxsdk::FbxQuaternion quat;
+//	quat.ComposeSphericalXYZ( fbxsdk::FbxVector4( rollRad, pitchRad, yawRad ) );
+//	quat.Normalize();
+//
+//	fbxsdk::FbxVector4 scaling = n->LclScaling.Get();
+//
+//	// experiment 1 - note, this doesnt get the t-pose, it gets the anim pose at current anim stack
+////	fbxsdk::FbxAMatrix transfrom = n->EvaluateGlobalTransform( fbxsdk::FBXSDK_TIME_INFINITE );
+//	//fbxsdk::FbxVector4 trans   = transfrom.GetT();
+//	//fbxsdk::FbxQuaternion quat = transfrom.GetQ();
+//
+//	skinnedData->InvBindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ] = { &quat, &trans };
+//
+//	// WRONG - these values are already poluted w transforms other than bind poses!
+//	//skinnedData->BindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ] =
+//	//	skinnedData->InvBindPoseMatrices[ skinnedData->boneNameToIdx[ name ] ].Inverse();
+//
+//	//{
+//	//	writeToDebugLog( CLUSTERS,
+//	//					 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
+//	//					 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
+//	//					 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
+//	//					 boneIdx, name,
+//	//					 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
+//	//					 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
+//	//					 translation[ 0 ], translation[ 1 ], translation[ 2 ],
+//	//					 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] 
+//	//	);
+//	//}
+//}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// https://www.gamedev.net/articles/programming/graphics/how-to-work-with-fbx-sdk-r3582/
+//////////////////////////////////////////////////////////////////////////////////////////////
+void tPoseCB_v2( void * user, fbxsdk::FbxNode * meshNode ) {
+	SkinnedData * me = reinterpret_cast< SkinnedData * >( user );
+	fbxsdk::FbxMesh * mesh = reinterpret_cast< FbxMesh * >( meshNode->GetNodeAttribute() );
+	assert( meshNode->GetNodeAttribute()->GetAttributeType() == fbxsdk::FbxNodeAttribute::EType::eMesh );
+
+	fbxsdk::FbxSkin * deformer = reinterpret_cast< fbxsdk::FbxSkin * >( mesh->GetDeformer( 0, fbxsdk::FbxDeformer::eSkin ) );
+	const std::unordered_map< std::string, int > & boneNameToIdx = me->boneNameToIdx;
+
+	for ( int clusterIdx = 0; clusterIdx < deformer->GetClusterCount(); ++clusterIdx ) {
+		fbxsdk::FbxCluster * cluster = deformer->GetCluster( clusterIdx );
+
+		const std::string boneName = cluster->GetLink()->GetName();
+		if ( boneNameToIdx.find( boneName ) == boneNameToIdx.end() ) {
+			assert( !"Bone did not exist in the bone map!" );
+			continue;
+		}
+
+		//GetBindPose( meshNode, cluster, outBindPose );
+		const FbxVector4 lT = meshNode->GetGeometricTranslation( FbxNode::eSourcePivot );
+		const FbxVector4 lR = meshNode->GetGeometricRotation( FbxNode::eSourcePivot );
+		const FbxVector4 lS = meshNode->GetGeometricScaling( FbxNode::eSourcePivot );
+		FbxAMatrix geometryTransform = FbxAMatrix( lT, lR, lS ); // Additional deformation to this vertex ( why??? ), always identity
+
+		FbxAMatrix meshTransform;		// The transformation of the mesh at binding time
+		FbxAMatrix boneTransformTPose;	// The transformation of the cluster(joint) at binding time from joint space to world space
+		cluster->GetTransformMatrix( meshTransform );
+		cluster->GetTransformLinkMatrix( boneTransformTPose );
+
+		// calculate final transform of this bone, in world space, in t-pose
+		FbxAMatrix invBindPose = boneTransformTPose.Inverse() * meshTransform * geometryTransform;
+		FbxAMatrix bindPose    = boneTransformTPose * meshTransform * geometryTransform;
+
+		me->InvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = BoneTransform( &invBindPose.GetQ(), &invBindPose.GetT() );
+		me->BindPoseMatrices[ boneNameToIdx.at( boneName ) ]    = BoneTransform( &bindPose.GetQ(), &bindPose.GetT() );
 	}
-
-	fbxsdk::FbxVector4 translation = n->LclTranslation.Get();
-	
-	fbxsdk::FbxVector4 eulerRot = n->LclRotation.Get();
-	
-	double roll  = FBXSDK_PI_DIV_180 * ( eulerRot[ 0 ] ); // X
-	double pitch = FBXSDK_PI_DIV_180 * ( eulerRot[ 1 ] ); // Y
-	double yaw   = FBXSDK_PI_DIV_180 * ( eulerRot[ 2 ] ); // Z
-	fbxsdk::FbxQuaternion quaternion;
-	quaternion.ComposeSphericalXYZ( fbxsdk::FbxVector4( roll, pitch, yaw ) );
-	quaternion.Normalize();
-
-	fbxsdk::FbxVector4 scaling = n->LclScaling.Get();
-
-	int boneIdx = skinnedData->boneNameToIdx[ name ];
-	skinnedData->BindPoseMatrices[ boneIdx ] = { &quaternion, &translation };
-
-	//{
-	//	writeToDebugLog( CLUSTERS,
-	//					 "\t{\"%i\":\"%s\",\"transform\":{\"euler\":"
-	//					 "[%.0f,%.0f,%.0f],\"quat\":[%.4f,%.4f,%.4f,%.4f],"
-	//					 "\"pos\":[%.0f,%.0f,%.0f],\"scale\":[%.0f,%.0f,%.0f]}},\n",
-	//					 boneIdx, name,
-	//					 eulerRot[ 0 ], eulerRot[ 1 ], eulerRot[ 2 ],
-	//					 quaternion[ 0 ], quaternion[ 1 ], quaternion[ 2 ], quaternion[ 3 ],
-	//					 translation[ 0 ], translation[ 1 ], translation[ 2 ],
-	//					 scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] 
-	//	);
-	//}
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
@@ -144,7 +193,11 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 
 	// @TODO - either these bind pose matrices are in local space, or something else is wrong
 	openDebugLog( CLUSTERS );
-	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
+
+//	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
+	// try a different tpose func
+	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &tPoseCB_v2 }, this );
+
 	closeDebugLog( CLUSTERS );
 
 	openDebugLog( BINDPOSES_AFTER );
@@ -184,7 +237,7 @@ void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std
 
 	if ( skeletonType == AnimationAssets::eSkeleton::SKINNED_MESH ) {
 		for ( int i = 0; i < boneCount; i++ ) {
-			outFinalTransforms[ i ] *= BindPoseMatrices[ i ];
+			outFinalTransforms[ i ] *= InvBindPoseMatrices[ i ];
 		}
 	}
 }
