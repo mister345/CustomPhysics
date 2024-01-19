@@ -143,9 +143,9 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	closeDebugLog( BINDPOSES_BEFORE );
 
 	// @TODO - either these bind pose matrices are in local space, or something else is wrong
-	//openDebugLog( CLUSTERS );
+	openDebugLog( CLUSTERS );
 	FbxUtil::HarvestTPose( fbxScene, &tPoseCB, this );
-	//closeDebugLog( CLUSTERS );
+	closeDebugLog( CLUSTERS );
 
 	openDebugLog( BINDPOSES_AFTER );
 	for ( int i = 0; i < BindPoseMatrices.size(); i++ ) {
