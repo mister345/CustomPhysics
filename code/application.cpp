@@ -17,6 +17,7 @@
 
 #include "Scene.h"
 #include "Animation/AnimationState.h"
+#include "Physics/Shapes/ShapeLoadedMesh.h"
 
 #include "Config.h"
 

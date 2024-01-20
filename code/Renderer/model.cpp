@@ -6,7 +6,9 @@
 #include "../Fileio.h"
 #include <string.h>
 #include "../Physics/Shapes.h"
+#include "../Physics/Shapes/ShapeLoadedMesh.h"
 #include <algorithm>
+
 
 #pragma warning( disable : 4996 )
 

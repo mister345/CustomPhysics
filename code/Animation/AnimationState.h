@@ -36,7 +36,5 @@ struct AnimationInstance {
 	void Update( float deltaT );
 	const char * GetCurClipName();
 	const char * CycleCurClip();
-	void CycleAnimMode() { 
-		animMode = static_cast< eAnimMode >( ( animMode + 1 ) % MODE_COUNT );
-	}
+	void CycleAnimMode();
 };

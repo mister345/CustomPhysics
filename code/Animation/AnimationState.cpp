@@ -2,6 +2,7 @@
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "../Physics/Shapes/ShapeAnimated.h"
+#include "../Physics/Shapes/ShapeLoadedMesh.h"
 #include "../Config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -66,15 +67,24 @@ AnimationInstance::AnimationInstance( const Vec3 & worldPos_, AnimationAssets::e
 
 	// setup the initial bone transforms
 	std::vector< BoneTransform > initialTransforms;
+	std::vector< FbxAMatrix > fbxInitialTransforms( animData->BoneCount() );
+
 	if ( startInTPose || animData->animations.empty() ) {
 		initialTransforms.assign( animData->BindPoseMatrices.begin(), animData->BindPoseMatrices.end() );
+//		fbxInitialTransforms.assign( animData->FbxInvBindPoseMatrices.begin(), animData->FbxInvBindPoseMatrices.end() );
 	} else {
-		animData->GetFinalTransforms( curClipName, 0, initialTransforms );
+		animData->GetFinalTransformsLocal( curClipName, 0, initialTransforms );
 	}
 
 	if ( whichSkeleton == AnimationAssets::eSkeleton::SKINNED_MESH ) {
 		ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodiesToAnimate[ 0 ].m_shape );
-		mesh->PopulateMatrixPalette( &initialTransforms );
+		if ( animMode == eAnimMode::GLOBAL ) {
+			mesh->PopulateMatrixPalette( fbxInitialTransforms );
+		} else if ( animMode == eAnimMode::LOCAL ) {
+			mesh->PopulateMatrixPalette( initialTransforms );
+		} else { // TPose
+			mesh->PopulateMatrixPalette( fbxInitialTransforms );			
+		}
 	} else {
 		// move bodies into position, assign appropriate shapes to them ( could be a skinned mesh! )
 		for ( int i = 0; i < bodiesToAnimate.size(); i++ ) {
@@ -130,22 +140,37 @@ void AnimationInstance::Update( float deltaT ) {
 
 	// ask AnimData to interpolate each bone transform across its keyframes @ given time point
 	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
-	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
-	std::vector< FbxAMatrix > fbxBoneTransforms( animData->BoneCount() );
+	std::vector< BoneTransform > boneTransforms( animData->BoneCount() ); // initialized to identity
+	std::vector< FbxAMatrix > fbxBoneTransforms( animData->BoneCount() ); // initialized to identity
 
 	switch ( animMode ) {
 		case LOCAL: {
-			animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
+			animData->GetFinalTransformsLocal( curClipName, animTimePos, boneTransforms );
 			break;
 		}
 		case GLOBAL: {
-//			animData->GetFinalTransforms_v2( curClipName, animTimePos, boneTransforms );
-			animData->GetFinalTransforms_v2( curClipName, animTimePos, fbxBoneTransforms );
+			animData->GetFinalTransformsGlobal( curClipName, animTimePos, fbxBoneTransforms );
 			break;
 		}
 		case TPOSE:
 		default: {
 			boneTransforms.assign( animData->BindPoseMatrices.begin(), animData->BindPoseMatrices.end() );
+
+			// experiment - completely broken
+			// in the case of vert deformation, the deformation matrix for the "tpose" would technically just be
+			// an identity matrix, aka doing NOTHING to the verts. but let's see if we can reconstruct it instead
+			//for ( int i = 0; i < fbxBoneTransforms.size(); i++ ) {
+			//	BoneTransform & tPose = animData->BindPoseMatrices[ i ];
+
+			//	fbxsdk::FbxAMatrix fbxTPose;
+			//	fbxsdk::FbxQuaternion q( tPose.rotation.x, tPose.rotation.y, tPose.rotation.z, tPose.rotation.w );
+			//	fbxTPose.SetQ( q );
+			//	FbxVector4 t( tPose.translation.x, tPose.translation.y, tPose.translation.z, 1 );
+			//	fbxTPose.SetT( t );
+			//	fbxTPose.SetS( { 0.01, 0.01, 0.01, 1 } );
+
+			//	fbxBoneTransforms[ i ] = animData->FbxInvBindPoseMatrices[ i ] * fbxTPose;
+			//}
 		}
 	}
 
@@ -160,7 +185,16 @@ void AnimationInstance::Update( float deltaT ) {
 			// apply each bone transform to each body ( 1 to 1 )
 			for ( int i = 0; i < animData->BoneCount(); i++ ) {
 				Body & bodyToAnimate			= bodiesToAnimate[ i ];
-				const BoneTransform & transform = boneTransforms[ i ];
+
+				BoneTransform transform;
+				if ( animMode == eAnimMode::GLOBAL ) {
+					transform = { &fbxBoneTransforms[ i ].GetQ(), &fbxBoneTransforms[ i ].GetT() };
+				} else if ( animMode == eAnimMode::LOCAL ) {
+					transform = boneTransforms[ i ];
+				} else { // TPOSE
+					transform = boneTransforms[ i ];
+				}
+
 				bodyToAnimate.m_orientation		= transform.rotation;
 				bodyToAnimate.m_position		= worldPos + transform.translation;
 			}
@@ -168,17 +202,15 @@ void AnimationInstance::Update( float deltaT ) {
 		}
 		case AnimationAssets::SKINNED_MESH: {
 			// handle the case of only ONE BODY, with ONE SHAPE,
-			Body & bodyToAnimate = bodiesToAnimate[ 0 ];
+			Body & bodyToAnimate   = bodiesToAnimate[ 0 ];
 			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate.m_shape );
-			// convert all these BoneTransforms into matrices,
-			// the rest is up to the GPU skinning stage in teh vertex shader
-			//mesh->PopulateMatrixPalette( &boneTransforms );
-
-			// try using straight fbx data instead
-//			mesh->PopulateMatrixPalette( &boneTransforms );
-
-			mesh->PopulateMatrixPalette( &fbxBoneTransforms );
-
+			if ( animMode == eAnimMode::GLOBAL ) {
+				mesh->PopulateMatrixPalette( fbxBoneTransforms );
+			} else if ( animMode == eAnimMode::LOCAL ) {
+				mesh->PopulateMatrixPalette( boneTransforms );
+			} else { // TPose
+				mesh->PopulateMatrixPalette( fbxBoneTransforms );
+			}
 			break;
 		}
 	}
@@ -199,4 +231,8 @@ const char * AnimationInstance::CycleCurClip() {
 		pCurAnim = animData->animations.begin();
 	}
 	return pCurAnim->first.c_str();
+}
+
+void AnimationInstance::CycleAnimMode() {
+	animMode = static_cast< eAnimMode >( ( animMode + 1 ) % MODE_COUNT );
 }

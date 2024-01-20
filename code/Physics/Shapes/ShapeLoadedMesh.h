@@ -3,6 +3,8 @@
 //
 #pragma once
 #include "ShapeBase.h"
+#include "../../Animation/Bone.h"
+#include "../../Animation/fbxInclude.h"
 
 struct vertSkinned_t;
 
@@ -32,7 +34,9 @@ public:
 
 	shapeType_t GetType() const override { return SHAPE_LOADED_MESH; }
 
-	void PopulateMatrixPalette( void * bTransforms );
+	void PopulateMatrixPalette( std::vector< fbxsdk::FbxAMatrix > & boneTransforms );
+	void PopulateMatrixPalette( std::vector< BoneTransform > & boneTransforms );
+
 	inline const std::vector< Mat4 > * GetMatrixPalette() const { return &matrixPalette;  }
 
 public:

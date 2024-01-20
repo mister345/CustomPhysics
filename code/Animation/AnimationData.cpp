@@ -109,7 +109,6 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 			continue;
 		}
 
-		//GetBindPose( meshNode, cluster, outBindPose );
 		const FbxVector4 lT = meshNode->GetGeometricTranslation( FbxNode::eSourcePivot );
 		const FbxVector4 lR = meshNode->GetGeometricRotation( FbxNode::eSourcePivot );
 		const FbxVector4 lS = meshNode->GetGeometricScaling( FbxNode::eSourcePivot );
@@ -122,11 +121,11 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 
 		// calculate final transform of this bone, in world space, in t-pose
 		FbxAMatrix invBindPose = boneTransformTPose.Inverse() * meshTransform * geometryTransform;
-		FbxAMatrix bindPose    = boneTransformTPose * meshTransform	* geometryTransform;
+		FbxAMatrix bindPose    = boneTransformTPose			  * meshTransform * geometryTransform;
 
 		me->FbxInvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = invBindPose;
-		me->InvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = BoneTransform( &invBindPose.GetQ(), &invBindPose.GetT() );
-		me->BindPoseMatrices[ boneNameToIdx.at( boneName ) ]    = BoneTransform( &bindPose.GetQ(), &bindPose.GetT() );
+		me->InvBindPoseMatrices[ boneNameToIdx.at( boneName ) ]	   = BoneTransform( &invBindPose.GetQ(), &invBindPose.GetT() );
+		me->BindPoseMatrices[ boneNameToIdx.at( boneName ) ]       = BoneTransform( &bindPose.GetQ(), &bindPose.GetT() );
 	}
 }
 
@@ -151,7 +150,7 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &populateTPoseCB }, this );
 }
 
-void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const {
+void SkinnedData::GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const {
 	const int boneCount		   = BoneCount();
 	const AnimationClip & clip = animations.at( cName );
 
@@ -164,7 +163,7 @@ void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, 
 	}
 }
 
-void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+void SkinnedData::GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount		   = BoneCount();
 	const AnimationClip & clip = animations.at( cName );
 
@@ -183,7 +182,7 @@ void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, 
 	}
 }
 
-void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
+void SkinnedData::GetFinalTransformsLocal( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount		   = BoneCount();
 	const AnimationClip & clip = animations.at( cName );
 

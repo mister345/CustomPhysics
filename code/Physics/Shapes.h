@@ -3,7 +3,6 @@
 //
 #pragma once
 #include "Shapes/ShapeSphere.h"
-#include "Shapes/ShapeLoadedMesh.h"
 
 extern Vec3 g_boxGround[ 8 ];
 extern Vec3 g_boxWall0[ 8 ];

@@ -86,11 +86,11 @@ NOTE - 2 ways to get frames from fbx file
 	*/
 	void Set( fbxsdk::FbxScene * scene );
 
-	void GetFinalTransforms_v2( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const;
-	void GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+	void GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const;
+	void GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 
 // PLAYBACK
-	void GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
+	void GetFinalTransformsLocal( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 
 public:
 	int numVerts = 0;
