@@ -28,7 +28,8 @@ struct AnimationInstance {
 
 	bool isInstanced = true;
 	bool startInTPose = true;
-	eAnimMode animMode = startInTPose ? TPOSE : LOCAL;
+//	eAnimMode animMode = startInTPose ? TPOSE : LOCAL;
+	eAnimMode animMode = GLOBAL;
 
 	AnimationInstance( const Vec3 & worldPos, AnimationAssets::eSkeleton whichSkeleton );
 	~AnimationInstance();

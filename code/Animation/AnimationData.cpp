@@ -48,6 +48,20 @@ void AnimationClip::Interpolate( float t, std::vector<BoneTransform> & boneTrans
 	}
 }
 
+// interpolate bone animations & populate a list of all bone transforms ( aka, the pose ) at this given time
+void AnimationClip::Interpolate( float t, std::vector<fbxsdk::FbxAMatrix > & boneTransforms, bool isGlobal ) const {
+//	bool shouldPrint = true;
+	bool shouldPrint = false;
+	for ( int i = 0; i < BoneAnimations.size(); i++ ) {
+		if ( isGlobal ) {
+			BoneAnimationsGlobal[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		} else {
+			BoneAnimations[ i ].Interpolate( t, boneTransforms[ i ], shouldPrint ? i : -1 );
+		}
+		shouldPrint = false;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // SKINNED DATA
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,8 +122,9 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 
 		// calculate final transform of this bone, in world space, in t-pose
 		FbxAMatrix invBindPose = boneTransformTPose.Inverse() * meshTransform * geometryTransform;
-		FbxAMatrix bindPose    = boneTransformTPose			  * meshTransform * geometryTransform;
+		FbxAMatrix bindPose    = boneTransformTPose * meshTransform	* geometryTransform;
 
+		me->FbxInvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = invBindPose;
 		me->InvBindPoseMatrices[ boneNameToIdx.at( boneName ) ] = BoneTransform( &invBindPose.GetQ(), &invBindPose.GetT() );
 		me->BindPoseMatrices[ boneNameToIdx.at( boneName ) ]    = BoneTransform( &bindPose.GetQ(), &bindPose.GetT() );
 	}
@@ -129,16 +144,43 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 
 	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::PopulateBoneAnimsCB, &FbxNodeParsers::PopulateVertsDataCB }, this );
 
+	FbxInvBindPoseMatrices.assign( BoneCount(), fbxsdk::FbxAMatrix() );
 	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
 	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
 
 	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &populateTPoseCB }, this );
 }
 
+void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const {
+	const int boneCount		   = BoneCount();
+	const AnimationClip & clip = animations.at( cName );
+
+	clip.Interpolate( time, outFinalTransforms, true );
+
+	for ( int i = 0; i < boneCount; i++ ) {
+		if ( skeletonType == AnimationAssets::eSkeleton::SKINNED_MESH ) {
+			outFinalTransforms[ i ] = outFinalTransforms[ i ] * FbxInvBindPoseMatrices[ i ];
+		}
+	}
+}
+
 void SkinnedData::GetFinalTransforms_v2( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {
 	const int boneCount		   = BoneCount();
 	const AnimationClip & clip = animations.at( cName );
-	clip.Interpolate( time, outFinalTransforms, true );
+
+	for ( int i = 0; i < boneCount; i++ ) {
+		if ( skeletonType == AnimationAssets::eSkeleton::SKINNED_MESH ) {
+			outFinalTransforms[ i ] = InvBindPoseMatrices[ i ];
+		} else {
+			outFinalTransforms[ i ] = BoneTransform(); // identity
+		}
+	}
+
+	std::vector< BoneTransform > interpd( BoneCount(), BoneTransform() );
+	clip.Interpolate( time, interpd, true );
+	for ( int i = 0; i < boneCount; i++ ) {
+		outFinalTransforms[ i ] *= interpd[ i ];
+	}
 }
 
 void SkinnedData::GetFinalTransforms( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const {

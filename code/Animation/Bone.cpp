@@ -152,7 +152,11 @@ BoneAnimation::BoneAnimation( fbxsdk::FbxScene * fbxScene, fbxsdk::FbxNode * bon
 		// experiment 3 - NOTE - this flattens the pose out in a similar way to doing node->GetLocalRotation(), suggesting the rotations dont exist until anims are applied
 		//rotation = { 0,0,0,1 };
 
+
 		keyframeToFill.transform = BoneTransform( &rotation, &translation );
+
+		// experiment
+		keyframeToFill.fbxMat = curTransform;
 
 		// experiment 4 - FAIL - rotate point by 90 degrees for translation - does nothing
 		//Quat rOffset( { 0.f, 1.f, 0.f }, 90.f * FBXSDK_PI_DIV_180 );
@@ -202,6 +206,51 @@ void BoneAnimation::Interpolate( float t, BoneTransform & outTransform, int myId
 
 				// slerp quat
 				outTransform.rotation = Slerp( start.transform.rotation, end.transform.rotation, progress );
+
+				if ( myIdx != -1 ) {
+					printf( "\tbone %i:\tinput time:%1.3f\tprog btwn frames %zi~%zi\t:\t%2.2f\t\n", myIdx, t, i, i + 1, progress );
+				}
+				break;
+			}
+		}
+	}
+}
+
+void BoneAnimation::Interpolate( float t, fbxsdk::FbxAMatrix & outTransform, int myIdx ) const {
+	if ( keyframes.empty() ) {
+		puts( "Bone Animation had no keyframe! Returning..." );
+		return;
+	}
+
+	// return first keyframe
+	if ( t <= keyframes.front().timePos ) {
+		outTransform = keyframes.front().fbxMat;
+		lastKeyframeIdx = 0;
+	} else if ( t >= keyframes.back().timePos ) {
+		outTransform = keyframes.back().fbxMat;
+		lastKeyframeIdx = 0;
+	} else {
+		// where does the given time t fall within our list of keyframes?
+		for ( size_t i = lastKeyframeIdx; i < keyframes.size() - 1; i++ ) {
+			const Keyframe & start = keyframes[ i ];
+			const Keyframe & end = keyframes[ i + 1 ];
+			if ( t >= start.timePos && t <= end.timePos ) {
+				// bookmark where we left off
+				lastKeyframeIdx = i;
+				// printf( "~~~~~~~~resuming from keyframe @ %i...\n", lastKeyframeIdx );
+
+				const float range = end.timePos - start.timePos;
+				const float progress = ( t - start.timePos ) / range;
+
+				// set scale
+				outTransform.SetS( start.fbxMat.GetS() );
+
+				// lerp translation
+				outTransform.SetT( start.fbxMat.GetT() + ( end.fbxMat.GetT() - start.fbxMat.GetT() ) * progress );
+
+				// slerp quat
+				FbxQuaternion qStart = start.fbxMat.GetQ();
+				outTransform.SetQ( qStart.Slerp( end.fbxMat.GetQ(), progress ) );
 
 				if ( myIdx != -1 ) {
 					printf( "\tbone %i:\tinput time:%1.3f\tprog btwn frames %zi~%zi\t:\t%2.2f\t\n", myIdx, t, i, i + 1, progress );

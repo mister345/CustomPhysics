@@ -131,13 +131,16 @@ void AnimationInstance::Update( float deltaT ) {
 	// ask AnimData to interpolate each bone transform across its keyframes @ given time point
 	// also concatenates the bones down the skeletal hierarchy to produce component space transforms
 	std::vector< BoneTransform > boneTransforms( animData->BoneCount() );
+	std::vector< FbxAMatrix > fbxBoneTransforms( animData->BoneCount() );
+
 	switch ( animMode ) {
 		case LOCAL: {
 			animData->GetFinalTransforms( curClipName, animTimePos, boneTransforms );
 			break;
 		}
 		case GLOBAL: {
-			animData->GetFinalTransforms_v2( curClipName, animTimePos, boneTransforms );
+//			animData->GetFinalTransforms_v2( curClipName, animTimePos, boneTransforms );
+			animData->GetFinalTransforms_v2( curClipName, animTimePos, fbxBoneTransforms );
 			break;
 		}
 		case TPOSE:
@@ -169,7 +172,13 @@ void AnimationInstance::Update( float deltaT ) {
 			ShapeLoadedMesh * mesh = reinterpret_cast< ShapeLoadedMesh * >( bodyToAnimate.m_shape );
 			// convert all these BoneTransforms into matrices,
 			// the rest is up to the GPU skinning stage in teh vertex shader
-			mesh->PopulateMatrixPalette( &boneTransforms );
+			//mesh->PopulateMatrixPalette( &boneTransforms );
+
+			// try using straight fbx data instead
+//			mesh->PopulateMatrixPalette( &boneTransforms );
+
+			mesh->PopulateMatrixPalette( &fbxBoneTransforms );
+
 			break;
 		}
 	}

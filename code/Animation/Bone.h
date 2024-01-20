@@ -3,6 +3,7 @@
 #include <vector>
 #include "../Math/Vector.h"
 #include "../Math/Quat.h"
+#include "fbxInclude.h"
 
 namespace fbxsdk {
 	class FbxScene;
@@ -10,6 +11,7 @@ namespace fbxsdk {
 	class FbxAnimLayer;
 	class FbxQuaternion;
 	class FbxVector4;
+	class FbxAMatrix;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,6 +45,7 @@ struct BoneTransform {
 struct Keyframe {
 	float timePos = 0.f;
 	BoneTransform transform;
+	fbxsdk::FbxAMatrix fbxMat;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,6 +59,7 @@ struct BoneAnimation {
 	float GetStartTime() const;
 	float GetEndTime() const;
 	void Interpolate( float t, BoneTransform & outTransform, int myIdx ) const;
+	void Interpolate( float t, fbxsdk::FbxAMatrix & outTransform, int myIdx ) const;
 	inline bool HasData() const { return !keyframes.empty(); }
 	std::vector< Keyframe > keyframes;
 	mutable int lastKeyframeIdx = 0;
