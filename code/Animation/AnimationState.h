@@ -17,6 +17,8 @@ enum eAnimMode : uint8_t {
 	MODE_COUNT = 3
 };
 
+const char * AnimModeToStr( eAnimMode m );
+
 struct AnimationInstance {
 	float animTimePos = 0.f;
 	float speedMultiplier = 2.f;

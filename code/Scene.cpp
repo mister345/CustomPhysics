@@ -152,7 +152,7 @@ void Scene::ToggleTPose() {
 void Scene::TryCycleAnim() {
 	for ( AnimationInstance * animInst : animInstanceDemo ) {
 		if ( animInst != nullptr ) {
-			printf( "\nACTIVE ANIMATION WAS CHANGED TO: %s\n", animInst->CycleCurClip() );
+			animInst->CycleCurClip();
 		}
 	}
 }

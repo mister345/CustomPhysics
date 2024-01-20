@@ -230,9 +230,31 @@ const char * AnimationInstance::CycleCurClip() {
 	if ( ++pCurAnim == animData->animations.end() ) {
 		pCurAnim = animData->animations.begin();
 	}
-	return pCurAnim->first.c_str();
+
+	const char * newAnim = pCurAnim->first.c_str();
+	printf( "\n# # # Active animation was changed to: %s # # #\n", newAnim );
+	return newAnim;
 }
 
 void AnimationInstance::CycleAnimMode() {
 	animMode = static_cast< eAnimMode >( ( animMode + 1 ) % MODE_COUNT );
+	printf( "\n# # # # # # Animation mode was changed to: %s# # # # # #\n", AnimModeToStr( animMode ) );
+}
+
+const char * AnimModeToStr( eAnimMode m ) {
+	switch ( m ) {
+		case TPOSE: {
+			return "TPOSE";
+		}
+		case LOCAL: {
+			return "LOCAL";
+		}
+		case GLOBAL: {
+			return "GLOBAL";
+		}
+		case MODE_COUNT: {
+			return "INVALID";
+		}
+	}
+	return "INVALID";
 }
