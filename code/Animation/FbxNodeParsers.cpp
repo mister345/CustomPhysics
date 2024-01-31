@@ -79,8 +79,8 @@ namespace FbxNodeParsers {
 			}
 
 			// Get the indices and weights
-			int * ctrlPtIdxes = cluster->GetControlPointIndices();
-			const int numCtrlPts = cluster->GetControlPointIndicesCount();
+			int * ctrlPtIdxes	   = cluster->GetControlPointIndices();
+			const int numCtrlPts   = cluster->GetControlPointIndicesCount();
 			double * inVertWeights = cluster->GetControlPointWeights();
 
 			// note - fbxsdk inverts bone-vert relationship; each cluster ( bone ) has a list of VERTS that it affects

@@ -58,11 +58,7 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, const FbxUtil::callbackAPI_t & callback, void * caller ) {
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-		if ( pRootNode != nullptr ) {
-			for ( int i = 0; i < pRootNode->GetChildCount(); i++ ) {
-				ProcessNode( pRootNode->GetChild( i ), callback, caller );
-			}
-		}
+		ProcessNode( pRootNode, callback, caller );
 	}
 
 	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
