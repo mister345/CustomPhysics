@@ -392,7 +392,7 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 				descriptor.BindBuffer( uniforms, camOffset, camSize, 0 );									// bind the camera matrices
 				descriptor.BindBuffer( uniforms, renderModel.uboByteOffset, renderModel.uboByteSize, 1 );	// bind the model matrices
 				descriptor.BindBuffer( uniforms, shadowCamOffset, shadowCamSize, 2 );						// bind the shadow camera matrices
-				descriptor.BindBuffer( uniforms, offsetToCurMatrixPalette, matrixPaletteSize, 3 );		// @TODO bind the skinning matrices layout info
+				descriptor.BindBuffer( uniforms, offsetToCurMatrixPalette, matrixPaletteSize, 3 );			// @TODO bind the skinning matrices layout info
 				descriptor.BindImage( VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_shadowFrameBuffer.m_imageDepth.m_vkImageView, Samplers::m_samplerStandard, 0 );
 				descriptor.BindDescriptor( device, cmdBuffer, &g_skinningPipeline );
 				renderModel.model->DrawIndexed( cmdBuffer );

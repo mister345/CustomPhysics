@@ -132,8 +132,9 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 }
 
 void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
-	fbxsdk::FbxNode * pRootNode = scene->GetRootNode();
+	auto start = std::chrono::high_resolution_clock::now();
 
+	fbxsdk::FbxNode * pRootNode = scene->GetRootNode();
 	for ( int i = 0; i < scene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
 		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
 		animations.insert( { curStack->GetName(), AnimationClip() } );
@@ -145,12 +146,23 @@ void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
 	FbxInvBindPoseMatrices.assign( BoneCount(), fbxsdk::FbxAMatrix() );
 	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
 	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
+
+	printf( "Preprocessed anim data in %i ms!\n", 
+			std::chrono::duration_cast< std::chrono::milliseconds >( std::chrono::high_resolution_clock::now() - start ).count() 
+	);
 }
 
 void SkinnedData::HarvestSceneData( fbxsdk::FbxScene * pScene ) {
+	auto start = std::chrono::high_resolution_clock::now();
+
 	fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-//	FbxUtil::ProcessNodes_Q( pRootNode, { nullptr, &populateTPoseCB }, this );
-	FbxUtil::ProcessNodes_R( pRootNode, { nullptr, &populateTPoseCB }, this );
+	FbxUtil::ProcessNodes_Q( pRootNode, { nullptr, &populateTPoseCB }, this );
+//	FbxUtil::ProcessNodes_R( pRootNode, { nullptr, &populateTPoseCB }, this );
+
+	printf( "Harvested anim data on %i threads in %i ms!\n",
+			std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD ),
+			std::chrono::duration_cast< std::chrono::milliseconds >( std::chrono::high_resolution_clock::now() - start ).count()
+	);
 }
 
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
@@ -160,21 +172,12 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	}
 	fbxScene = scene;
 
-	typedef std::chrono::high_resolution_clock Clock;
-	auto start = Clock::now();
 
 	// Single threaded
 	PreProcessSceneData( fbxScene );
 
 	// Multithreaded
 	HarvestSceneData( fbxScene );
-
-	auto end = Clock::now();
-	int numThreads = std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD );
-	printf( "Animation data was loaded on %i threads in %i ms!\n", 
-			numThreads,
-			std::chrono::duration_cast< std::chrono::milliseconds>( end - start ).count() 
-	);
 }
 
 void SkinnedData::GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const {

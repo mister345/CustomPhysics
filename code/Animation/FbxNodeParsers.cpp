@@ -142,8 +142,8 @@ namespace FbxNodeParsers {
 				outVert.st[ 0 ] = static_cast< float >( uv[ 0 ] );
 				outVert.st[ 1 ] = static_cast< float >( uv[ 1 ] );
 			}
-			printf( "Vertex %i: %3.1f, %3.1f, %3.2f, uv:%1.1f,%1.1f\n", 
-					i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], outVert.st[ 0 ], outVert.st[ 1 ] );
+			//printf( "Vertex %i: %3.1f, %3.1f, %3.2f, uv:%1.1f,%1.1f\n", 
+			//		i, outVert.xyz[ 0 ], outVert.xyz[ 1 ], outVert.xyz[ 2 ], outVert.st[ 0 ], outVert.st[ 1 ] );
 
 			// @TODO - load the bone weights and bone indices for each of these verts
 			// currently seed w random values to check if they're showing up in vtx shader in renderdoc

@@ -62,7 +62,6 @@ namespace FbxUtil {
 		}
 	}
 	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & callbacks, void * dataRecipient ) {
-
 		// Aggregate
 		std::stack< fbxsdk::FbxNode * > jobs;
 		std::queue< fbxsdk::FbxNode * > q;
@@ -83,36 +82,55 @@ namespace FbxUtil {
 		// Process	
 		struct worker_t {
 			std::thread t;
+			worker_t( std::vector< fbxsdk::FbxNode * > & assignedWork, const FbxUtil::callbackAPI_t & callbacks_, void * dataRecipient_ ) {
+				t = std::move( std::thread(
+						[]( std::vector< fbxsdk::FbxNode * > & jobs, const FbxUtil::callbackAPI_t & callbacks, void * dataRecipient ) {							
+							for( int i = 0; i < jobs.size(); i++ ){
+								if ( jobs[ i ] == nullptr ) {
+									return;
+								}
+								ProcessNodeInternal( jobs[ i ], callbacks, dataRecipient ); 
+							} },
+						assignedWork,
+						callbacks_, 
+						dataRecipient_ 
+					) 
+				);
 
-			worker_t( fbxsdk::FbxNode * pNode_, const FbxUtil::callbackAPI_t & callbacks_, void * dataRecipient_ ) {
-				t = std::move( std::thread( 
-					[]( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callbacks, void * dataRecipient ) { 
-						ProcessNodeInternal( pNode, callbacks, dataRecipient ); }, 
-					pNode_, 
-					callbacks_, 
-					dataRecipient_ 
-				) );
 			}
-
 			~worker_t() {
 				t.join();
-				// @TODO - try pull work from queue
 			}
 		};
 
-		// @todo - make workers pull new jobs from queue, then we wont need this outer loop
-		// ( otherwise its the same performance as single threaded )
+
+		// distribute jobs into n threads distinct arrays
 		const unsigned nThreads = std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD );
-		std::vector< worker_t * > workers( nThreads, nullptr );
+		std::vector< std::vector< fbxsdk::FbxNode * > >jobsAssigned( nThreads );
 		while ( !jobs.empty() ) {
 			for ( int i = 0; i < nThreads; i++ ) {
-				workers[ i ] = new worker_t( jobs.top(), callbacks, dataRecipient );
-				jobs.pop();
-			}
-			for ( int i = 0; i < nThreads; i++ ) {
-				delete( workers[ i ] );
+				FbxNode * node = nullptr;
+				do {
+					node = jobs.top();
+					jobs.pop();
+				} while ( node == nullptr );
+
+				jobsAssigned[ i ].push_back( node );
 			}
 		}
+
+		// create n threads workers, each with their own array of jobs
+		std::vector< worker_t * > workers( nThreads, nullptr );
+		for ( int i = 0; i < nThreads; i++ ) {
+			workers[ i ] = new worker_t( jobsAssigned[ i ], callbacks, dataRecipient );
+		}
+
+		// destroy the workers ( this will call thread::join() for each one )
+		for ( int i = 0; i < workers.size(); i++ ) {
+			delete( workers[ i ] );
+			workers[ i ] = nullptr;
+		}
+		workers.clear();
 
 		/*	@TODO
 		*	1. make sure all data being operated on is threadsafe
@@ -135,7 +153,7 @@ namespace FbxUtil {
 	}
 
 	void ProcessNodeInternal( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callback, void * dataRecipient ) {
-		PrintNodeTransform( pNode );
+//		PrintNodeTransform( pNode );
 		for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
 			fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
 			if ( pAttribute != nullptr ) {
