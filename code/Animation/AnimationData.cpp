@@ -131,6 +131,7 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 	}
 }
 
+// single threaded
 void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -140,9 +141,8 @@ void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
 		animations.insert( { curStack->GetName(), AnimationClip() } );
 	}
 
-	// single threaded
-	FbxUtil::ProcessNodes_R( pRootNode, { &FbxNodeParsers::PopulateBoneAnimsCB, &FbxNodeParsers::PopulateVertsDataCB }, this );
-
+	// @TODO multithread this on a more granular level
+	FbxUtil::ProcessNodes_R( pRootNode, { &FbxNodeParsers::PopulateBoneAnimsCB, nullptr }, this );
 	FbxInvBindPoseMatrices.assign( BoneCount(), fbxsdk::FbxAMatrix() );
 	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
 	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
@@ -152,12 +152,17 @@ void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
 	);
 }
 
+void populateTPoseAndVertsCB( void * user, fbxsdk::FbxNode * meshNode ) {
+	// @TODO - add a map to optimize getting which bone influences which vert
+	FbxNodeParsers::PopulateVertsDataCB( user, meshNode );
+	populateTPoseCB( user, meshNode );
+}
+
 void SkinnedData::HarvestSceneData( fbxsdk::FbxScene * pScene ) {
 	auto start = std::chrono::high_resolution_clock::now();
 
 	fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-	FbxUtil::ProcessNodes_Q( pRootNode, { nullptr, &populateTPoseCB }, this );
-//	FbxUtil::ProcessNodes_R( pRootNode, { nullptr, &populateTPoseCB }, this );
+	FbxUtil::ProcessNodes_Q( pRootNode, { nullptr, &populateTPoseAndVertsCB }, this );
 
 	printf( "Harvested anim data on %i threads in %i ms!\n",
 			std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD ),
