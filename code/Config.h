@@ -7,19 +7,17 @@
 //////////////////////////////
 /////////// CONFIG ///////////
 //////////////////////////////
-//#define ANIM_DEBUG_LOGGING
 
+//#define ANIM_DEBUG_LOGGING
+#ifdef ANIM_DEBUG_LOGGING
 constexpr int DEBUG_FILE_COUNT = 4;
-#define BONES			 0
-#define CLUSTERS		 1
-#define BINDPOSES_BEFORE 2
-#define BINDPOSES_AFTER  3
 static std::array< const char *, DEBUG_FILE_COUNT > debugNames = {
 	"bones",
 	"clusters",
 	"bindPosesBefore",
 	"bindPosesAfter",
 };
+#endif // ANIM_DEBUG_LOGGING
 
 void startDebugSession();
 void endDebugSession();
@@ -37,6 +35,8 @@ static constexpr bool PRINT_FRAME_TIME = false;
 
 // Animation
 static constexpr bool SHOW_ORIGIN = false;
+static constexpr int  NUM_THREADS_LOAD = 1;
+//static constexpr int  NUM_THREADS_LOAD = 16;
 
 // skeleton type
 static constexpr std::array< AnimationAssets::eSkeleton, 2 > ANIM_DEMO_SKELETONS = {

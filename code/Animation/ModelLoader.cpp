@@ -1,14 +1,20 @@
 #include <iostream>
 #include <cassert>
 #include <unordered_map>
+#include <thread>
+#include <queue>
 #include "fbxInclude.h"
 #include "Bone.h"
 #include "ModelLoader.h"
 #include "AnimationData.h"
+#include "../Config.h"
+#include <stack>
 
 namespace FbxUtil {
 	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter );
-	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
+	void ProcessNodeInternal( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callback, void * dataRecipient );
+	void ProcessNode_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
+	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
 	void PrintNodeTransform( fbxsdk::FbxNode * node );
 	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
 	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
@@ -56,36 +62,95 @@ namespace FbxUtil {
 	/////////////////////////////////////
 	// Data Extraction Functions
 	/////////////////////////////////////
+	int g_recursiveHitCt = 0;
 	void HarvestSceneData( fbxsdk::FbxScene * pScene, const FbxUtil::callbackAPI_t & callback, void * caller ) {
 		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-		ProcessNode( pRootNode, callback, caller );
+		// recursive version		
+		ProcessNode_R( pRootNode, callback, caller );
+
+		// parallel version ( see who wins )
+		//ProcessNodes_Q( pRootNode, callback, caller );
 	}
 
-	void ProcessNode( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
-		if ( pNode != nullptr ) {
-			// PrintNode( pNode );
-			PrintNodeTransform( pNode );
-			for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
-				fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
-				if ( pAttribute != nullptr ) {
-					// PrintAttribute( pAttribute );
-					const fbxsdk::FbxNodeAttribute::EType attrType = pAttribute->GetAttributeType();
-					if ( attrType == fbxsdk::FbxNodeAttribute::EType::eSkeleton && callback.onFoundBone != nullptr ) {
-						callback.onFoundBone( dataRecipient, pNode );
-						// break;	// @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
-					} else if ( attrType == fbxsdk::FbxNodeAttribute::EType::eMesh && callback.onFoundMesh != nullptr ) {
-						callback.onFoundMesh( dataRecipient, pNode );
-						// break; // @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
-					}
+	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & callbacks, void * dataRecipient ) {
+		// Aggregate
+		std::stack< fbxsdk::FbxNode * > jobs;
+		std::queue< fbxsdk::FbxNode * > q;
+		q.push( pNode );
+		while ( !q.empty() ) {
+			FbxNode * curNode = q.front();
+			q.pop();
+			jobs.push( curNode );
+			int childCt = curNode->GetChildCount();
+			for ( int j = 0; j < childCt; j++ ) {
+				fbxsdk::FbxNode * child = curNode->GetChild( j );
+				if ( child != nullptr ) {	// @TODO - necessary?
+					q.push( child );
 				}
 			}
+		}
+
+		// Process	
+		struct worker_t {
+			std::thread t;
+			worker_t( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callbacks, void * dataRecipient ) :
+				t( [ pNode, callbacks, dataRecipient ]() {
+				ProcessNodeInternal( pNode, callbacks, dataRecipient );
+			} ) {}
+			~worker_t() {
+				t.join();
+				// @TODO - try pull work from queue
+			}
+		};
+
+		// @todo - make workers pull new jobs from queue, then we wont need this outer loop
+		while ( !jobs.empty() ) {
+			worker_t * workers[ NUM_THREADS_LOAD ] = {};
+			for ( int i = 0; i < NUM_THREADS_LOAD; i++ ) {
+				workers[ i ] = new worker_t( jobs.top(), callbacks, dataRecipient );
+				jobs.pop();
+			}
+			for ( int i = 0; i < NUM_THREADS_LOAD; i++ ) {
+				delete( workers[ i ] );
+			}
+		}
+
+		/*	@TODO
+		*	1. make sure all data being operated on is threadsafe
+		*		>> already know this is calling emplace_back() on the matrix palette; need to preallocate instead
+		*	2. switch to thread pool
+		*	3. allow threads who finish first to steal from queue ( bc variant num verts per job )
+		*/ 
+	}
+
+	void ProcessNode_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
+		g_recursiveHitCt++;
+		if ( pNode != nullptr ) {
+			ProcessNodeInternal( pNode, callback, dataRecipient );
 
 			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				ProcessNode( pNode->GetChild( j ), callback, dataRecipient );
+				ProcessNode_R( pNode->GetChild( j ), callback, dataRecipient );
 			}
 		}
 	}
 
+	void ProcessNodeInternal( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callback, void * dataRecipient ) {
+		PrintNodeTransform( pNode );
+		for ( int i = 0; i < pNode->GetNodeAttributeCount(); i++ ) {
+			fbxsdk::FbxNodeAttribute * pAttribute = pNode->GetNodeAttributeByIndex( i );
+			if ( pAttribute != nullptr ) {
+				// PrintAttribute( pAttribute );
+				const fbxsdk::FbxNodeAttribute::EType attrType = pAttribute->GetAttributeType();
+				if ( attrType == fbxsdk::FbxNodeAttribute::EType::eSkeleton && callback.onFoundBone != nullptr ) {
+					callback.onFoundBone( dataRecipient, pNode );
+					// break;	// @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
+				} else if ( attrType == fbxsdk::FbxNodeAttribute::EType::eMesh && callback.onFoundMesh != nullptr ) {
+					callback.onFoundMesh( dataRecipient, pNode );
+					// break; // @TODO - can a node ever have BOTH bone and MESH attributes? if so, this is a problem!
+				}
+			}
+		}
+	}
 
 	/////////////////////////////////////
 	// Init Functions
