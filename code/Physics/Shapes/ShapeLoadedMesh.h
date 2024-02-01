@@ -24,7 +24,7 @@ public:
 
 		m_centerOfMass.Zero(); 
 
-		assert( nBones == 80 );
+		assert( nBones <= 80 );
 		matrixPalette.resize( nBones );
 	}
 	Mat3 InertiaTensorGeometric() const override;

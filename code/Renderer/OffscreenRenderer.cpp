@@ -377,7 +377,7 @@ void DrawOffscreen( DeviceContext * device, int cmdBufferIndex, Buffer * uniform
 				// @TODO - we either need a dynamic buffer in the vert shader, 
 				// or create a new vert shader for every skeleton size!
 				// ( currently hardcoded to 80 in the vert shader )
-				assert( renderModel.numBones == 80 );
+				assert( renderModel.numBones <= 80 );
 
 				//extern bool * g_isPaused;
 				//if ( !*g_isPaused ) {
