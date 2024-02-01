@@ -39,8 +39,8 @@ static constexpr int  NUM_THREADS_LOAD = 1;
 //static constexpr int  NUM_THREADS_LOAD = 16;
 
 // skeleton type
-static constexpr std::array< AnimationAssets::eSkeleton, 2 > ANIM_DEMO_SKELETONS = {
-	AnimationAssets::DEBUG_SKELETON,
+static constexpr std::array< AnimationAssets::eSkeleton, 1 > ANIM_DEMO_SKELETONS = {
+//	AnimationAssets::DEBUG_SKELETON,
 	AnimationAssets::SKINNED_MESH 
 };
 //static constexpr AnimationAssets::eSkeleton WHICH_SKELETON = AnimationAssets::SKINNED_MESH;
@@ -51,7 +51,8 @@ static constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr float DEBUG_BONE_RAD = 7.5f * ANIMDEMO_SCALE;
 //static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
- constexpr const char * ANIMDEMO_FILENAME = "assets/femaleDance.fbx";
+// constexpr const char * ANIMDEMO_FILENAME = "assets/femaleDance.fbx";
+ constexpr const char * ANIMDEMO_FILENAME = "assets/BirdOrange.fbx";
 
 //static constexpr bool CONVERT_SCENE = false;
 static constexpr bool CONVERT_SCENE = true;
