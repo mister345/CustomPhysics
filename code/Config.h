@@ -52,7 +52,7 @@ static constexpr float DEBUG_BONE_RAD = 7.5f * ANIMDEMO_SCALE;
 //static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/femaleDance.fbx";
- constexpr const char * ANIMDEMO_FILENAME = "assets/BirdOrange.fbx";
+ constexpr const char * ANIMDEMO_FILENAME = "assets/bird.fbx";
 
 //static constexpr bool CONVERT_SCENE = false;
 static constexpr bool CONVERT_SCENE = true;
