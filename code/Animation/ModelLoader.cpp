@@ -93,10 +93,17 @@ namespace FbxUtil {
 		// Process	
 		struct worker_t {
 			std::thread t;
-			worker_t( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callbacks, void * dataRecipient ) :
-				t( [ pNode, callbacks, dataRecipient ]() {
-				ProcessNodeInternal( pNode, callbacks, dataRecipient );
-			} ) {}
+
+			worker_t( fbxsdk::FbxNode * pNode_, const FbxUtil::callbackAPI_t & callbacks_, void * dataRecipient_ ) {
+				t = std::move( std::thread( 
+					[]( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callbacks, void * dataRecipient ) { 
+						ProcessNodeInternal( pNode, callbacks, dataRecipient ); }, 
+					pNode_, 
+					callbacks_, 
+					dataRecipient_ 
+				) );
+			}
+
 			~worker_t() {
 				t.join();
 				// @TODO - try pull work from queue
