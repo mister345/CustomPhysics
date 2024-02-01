@@ -26,7 +26,8 @@ namespace FbxUtil {
 		onFoundNode_fn onFoundMesh;
 	};
 
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, const callbackAPI_t & callback, void * caller );
+	void ProcessNodes_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
+	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
 	void HarvestTPose( fbxsdk::FbxScene * pScene, const onFoundTPose_fn & callback, void * caller );
 	bool LoadFBXFile( const char * filename, onLoadedCallback_fn onLoaded, void * userData, bool bConvert, float scale = 1.f );
 } // namespace fbx util

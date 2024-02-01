@@ -1,7 +1,8 @@
+#include <thread>
+#include <iostream>
 #include <iostream>
 #include <cassert>
 #include <unordered_map>
-#include <thread>
 #include <queue>
 #include "fbxInclude.h"
 #include "Bone.h"
@@ -13,8 +14,6 @@
 namespace FbxUtil {
 	bool InitializeSdkObjects( fbxsdk::FbxManager *& pManager, fbxsdk::FbxImporter *& pImporter );
 	void ProcessNodeInternal( fbxsdk::FbxNode * pNode, const FbxUtil::callbackAPI_t & callback, void * dataRecipient );
-	void ProcessNode_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
-	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & cb, void * dataRecipient );
 	void PrintNodeTransform( fbxsdk::FbxNode * node );
 	void PrintSceneAnimData( fbxsdk::FbxImporter * pImporter );
 	int CountBonesInSkeleton( fbxsdk::FbxNode * rootNode );
@@ -41,6 +40,10 @@ namespace FbxUtil {
 		printf( "\tScaling: %f, %f, %f\n", scaling[ 0 ], scaling[ 1 ], scaling[ 2 ] );
 
 	}
+
+	/////////////////////////////////////
+	// Data Extraction Functions
+	/////////////////////////////////////
 	void ProcessNodeTPose( fbxsdk::FbxNode * pNode, const onFoundTPose_fn & callback, void * dataRecipient ) {
 		if ( pNode != nullptr ) {
 			PrintNodeTransform( pNode );
@@ -58,21 +61,8 @@ namespace FbxUtil {
 			}
 		}
 	}
-
-	/////////////////////////////////////
-	// Data Extraction Functions
-	/////////////////////////////////////
-	int g_recursiveHitCt = 0;
-	void HarvestSceneData( fbxsdk::FbxScene * pScene, const FbxUtil::callbackAPI_t & callback, void * caller ) {
-		fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
-		// recursive version		
-		ProcessNode_R( pRootNode, callback, caller );
-
-		// parallel version ( see who wins )
-		//ProcessNodes_Q( pRootNode, callback, caller );
-	}
-
 	void ProcessNodes_Q( fbxsdk::FbxNode * pNode, const callbackAPI_t & callbacks, void * dataRecipient ) {
+
 		// Aggregate
 		std::stack< fbxsdk::FbxNode * > jobs;
 		std::queue< fbxsdk::FbxNode * > q;
@@ -111,13 +101,15 @@ namespace FbxUtil {
 		};
 
 		// @todo - make workers pull new jobs from queue, then we wont need this outer loop
+		// ( otherwise its the same performance as single threaded )
+		const unsigned nThreads = std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD );
+		std::vector< worker_t * > workers( nThreads, nullptr );
 		while ( !jobs.empty() ) {
-			worker_t * workers[ NUM_THREADS_LOAD ] = {};
-			for ( int i = 0; i < NUM_THREADS_LOAD; i++ ) {
+			for ( int i = 0; i < nThreads; i++ ) {
 				workers[ i ] = new worker_t( jobs.top(), callbacks, dataRecipient );
 				jobs.pop();
 			}
-			for ( int i = 0; i < NUM_THREADS_LOAD; i++ ) {
+			for ( int i = 0; i < nThreads; i++ ) {
 				delete( workers[ i ] );
 			}
 		}
@@ -130,13 +122,14 @@ namespace FbxUtil {
 		*/ 
 	}
 
-	void ProcessNode_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
+	int g_recursiveHitCt = 0;
+	void ProcessNodes_R( fbxsdk::FbxNode * pNode, const callbackAPI_t & callback, void * dataRecipient ) {
 		g_recursiveHitCt++;
 		if ( pNode != nullptr ) {
 			ProcessNodeInternal( pNode, callback, dataRecipient );
 
 			for ( int j = 0; j < pNode->GetChildCount(); j++ ) {
-				ProcessNode_R( pNode->GetChild( j ), callback, dataRecipient );
+				ProcessNodes_R( pNode->GetChild( j ), callback, dataRecipient );
 			}
 		}
 	}

@@ -8,7 +8,9 @@
 #include "AnimationData.h"
 #include "AnimationState.h"
 #include "FbxNodeParsers.h"
+#include <thread>
 #include <cmath>
+#include <chrono>
 #include "../Config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,6 +131,28 @@ void populateTPoseCB( void * user, fbxsdk::FbxNode * meshNode ) {
 	}
 }
 
+void SkinnedData::PreProcessSceneData( fbxsdk::FbxScene * scene ) {
+	fbxsdk::FbxNode * pRootNode = scene->GetRootNode();
+
+	for ( int i = 0; i < scene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
+		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
+		animations.insert( { curStack->GetName(), AnimationClip() } );
+	}
+
+	// single threaded
+	FbxUtil::ProcessNodes_R( pRootNode, { &FbxNodeParsers::PopulateBoneAnimsCB, &FbxNodeParsers::PopulateVertsDataCB }, this );
+
+	FbxInvBindPoseMatrices.assign( BoneCount(), fbxsdk::FbxAMatrix() );
+	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
+	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
+}
+
+void SkinnedData::HarvestSceneData( fbxsdk::FbxScene * pScene ) {
+	fbxsdk::FbxNode * pRootNode = pScene->GetRootNode();
+//	FbxUtil::ProcessNodes_Q( pRootNode, { nullptr, &populateTPoseCB }, this );
+	FbxUtil::ProcessNodes_R( pRootNode, { nullptr, &populateTPoseCB }, this );
+}
+
 void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	if ( scene == nullptr ) {
 		assert( !"ERROR - trying to load data from an empty FbxScene!" );
@@ -136,18 +160,21 @@ void SkinnedData::Set( fbxsdk::FbxScene * scene ) {
 	}
 	fbxScene = scene;
 
-	for ( int i = 0; i < scene->GetSrcObjectCount< FbxAnimStack >(); i++ ) {
-		fbxsdk::FbxAnimStack * curStack = scene->GetSrcObject< FbxAnimStack >( i );
-		animations.insert( { curStack->GetName(), AnimationClip() } );
-	}
+	typedef std::chrono::high_resolution_clock Clock;
+	auto start = Clock::now();
 
-	FbxUtil::HarvestSceneData( fbxScene, { &FbxNodeParsers::PopulateBoneAnimsCB, &FbxNodeParsers::PopulateVertsDataCB }, this );
+	// Single threaded
+	PreProcessSceneData( fbxScene );
 
-	FbxInvBindPoseMatrices.assign( BoneCount(), fbxsdk::FbxAMatrix() );
-	InvBindPoseMatrices.assign( BoneCount(), BoneTransform() );
-	BindPoseMatrices.assign( BoneCount(), BoneTransform() );
+	// Multithreaded
+	HarvestSceneData( fbxScene );
 
-	FbxUtil::HarvestSceneData( fbxScene, { nullptr, &populateTPoseCB }, this );
+	auto end = Clock::now();
+	int numThreads = std::min( std::thread::hardware_concurrency(), NUM_THREADS_LOAD );
+	printf( "Animation data was loaded on %i threads in %i ms!\n", 
+			numThreads,
+			std::chrono::duration_cast< std::chrono::milliseconds>( end - start ).count() 
+	);
 }
 
 void SkinnedData::GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const {

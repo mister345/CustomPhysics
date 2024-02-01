@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "Bone.h"
 #include "../Physics/Body.h"
+#include "ModelLoader.h"
 
 struct vert_t;
 
@@ -86,6 +87,8 @@ NOTE - 2 ways to get frames from fbx file
 	*/
 	void Set( fbxsdk::FbxScene * scene );
 
+	void PreProcessSceneData( fbxsdk::FbxScene * pScene );
+	void HarvestSceneData( fbxsdk::FbxScene * pScene );
 	void GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<fbxsdk::FbxAMatrix> & outFinalTransforms ) const;
 	void GetFinalTransformsGlobal( const std::string & cName, float time, std::vector<BoneTransform> & outFinalTransforms ) const;
 

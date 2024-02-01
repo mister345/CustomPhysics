@@ -35,8 +35,9 @@ static constexpr bool PRINT_FRAME_TIME = false;
 
 // Animation
 static constexpr bool SHOW_ORIGIN = false;
-static constexpr int  NUM_THREADS_LOAD = 1;
-//static constexpr int  NUM_THREADS_LOAD = 16;
+
+//static constexpr unsigned NUM_THREADS_LOAD = 1;
+static constexpr unsigned NUM_THREADS_LOAD = 16;
 
 // skeleton type
 static constexpr std::array< AnimationAssets::eSkeleton, 1 > ANIM_DEMO_SKELETONS = {
@@ -51,9 +52,9 @@ static constexpr float ANIMDEMO_SCALE = 1.f;
 static constexpr float DEBUG_BONE_RAD = 7.5f * ANIMDEMO_SCALE;
 //static constexpr const char * ANIMDEMO_FILENAME = "assets/humanoid.fbx";
 // constexpr const char * ANIMDEMO_FILENAME = "assets/human_idle.fbx";
-// constexpr const char * ANIMDEMO_FILENAME = "assets/femaleDance.fbx";
- constexpr const char * ANIMDEMO_FILENAME = "assets/bird.fbx";
-
+//constexpr const char * ANIMDEMO_FILENAME = "assets/bird.fbx";
+constexpr const char * ANIMDEMO_FILENAME = "assets/femaleDance.fbx";
+ 
 //static constexpr bool CONVERT_SCENE = false;
 static constexpr bool CONVERT_SCENE = true;
 
