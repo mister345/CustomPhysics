@@ -25,8 +25,8 @@ void openDebugLog( int whichFile );
 void closeDebugLog( int whichFile );
 void writeToDebugLog( int whichFile, const char * s, ... );
 
-static constexpr bool RUN_ANIMATION    = true;
-static constexpr bool RUN_PHYSICS_SIM  = false;
+static constexpr bool RUN_ANIMATION    = false;
+static constexpr bool RUN_PHYSICS_SIM  = true;
 static constexpr float ZOOM_MULTIPLIER = 35.f;
 static constexpr float GIZMO_SCALE	   = 20.f;
 

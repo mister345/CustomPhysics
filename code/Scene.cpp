@@ -103,15 +103,15 @@ void Scene::Initialize() {
 		}
 	}
 
-	sceneUtil::MakeCoordGizmo( { 0, 0, 10 }, // origin
-					{ 1, 0, 0 },  // fwd
-					{ 0, 1, 0 },  // right
-					{ 0, 0, 1 },  // up
-					GIZMO_SCALE,
-					&m_bodies 
-	);
 
 	if ( RUN_ANIMATION ) {		
+		sceneUtil::MakeCoordGizmo( { 0, 0, 10 }, // origin
+						{ 1, 0, 0 },  // fwd
+						{ 0, 1, 0 },  // right
+						{ 0, 0, 1 },  // up
+						GIZMO_SCALE,
+						&m_bodies 
+		);
 		InitializeAnimInstanceDemo();
 	}
 
@@ -127,17 +127,19 @@ void Scene::Initialize() {
 	// add all the physics bodies to the array of rendered bodies
 	std::transform( m_bodies.begin(), m_bodies.end(), m_renderedBodies.begin(), []( Body & b ) { return &b; } );
 
-	// add all the physics bodies to the array of rendered bodies ( always at the end )
-	size_t offset = m_bodies.size();
-	for ( AnimationInstance * animInst : animInstanceDemo ) {
-			std::transform( 
-				animInst->bodiesToAnimate.begin(), 
-				animInst->bodiesToAnimate.end(), 
-				m_renderedBodies.begin() + offset, 
-				[]( Body & b )  { 
-					return &b; 
-				} );
-			offset += animInst->bodiesToAnimate.size();
+	if ( RUN_ANIMATION ) {
+		// add all the animated bodies to the array of rendered bodies ( always at the end )
+		size_t offset = m_bodies.size();
+		for ( AnimationInstance * animInst : animInstanceDemo ) {
+				std::transform( 
+					animInst->bodiesToAnimate.begin(), 
+					animInst->bodiesToAnimate.end(), 
+					m_renderedBodies.begin() + offset, 
+					[]( Body & b )  { 
+						return &b; 
+					} );
+				offset += animInst->bodiesToAnimate.size();
+		}
 	}
 }
 
